@@ -1,0 +1,232 @@
+CREATE TABLE Member (
+    member_id VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    age NUMBER(3) NOT NULL CHECK (age >= 12 AND age < 130),
+    gender VARCHAR(10) NOT NULL CHECK (gender IN ('Male', 'Female')),
+    phone_no VARCHAR(20) NOT NULL,
+    email VARCHAR(100),
+    points_balance NUMBER(10) DEFAULT 0 NOT NULL,
+    membership_type VARCHAR(10) DEFAULT 'Normal' NOT NULL CHECK (membership_type IN ('Normal', 'VIP')),
+    point_rate NUMBER(3,2) DEFAULT 1.00 NOT NULL,
+    status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
+    PRIMARY KEY (member_id),
+    CONSTRAINT chk_member_rate CHECK ( (membership_type = 'Normal' AND point_rate = 1.00) OR (membership_type = 'VIP'    AND point_rate = 2.00) )
+);
+
+CREATE TABLE Reward (
+    reward_id VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    quantity NUMBER(7) DEFAULT 0 NOT NULL CHECK (quantity >= 0),
+    points_required NUMBER(10) NOT NULL CHECK (points_required > 0),
+    reward_type VARCHAR(20) NOT NULL CHECK (reward_type IN ('Discount', 'Free Delivery', 'Gift')),
+    value NUMBER(7,2) DEFAULT 0.00 NOT NULL CHECK (value >= 0),
+    PRIMARY KEY (reward_id)
+);
+
+
+CREATE TABLE Branch (
+    branch_id VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    phone_no VARCHAR(20),
+    open_time VARCHAR(10) DEFAULT '09:00',
+    close_time VARCHAR(10) DEFAULT '18:00',
+    status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive', 'Closed')),
+    PRIMARY KEY (branch_id)
+);
+
+CREATE TABLE Delivery_Company (
+    delivery_company_id VARCHAR(20) NOT NULL,
+    company_name VARCHAR(100) NOT NULL,
+    contact_no VARCHAR(20),
+    base_delivery_fee NUMBER(6,2) DEFAULT 0.00 NOT NULL CHECK (base_delivery_fee >= 0),
+    rate_per_kg NUMBER(6,2) DEFAULT 0.00 NOT NULL CHECK (rate_per_kg >= 0),
+    status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
+    PRIMARY KEY (delivery_company_id)
+);
+
+CREATE TABLE Item (
+    item_id VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    barcode VARCHAR(50) UNIQUE,
+    unit_price NUMBER(7,2) NOT NULL CHECK (unit_price >= 0),
+    unit_of_measure VARCHAR(20),
+    unit_weight_kg NUMBER(7,3) DEFAULT 0.000 NOT NULL,
+    category VARCHAR(50) NOT NULL CHECK (category IN ('Beverages', 'Canned and Preserved Food', 'Sauces', 'Snacks',  'Personal Care', 'Dairy and Eggs')),
+    status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
+    is_mykasih_eligible CHAR(1) DEFAULT 'N' NOT NULL CHECK (is_mykasih_eligible IN ('Y', 'N')),
+    PRIMARY KEY (item_id)
+);
+
+CREATE TABLE Customer (
+    customer_id VARCHAR(20) NOT NULL,
+    ic_number VARCHAR(20) UNIQUE,
+    member_id VARCHAR(20),
+    PRIMARY KEY (customer_id),
+    FOREIGN KEY (member_id) REFERENCES Member(member_id)
+);
+
+CREATE TABLE Employee (
+    employee_id VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    age NUMBER(3) NOT NULL CHECK (age >= 18 AND age < 61),
+    contact_no VARCHAR(20) NOT NULL,
+    position VARCHAR(50),
+    salary NUMBER(8,2) CHECK (salary > 0),
+    status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
+    hire_date DATE DEFAULT SYSDATE NOT NULL,
+    branch_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (employee_id),
+    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id)
+);
+
+CREATE TABLE Courier (
+    courier_id VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    contact_no VARCHAR(20) NOT NULL,
+    average_rating NUMBER(3,2) DEFAULT 0.00 CHECK (average_rating BETWEEN 0 AND 5.00),
+    delivery_company_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (courier_id),
+    FOREIGN KEY (delivery_company_id) REFERENCES Delivery_Company(delivery_company_id)
+);
+
+
+
+CREATE TABLE Member_Subscription (
+    subscription_id VARCHAR(20) NOT NULL,
+    start_date DATE DEFAULT SYSDATE NOT NULL,
+    end_date DATE NOT NULL,
+    fee_amount NUMBER(5,2) DEFAULT 12.00 NOT NULL CHECK (fee_amount = 12.00), 
+    payment_status VARCHAR(20) DEFAULT 'Pending' NOT NULL CHECK (payment_status IN ('Pending', 'Paid', 'Cancelled', 'Expired')),
+    member_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (subscription_id),
+    FOREIGN KEY (member_id) REFERENCES Member(member_id),
+    CONSTRAINT chk_subscription_dates CHECK (end_date > start_date)
+);
+
+CREATE TABLE Reward_Redemption (
+    redemption_id VARCHAR(20) NOT NULL,
+    quantity_redeemed NUMBER(5) NOT NULL CHECK (quantity_redeemed > 0),
+    point_spent NUMBER(10) NOT NULL CHECK (point_spent > 0),
+    issue_date DATE DEFAULT SYSDATE NOT NULL,
+    expiry_date DATE,
+    status VARCHAR(20) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Used', 'Expired')),
+    member_id VARCHAR(20) NOT NULL,
+    reward_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (redemption_id),
+    FOREIGN KEY (member_id) REFERENCES Member(member_id),
+    FOREIGN KEY (reward_id) REFERENCES Reward(reward_id),
+    CONSTRAINT chk_redemption_dates CHECK (expiry_date > issue_date) 
+);
+
+
+CREATE TABLE Inventory (
+    branch_id VARCHAR(20) NOT NULL,
+    item_id VARCHAR(20) NOT NULL,
+    quantity NUMBER(8) DEFAULT 0 NOT NULL CHECK (quantity >= 0),
+    last_restock_date DATE,
+    PRIMARY KEY (branch_id, item_id),
+    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id),
+    FOREIGN KEY (item_id) REFERENCES Item(item_id)
+);
+
+CREATE TABLE Orders (
+    order_no VARCHAR(20) NOT NULL,
+    order_date_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    order_type VARCHAR(20) NOT NULL CHECK (order_type IN ('Online', 'Walk-In')),
+    service_type VARCHAR(20) NOT NULL CHECK (service_type IN ('Pickup', 'Delivery')),
+    total_amount NUMBER(10,2) DEFAULT 0.00 NOT NULL CHECK (total_amount >= 0),
+    points_earned NUMBER(8) DEFAULT 0 NOT NULL,
+    discount_amount NUMBER(10,2) DEFAULT 0.00 NOT NULL CHECK (discount_amount >= 0),
+    order_status VARCHAR(20) DEFAULT 'Processing' NOT NULL CHECK (order_status IN ('Processing', 'Completed', 'Cancelled')),
+    is_mykasih_purchase CHAR(1) DEFAULT 'N' NOT NULL CHECK (is_mykasih_purchase IN ('Y', 'N')),
+    redemption_id VARCHAR(20) UNIQUE,
+    customer_id VARCHAR(20) NOT NULL,
+    branch_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (order_no),
+    FOREIGN KEY (redemption_id) REFERENCES reward_redemption (redemption_id),
+    FOREIGN KEY (customer_id) REFERENCES Customer(customer_id),
+    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id)
+);
+
+CREATE TABLE Order_Detail (
+    order_no VARCHAR(20) NOT NULL,
+    item_id VARCHAR(20) NOT NULL,
+    quantity NUMBER(5) NOT NULL CHECK (quantity > 0),
+    unit_price NUMBER(8,2) NOT NULL CHECK (unit_price >= 0),
+    subtotal NUMBER(10,2) NOT NULL CHECK (subtotal >= 0),
+    PRIMARY KEY (order_no, item_id),
+    FOREIGN KEY (order_no) REFERENCES Orders(order_no),
+    FOREIGN KEY (item_id) REFERENCES Item(item_id)
+);
+
+CREATE TABLE Payment (
+    payment_id VARCHAR(20) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    payment_date_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    reference_no VARCHAR(100),
+    payment_status VARCHAR(20) DEFAULT 'Pending' NOT NULL CHECK (payment_status IN ('Pending', 'Paid', 'Failed', 'Cancelled', 'Refunded')),
+    order_no VARCHAR(20) NOT NULL UNIQUE,
+    PRIMARY KEY (payment_id),
+    FOREIGN KEY (order_no) REFERENCES Orders(order_no)
+);
+
+CREATE TABLE Return_Request (
+    return_id VARCHAR(20) NOT NULL,
+    reason VARCHAR(255) NOT NULL,
+    request_date DATE DEFAULT SYSDATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'Requested' NOT NULL CHECK (status IN ('Requested', 'Approved', 'Rejected', 'Refunded')),
+    refund_amount NUMBER(10,2) DEFAULT 0.00 CHECK (refund_amount >= 0),
+    remarks VARCHAR(500),
+    return_quantity NUMBER(5) NOT NULL CHECK (return_quantity > 0),
+    order_no VARCHAR(20) NOT NULL,
+    item_id VARCHAR(20) NOT NULL,
+    reviewed_by VARCHAR(20),
+    PRIMARY KEY (return_id),
+    FOREIGN KEY (order_no) REFERENCES Orders(order_no),
+    FOREIGN KEY (item_id) REFERENCES Item(item_id),
+    FOREIGN KEY (reviewed_by) REFERENCES Employee(employee_id)
+);
+
+CREATE TABLE Feedback (
+    feedback_id VARCHAR(20) NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description VARCHAR(1000) NOT NULL,
+    feedback_date DATE DEFAULT SYSDATE NOT NULL,
+    order_no VARCHAR(20) NOT NULL UNIQUE,
+    PRIMARY KEY (feedback_id),
+    FOREIGN KEY (order_no) REFERENCES Orders(order_no)
+);
+
+CREATE TABLE Rating (
+    rating_id VARCHAR(20) NOT NULL,
+    score NUMBER(1) NOT NULL CHECK (score BETWEEN 1 AND 5),
+    comments VARCHAR(500),
+    rating_date DATE DEFAULT SYSDATE NOT NULL,
+    order_no VARCHAR(20) NOT NULL,
+    item_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (rating_id),
+    FOREIGN KEY (order_no) REFERENCES Orders(order_no),
+    FOREIGN KEY (item_id) REFERENCES Item(item_id)
+);
+
+CREATE TABLE Delivery_Request (
+    delivery_request_id VARCHAR(20) NOT NULL,
+    recipient_name VARCHAR(100) NOT NULL,
+    recipient_phone_no VARCHAR(20) NOT NULL,
+    delivery_address VARCHAR(255) NOT NULL,
+    delivery_fee NUMBER(6,2) DEFAULT 0.00 NOT NULL CHECK (delivery_fee >= 0),
+    delivered_date_time TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'Processing' NOT NULL CHECK (status IN ('Processing', 'In Transit', 'Delivered', 'Failed')),
+    rating NUMBER(1) CHECK (rating BETWEEN 1 AND 5),
+    order_no VARCHAR(20) NOT NULL UNIQUE,
+    courier_id VARCHAR(20) NOT NULL,
+    PRIMARY KEY (delivery_request_id),
+    FOREIGN KEY (order_no) REFERENCES Orders(order_no),
+    FOREIGN KEY (courier_id) REFERENCES Courier(courier_id)
+);
+
+
+
+
+
