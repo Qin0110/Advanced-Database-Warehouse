@@ -63,7 +63,8 @@ CREATE TABLE Customer (
     ic_number VARCHAR(20) UNIQUE,
     member_id VARCHAR(20),
     PRIMARY KEY (customer_id),
-    FOREIGN KEY (member_id) REFERENCES Member(member_id)
+    FOREIGN KEY (member_id) REFERENCES Member(member_id),
+    CONSTRAINT uq_customer_member UNIQUE (member_id)
 );
 
 CREATE TABLE Employee (
@@ -146,7 +147,8 @@ CREATE TABLE Orders (
     PRIMARY KEY (order_no),
     FOREIGN KEY (redemption_id) REFERENCES reward_redemption (redemption_id),
     FOREIGN KEY (customer_id) REFERENCES Customer(customer_id),
-    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id)
+    FOREIGN KEY (branch_id) REFERENCES Branch(branch_id),
+    CONSTRAINT chk_orders_discount CHECK (discount_amount <= total_amount)
 );
 
 CREATE TABLE Order_Detail (
@@ -157,7 +159,8 @@ CREATE TABLE Order_Detail (
     subtotal NUMBER(10,2) NOT NULL CHECK (subtotal >= 0),
     PRIMARY KEY (order_no, item_id),
     FOREIGN KEY (order_no) REFERENCES Orders(order_no),
-    FOREIGN KEY (item_id) REFERENCES Item(item_id)
+    FOREIGN KEY (item_id) REFERENCES Item(item_id),
+    CONSTRAINT chk_od_subtotal CHECK (subtotal = quantity * unit_price)
 );
 
 CREATE TABLE Payment (
@@ -183,9 +186,9 @@ CREATE TABLE Return_Request (
     item_id VARCHAR(20) NOT NULL,
     reviewed_by VARCHAR(20),
     PRIMARY KEY (return_id),
-    FOREIGN KEY (order_no) REFERENCES Orders(order_no),
-    FOREIGN KEY (item_id) REFERENCES Item(item_id),
-    FOREIGN KEY (reviewed_by) REFERENCES Employee(employee_id)
+    CONSTRAINT fk_return_orderdetail FOREIGN KEY (order_no, item_id) REFERENCES Order_Detail(order_no, item_id),
+    FOREIGN KEY (reviewed_by) REFERENCES Employee(employee_id),
+    CONSTRAINT uq_return_orderdetail UNIQUE (order_no, item_id)
 );
 
 CREATE TABLE Feedback (
@@ -206,8 +209,8 @@ CREATE TABLE Rating (
     order_no VARCHAR(20) NOT NULL,
     item_id VARCHAR(20) NOT NULL,
     PRIMARY KEY (rating_id),
-    FOREIGN KEY (order_no) REFERENCES Orders(order_no),
-    FOREIGN KEY (item_id) REFERENCES Item(item_id)
+    CONSTRAINT fk_rating_orderdetail FOREIGN KEY (order_no, item_id) REFERENCES Order_Detail(order_no, item_id),
+    CONSTRAINT uq_rating_orderdetail UNIQUE (order_no, item_id)
 );
 
 CREATE TABLE Delivery_Request (
@@ -223,7 +226,9 @@ CREATE TABLE Delivery_Request (
     courier_id VARCHAR(20) NOT NULL,
     PRIMARY KEY (delivery_request_id),
     FOREIGN KEY (order_no) REFERENCES Orders(order_no),
-    FOREIGN KEY (courier_id) REFERENCES Courier(courier_id)
+    FOREIGN KEY (courier_id) REFERENCES Courier(courier_id),
+    CONSTRAINT chk_dr_delivered CHECK (status <> 'Delivered' OR delivered_date_time IS NOT NULL),
+    CONSTRAINT chk_dr_rating    CHECK (rating IS NULL OR status = 'Delivered')
 );
 
 
