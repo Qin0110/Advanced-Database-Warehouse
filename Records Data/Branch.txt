@@ -1,0 +1,19 @@
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR001', '88 Speedmart Kota Damansara', 'No. 12, Jalan PJU 5/20, Kota Damansara, 47810 Petaling Jaya, Selangor', '03-6142 1001');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR002', '88 Speedmart Subang Jaya', 'No. 25, Jalan SS 15/4, SS 15, 47500 Subang Jaya, Selangor', '03-5634 1002');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR003', '88 Speedmart Setapak', 'No. 18, Jalan Genting Klang, Setapak, 53300 Kuala Lumpur', '03-4021 1003');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR004', '88 Speedmart Cheras', 'No. 31, Jalan Cerdas, Taman Connaught, 56000 Kuala Lumpur', '03-9107 1004');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR005', '88 Speedmart Shah Alam', 'No. 9, Jalan Tengku Ampuan Zabedah, Seksyen 9, 40100 Shah Alam, Selangor', '03-5512 1005');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR006', '88 Speedmart Klang', 'No. 42, Jalan Meru, Taman Berkeley, 41150 Klang, Selangor', '03-3341 1006');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR007', '88 Speedmart Puchong', 'No. 16, Jalan Bandar Dua Belas, Pusat Bandar Puchong, 47160 Puchong, Selangor', '03-5882 1007');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR008', '88 Speedmart Kajang', 'No. 27, Jalan Reko, 43000 Kajang, Selangor', '03-8736 1008');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR009', '88 Speedmart Kepong', 'No. 8, Jalan Metro Perdana Barat, Kepong, 52100 Kuala Lumpur', '03-6257 1009');
+
+INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR010', '88 Speedmart Ampang', 'No. 55, Jalan Wawasan, Bandar Baru Ampang, 68000 Ampang, Selangor', '03-4296 1010');

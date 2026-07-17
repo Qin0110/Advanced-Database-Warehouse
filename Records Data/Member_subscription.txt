@@ -1,0 +1,138 @@
+-- =========================================================
+-- Current VIP member: MB002
+-- Previous subscription expired, current subscription active
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB001', DATE '2024-02-01', DATE '2025-01-31', 12.00, 'Expired', 'MB002');
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB002', DATE '2026-02-01', DATE '2027-01-31', 12.00, 'Paid', 'MB002');
+
+
+-- =========================================================
+-- Current VIP member: MB004
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB003', DATE '2024-06-15', DATE '2025-06-14', 12.00, 'Expired', 'MB004');
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB004', DATE '2026-06-15', DATE '2027-06-14', 12.00, 'Paid', 'MB004');
+
+
+-- =========================================================
+-- Current Normal member: MB003
+-- Previously subscribed to VIP, but did not renew
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB005', DATE '2024-01-10', DATE '2025-01-09', 12.00, 'Expired', 'MB003');
+
+
+-- =========================================================
+-- Current VIP member: MB006
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB006', DATE '2024-09-01', DATE '2025-08-31', 12.00, 'Expired', 'MB006');
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB007', DATE '2025-09-01', DATE '2026-08-31', 12.00, 'Paid', 'MB006');
+
+
+-- =========================================================
+-- Current Normal member: MB005
+-- Previously registered for VIP but cancelled
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB008', DATE '2025-03-01', DATE '2026-02-28', 12.00, 'Cancelled', 'MB005');
+
+
+-- =========================================================
+-- Current VIP member: MB009
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB009', DATE '2024-11-20', DATE '2025-11-19', 12.00, 'Expired', 'MB009');
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB010', DATE '2025-11-20', DATE '2026-11-19', 12.00, 'Paid', 'MB009');
+
+
+-- =========================================================
+-- Current Normal member: MB008
+-- Was previously VIP, subscription has expired
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB011', DATE '2023-08-15', DATE '2024-08-14', 12.00, 'Expired', 'MB008');
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB012', DATE '2024-08-15', DATE '2025-08-14', 12.00, 'Expired', 'MB008');
+
+
+-- =========================================================
+-- Current VIP member: MB011
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB013', DATE '2025-03-10', DATE '2026-03-09', 12.00, 'Expired', 'MB011');
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB014', DATE '2026-03-10', DATE '2027-03-09', 12.00, 'Paid', 'MB011');
+
+
+-- =========================================================
+-- Current Normal member: MB012
+-- Application was cancelled before activation
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB015', DATE '2025-10-01', DATE '2026-09-30', 12.00, 'Cancelled', 'MB012');
+
+
+-- =========================================================
+-- Current VIP member: MB013
+-- =========================================================
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB016', DATE '2025-08-01', DATE '2026-07-31', 12.00, 'Paid', 'MB013');
+
+INSERT INTO MEMBER_SUBSCRIPTION
+    (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
+VALUES
+    ('SUB017', DATE '2026-08-01', DATE '2027-07-31', 12.00, 'Pending', 'MB013');
