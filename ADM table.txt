@@ -4,8 +4,8 @@ CREATE TABLE Member (
     age NUMBER(3) NOT NULL CHECK (age >= 12 AND age < 130),
     gender VARCHAR(10) NOT NULL CHECK (gender IN ('Male', 'Female')),
     phone_no VARCHAR(20) NOT NULL,
-    email VARCHAR(100),
-    points_balance NUMBER(10) DEFAULT 0 NOT NULL,
+    email VARCHAR(100) UNIQUE CHECK (email LIKE '%@%.%'),
+    points_balance NUMBER(10) DEFAULT 0 NOT NULL CHECK (points_balance >= 0),
     membership_type VARCHAR(10) DEFAULT 'Normal' NOT NULL CHECK (membership_type IN ('Normal', 'VIP')),
     point_rate NUMBER(3,2) DEFAULT 1.00 NOT NULL,
     status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
@@ -20,6 +20,7 @@ CREATE TABLE Reward (
     points_required NUMBER(10) NOT NULL CHECK (points_required > 0),
     reward_type VARCHAR(20) NOT NULL CHECK (reward_type IN ('Discount', 'Free Delivery', 'Gift')),
     value NUMBER(7,2) DEFAULT 0.00 NOT NULL CHECK (value >= 0),
+    status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
     PRIMARY KEY (reward_id)
 );
 
@@ -50,8 +51,8 @@ CREATE TABLE Item (
     name VARCHAR(100) NOT NULL,
     barcode VARCHAR(50) UNIQUE,
     unit_price NUMBER(7,2) NOT NULL CHECK (unit_price >= 0),
-    unit_of_measure VARCHAR(20),
-    unit_weight_kg NUMBER(7,3) DEFAULT 0.000 NOT NULL,
+    unit_of_measure VARCHAR(20) CHECK (unit_of_measure IN ('kg','g','L','ml','pcs','pack')),
+    unit_weight_kg NUMBER(7,3) DEFAULT 0.000 NOT NULL CHECK (unit_weight_kg >= 0),
     category VARCHAR(50) NOT NULL CHECK (category IN ('Beverages', 'Canned and Preserved Food', 'Sauces', 'Snacks',  'Personal Care', 'Dairy and Eggs')),
     status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
     is_mykasih_eligible CHAR(1) DEFAULT 'N' NOT NULL CHECK (is_mykasih_eligible IN ('Y', 'N')),
@@ -70,9 +71,9 @@ CREATE TABLE Customer (
 CREATE TABLE Employee (
     employee_id VARCHAR(20) NOT NULL,
     name VARCHAR(100) NOT NULL,
-    age NUMBER(3) NOT NULL CHECK (age >= 18 AND age < 61),
+    age NUMBER(3) NOT NULL CHECK (age >= 18 AND age < 70),
     contact_no VARCHAR(20) NOT NULL,
-    position VARCHAR(50),
+    position VARCHAR(50) CHECK (position IN ('Cashier','Manager','Supervisor','Stock Clerk')),
     salary NUMBER(8,2) CHECK (salary > 0),
     status VARCHAR(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
     hire_date DATE DEFAULT SYSDATE NOT NULL,
@@ -136,8 +137,9 @@ CREATE TABLE Orders (
     order_date_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     order_type VARCHAR(20) NOT NULL CHECK (order_type IN ('Online', 'Walk-In')),
     service_type VARCHAR(20) NOT NULL CHECK (service_type IN ('Pickup', 'Delivery')),
+    subtotal_amount NUMBER(10,2) DEFAULT 0.00 NOT NULL CHECK (subtotal_amount >= 0),
     total_amount NUMBER(10,2) DEFAULT 0.00 NOT NULL CHECK (total_amount >= 0),
-    points_earned NUMBER(8) DEFAULT 0 NOT NULL,
+    points_earned NUMBER(8) DEFAULT 0 NOT NULL CHECK (points_earned >= 0),
     discount_amount NUMBER(10,2) DEFAULT 0.00 NOT NULL CHECK (discount_amount >= 0),
     order_status VARCHAR(20) DEFAULT 'Processing' NOT NULL CHECK (order_status IN ('Processing', 'Completed', 'Cancelled')),
     is_mykasih_purchase CHAR(1) DEFAULT 'N' NOT NULL CHECK (is_mykasih_purchase IN ('Y', 'N')),
@@ -148,14 +150,15 @@ CREATE TABLE Orders (
     FOREIGN KEY (redemption_id) REFERENCES reward_redemption (redemption_id),
     FOREIGN KEY (customer_id) REFERENCES Customer(customer_id),
     FOREIGN KEY (branch_id) REFERENCES Branch(branch_id),
-    CONSTRAINT chk_orders_discount CHECK (discount_amount <= total_amount)
+    CONSTRAINT chk_orders_discount CHECK (discount_amount <= subtotal_amount),
+    CONSTRAINT chk_orders_total    CHECK (total_amount = subtotal_amount - discount_amount)
 );
 
 CREATE TABLE Order_Detail (
     order_no VARCHAR(20) NOT NULL,
     item_id VARCHAR(20) NOT NULL,
     quantity NUMBER(5) NOT NULL CHECK (quantity > 0),
-    unit_price NUMBER(8,2) NOT NULL CHECK (unit_price >= 0),
+    unit_price NUMBER(7,2) NOT NULL CHECK (unit_price >= 0),
     subtotal NUMBER(10,2) NOT NULL CHECK (subtotal >= 0),
     PRIMARY KEY (order_no, item_id),
     FOREIGN KEY (order_no) REFERENCES Orders(order_no),
@@ -165,9 +168,9 @@ CREATE TABLE Order_Detail (
 
 CREATE TABLE Payment (
     payment_id VARCHAR(20) NOT NULL,
-    payment_method VARCHAR(50) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL CHECK (payment_method IN ('Cash','Card','E-Wallet','MyKasih','Online Banking')),
     payment_date_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    reference_no VARCHAR(100),
+    reference_no VARCHAR(100) UNIQUE,
     payment_status VARCHAR(20) DEFAULT 'Pending' NOT NULL CHECK (payment_status IN ('Pending', 'Paid', 'Failed', 'Cancelled', 'Refunded')),
     order_no VARCHAR(20) NOT NULL UNIQUE,
     PRIMARY KEY (payment_id),
