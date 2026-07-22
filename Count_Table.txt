@@ -1,0 +1,35 @@
+SELECT COUNT(*) AS total_members FROM MEMBER;
+
+SELECT COUNT(*) AS total_rewards FROM REWARD;
+
+SELECT COUNT(*) AS total_branches FROM BRANCH;
+
+SELECT COUNT(*) AS total_delivery_companies FROM DELIVERY_COMPANY;
+
+SELECT COUNT(*) AS total_items FROM ITEM;
+
+SELECT COUNT(*) AS total_customers FROM CUSTOMER;
+
+SELECT COUNT(*) AS total_employees FROM EMPLOYEE;
+
+SELECT COUNT(*) AS total_couriers FROM COURIER;
+
+SELECT COUNT(*) AS total_member_subscriptions FROM MEMBER_SUBSCRIPTION;
+
+SELECT COUNT(*) AS total_reward_redemptions FROM REWARD_REDEMPTION;
+
+SELECT COUNT(*) AS total_orders FROM ORDERS;
+
+SELECT COUNT(*) AS total_payments FROM PAYMENT;
+
+SELECT COUNT(*) AS total_return_requests FROM RETURN_REQUEST;
+
+SELECT COUNT(*) AS total_feedback FROM FEEDBACK;
+
+SELECT COUNT(*) AS total_ratings FROM RATING;
+
+SELECT COUNT(*) AS total_delivery_requests FROM DELIVERY_REQUEST;
+
+SELECT COUNT(*) AS total_inventory_records FROM INVENTORY;
+
+SELECT COUNT(*) AS total_order_details FROM ORDER_DETAIL;
