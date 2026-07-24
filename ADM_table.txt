@@ -18,7 +18,6 @@ DROP TABLE Reward CASCADE CONSTRAINTS;
 DROP TABLE Member CASCADE CONSTRAINTS;
 
 
-
 CREATE TABLE Member (
     member_id VARCHAR2(20) NOT NULL,
     name VARCHAR2(100) NOT NULL,
@@ -62,7 +61,6 @@ CREATE TABLE Delivery_Company (
     company_name VARCHAR2(100) NOT NULL,
     contact_no VARCHAR2(20),
     base_delivery_fee NUMBER(6,2) DEFAULT 0.00 NOT NULL CHECK (base_delivery_fee >= 0),
-    rate_per_kg NUMBER(6,2) DEFAULT 0.00 NOT NULL CHECK (rate_per_kg >= 0),
     status VARCHAR2(10) DEFAULT 'Active' NOT NULL CHECK (status IN ('Active', 'Inactive')),
     PRIMARY KEY (delivery_company_id)
 );
@@ -172,16 +170,18 @@ CREATE TABLE Orders (
     FOREIGN KEY (customer_id) REFERENCES Customer(customer_id),
     FOREIGN KEY (branch_id) REFERENCES Branch(branch_id),
     CONSTRAINT chk_orders_discount CHECK (discount_amount <= subtotal_amount),
-    CONSTRAINT chk_orders_total    CHECK (total_amount = subtotal_amount - discount_amount),
+    CONSTRAINT chk_orders_total CHECK (
+        (service_type = 'Pickup'   AND total_amount =  subtotal_amount - discount_amount) OR
+        (service_type = 'Delivery' AND total_amount >= subtotal_amount - discount_amount)),
     CONSTRAINT chk_walk_delivery CHECK (NOT (order_type = 'Walk-In' AND service_type = 'Delivery'))
 );
 
 CREATE TABLE Order_Detail (
     order_no VARCHAR2(20) NOT NULL,
     item_id VARCHAR2(20) NOT NULL,
+    subtotal NUMBER(10,2) NOT NULL CHECK (subtotal >= 0),
     quantity NUMBER(5) NOT NULL CHECK (quantity > 0),
     unit_price NUMBER(7,2) NOT NULL CHECK (unit_price >= 0),
-    subtotal NUMBER(10,2) NOT NULL CHECK (subtotal >= 0),
     PRIMARY KEY (order_no, item_id),
     FOREIGN KEY (order_no) REFERENCES Orders(order_no),
     FOREIGN KEY (item_id) REFERENCES Item(item_id),
@@ -255,8 +255,3 @@ CREATE TABLE Delivery_Request (
     CONSTRAINT chk_dr_delivered CHECK (status <> 'Delivered' OR delivered_date_time IS NOT NULL),
     CONSTRAINT chk_dr_rating    CHECK (rating IS NULL OR status = 'Delivered')
 );
-
-
-
-
-

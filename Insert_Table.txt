@@ -1,5 +1,5 @@
 -- =========================================================================
--- MEMBER  (250 rows, base table)
+-- MEMBER  (250 rows)
 -- =========================================================================
 INSERT INTO MEMBER (MEMBER_ID, NAME, AGE, GENDER, PHONE_NO, EMAIL, POINTS_BALANCE, MEMBERSHIP_TYPE, POINT_RATE, STATUS)
 VALUES ('MB001', 'Ahmad Syafiq', 24, 'Male', '012-710 1001', 'ahmad.syafiq@email.com', 364, 'Normal', 1.00, 'Active');
@@ -503,7 +503,7 @@ INSERT INTO MEMBER (MEMBER_ID, NAME, AGE, GENDER, PHONE_NO, EMAIL, POINTS_BALANC
 VALUES ('MB250', 'Wen Qi Binti Salleh', 33, 'Female', '010-726 1250', 'wen.qibintisalleh@email.com', 240, 'Normal', 1.00, 'Active');
 
 -- =========================================================================
--- REWARD  (10 rows, base table)
+-- REWARD  (10 rows)
 -- =========================================================================
 INSERT INTO REWARD (REWARD_ID, NAME, QUANTITY, POINTS_REQUIRED, REWARD_TYPE, VALUE)
 VALUES ('RW001', 'RM5 Purchase Discount', 200, 500, 'Discount', 5.00);
@@ -536,7 +536,7 @@ INSERT INTO REWARD (REWARD_ID, NAME, QUANTITY, POINTS_REQUIRED, REWARD_TYPE, VAL
 VALUES ('RW010', 'RM50 Purchase Discount', 30, 4000, 'Discount', 50.00);
 
 -- =========================================================================
--- BRANCH  (10 rows, base table)
+-- BRANCH  (10 rows)
 -- =========================================================================
 INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR001', '88 Speedmart Kota Damansara', 'No. 12, Jalan PJU 5/20, Kota Damansara, 47810 Petaling Jaya, Selangor', '03-6142 1001');
 
@@ -559,14 +559,14 @@ INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR009', '88 Spe
 INSERT INTO BRANCH (BRANCH_ID, NAME, ADDRESS, PHONE_NO) VALUES ('BR010', '88 Speedmart Ampang', 'No. 55, Jalan Wawasan, Bandar Baru Ampang, 68000 Ampang, Selangor', '03-4296 1010');
 
 -- =========================================================================
--- DELIVERY_COMPANY  (10 rows, base table)
+-- DELIVERY_COMPANY  (10 rows)
 -- =========================================================================
 INSERT INTO DELIVERY_COMPANY (DELIVERY_COMPANY_ID, COMPANY_NAME, CONTACT_NO, BASE_DELIVERY_FEE, STATUS)
 VALUES ('DC001', 'GrabExpress', '03-2788 1300', 5.00, 'Active');
 INSERT INTO DELIVERY_COMPANY (DELIVERY_COMPANY_ID, COMPANY_NAME, CONTACT_NO, BASE_DELIVERY_FEE, STATUS)
 VALUES ('DC002', 'Lalamove', '03-7688 6555', 6.00, 'Active');
 INSERT INTO DELIVERY_COMPANY (DELIVERY_COMPANY_ID, COMPANY_NAME, CONTACT_NO, BASE_DELIVERY_FEE, STATUS)
-VALUES ('DC003', 'J&T Express', '1300-80-9000', 4.50, 'Active');
+VALUES ('DC003', 'JNT Express', '1300-80-9000', 4.50, 'Active');
 INSERT INTO DELIVERY_COMPANY (DELIVERY_COMPANY_ID, COMPANY_NAME, CONTACT_NO, BASE_DELIVERY_FEE, STATUS)
 VALUES ('DC004', 'Pos Laju', '1300-300-300', 5.50, 'Active');
 INSERT INTO DELIVERY_COMPANY (DELIVERY_COMPANY_ID, COMPANY_NAME, CONTACT_NO, BASE_DELIVERY_FEE, STATUS)
@@ -583,11 +583,8 @@ INSERT INTO DELIVERY_COMPANY (DELIVERY_COMPANY_ID, COMPANY_NAME, CONTACT_NO, BAS
 VALUES ('DC010', 'Flash Express', '03-9212 0868', 4.00, 'Active');
 
 -- =========================================================================
--- ITEM  (50 rows, base table)
+-- ITEM  (50 rows)
 -- =========================================================================
--- =========================================================
--- BEVERAGES: 10 items
--- =========================================================
 
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT001', 'Spritzer Mineral Water 1.5L', '9556995200011', 2.80, 'L', 1.500, 'Beverages', 'Active', 'Y');
@@ -619,11 +616,6 @@ VALUES ('IT009', 'Nescafe Original Coffee 240ml', '9556001200090', 3.20, 'ml', 0
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT010', 'Lipton Lemon Tea 1.5L', '9556404200107', 4.70, 'L', 1.500, 'Beverages', 'Active', 'N');
 
-
--- =========================================================
--- CANNED AND PRESERVED FOOD: 8 items
--- =========================================================
-
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT011', 'Ayam Brand Sardines in Tomato Sauce 425g', '9556041600112', 9.50, 'g', 0.425, 'Canned and Preserved Food', 'Active', 'Y');
 
@@ -648,11 +640,6 @@ VALUES ('IT017', 'Rex Chicken Curry 300g', '9556130100170', 8.90, 'g', 0.300, 'C
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT018', 'Yeo''s Curry Chicken 285g', '9556156000188', 9.20, 'g', 0.285, 'Canned and Preserved Food', 'Active', 'Y');
 
-
--- =========================================================
--- SAUCES: 7 items
--- =========================================================
-
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT019', 'Life Chilli Sauce 500g', '9556046500196', 4.90, 'g', 0.500, 'Sauces', 'Active', 'Y');
 
@@ -673,11 +660,6 @@ VALUES ('IT024', 'Kimball Spaghetti Sauce Traditional 350g', '9556046600247', 7.
 
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT025', 'Adabi Oyster Flavoured Sauce 510g', '9556252100256', 6.80, 'g', 0.510, 'Sauces', 'Active', 'Y');
-
-
--- =========================================================
--- SNACKS: 10 items
--- =========================================================
 
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT026', 'Mister Potato Original Crisps 125g', '9556194000263', 5.50, 'g', 0.125, 'Snacks', 'Active', 'N');
@@ -709,11 +691,6 @@ VALUES ('IT034', 'KitKat Chocolate Bar 35g', '9556001200342', 2.80, 'g', 0.035, 
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT035', 'Gardenia Chocolate Cream Roll 55g', '9557170000350', 1.50, 'g', 0.055, 'Snacks', 'Active', 'N');
 
-
--- =========================================================
--- PERSONAL CARE: 8 items
--- =========================================================
-
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT036', 'Colgate Maximum Cavity Protection Toothpaste 175g', '9556031000369', 8.90, 'g', 0.175, 'Personal Care', 'Active', 'Y');
 
@@ -738,11 +715,6 @@ VALUES ('IT042', 'Drypers Wee Wee Dry Medium 20 Pieces', '9557326000425', 19.90,
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT043', 'Systema Medium Toothbrush', '9556111600430', 4.90, 'pcs', 0.030, 'Personal Care', 'Active', 'Y');
 
-
--- =========================================================
--- DAIRY AND EGGS: 7 items
--- =========================================================
-
 INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIGHT_KG, CATEGORY, STATUS, IS_MYKASIH_ELIGIBLE)
 VALUES ('IT044', 'Dutch Lady Full Cream Milk 1L', '9556173200448', 7.20, 'L', 1.000, 'Dairy and Eggs', 'Active', 'Y');
 
@@ -765,10 +737,8 @@ INSERT INTO ITEM (ITEM_ID, NAME, BARCODE, UNIT_PRICE, UNIT_OF_MEASURE, UNIT_WEIG
 VALUES ('IT050', 'Chesdale Cheddar Cheese Slices 12 Pieces', '9415007000501', 10.90, 'pack', 0.250, 'Dairy and Eggs', 'Active', 'Y');
 
 -- =========================================================================
--- CUSTOMER  (1010 rows, base table)
+-- CUSTOMER  (1010 rows)
 -- =========================================================================
--- One customer row per member, plus non-members identified by IC (MyKasih /
--- returning walk-in customers), plus one row per anonymous walk-in visit.
 INSERT INTO CUSTOMER (CUSTOMER_ID, IC_NUMBER, MEMBER_ID) VALUES ('CUS0001', '020320-06-6127', 'MB001');
 INSERT INTO CUSTOMER (CUSTOMER_ID, IC_NUMBER, MEMBER_ID) VALUES ('CUS0002', '050810-06-0918', 'MB002');
 INSERT INTO CUSTOMER (CUSTOMER_ID, IC_NUMBER, MEMBER_ID) VALUES ('CUS0003', '970711-16-5509', 'MB003');
@@ -1781,11 +1751,8 @@ INSERT INTO CUSTOMER (CUSTOMER_ID, IC_NUMBER, MEMBER_ID) VALUES ('CUS1009', NULL
 INSERT INTO CUSTOMER (CUSTOMER_ID, IC_NUMBER, MEMBER_ID) VALUES ('CUS1010', NULL, NULL);
 
 -- =========================================================================
--- EMPLOYEE  (71 rows, base table)
+-- EMPLOYEE  (71 rows)
 -- =========================================================================
--- =========================================================
--- BR001: 7 employees
--- =========================================================
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP001', 'Ahmad Firdaus', 38, '012-510 1001', 'Manager', 4800.00, 'Active', DATE '2022-03-15', 'BR001');
@@ -1808,11 +1775,6 @@ VALUES ('EMP006', 'Tan Jia Yi', 21, '018-510 1006', 'Cashier', 1800.00, 'Active'
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP007', 'Mohd Hafiz', 44, '019-510 1007', 'Stock Clerk', 2100.00, 'Active', DATE '2021-11-01', 'BR001');
 
-
--- =========================================================
--- BR002: 6 employees
--- =========================================================
-
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP008', 'Lee Jun Hao', 40, '012-520 1008', 'Manager', 4700.00, 'Active', DATE '2021-07-12', 'BR002');
 
@@ -1830,11 +1792,6 @@ VALUES ('EMP012', 'Chong Wei Lun', 34, '017-520 1012', 'Stock Clerk', 2500.00, '
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP013', 'Mala Devi', 46, '018-520 1013', 'Stock Clerk', 1700.00, 'Active', DATE '2020-08-14', 'BR002');
-
-
--- =========================================================
--- BR003: 8 employees
--- =========================================================
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP014', 'Khairul Anwar', 42, '012-530 1014', 'Manager', 4900.00, 'Active', DATE '2020-05-10', 'BR003');
@@ -1860,11 +1817,6 @@ VALUES ('EMP020', 'Anis Sofea', 20, '019-530 1020', 'Cashier', 1800.00, 'Active'
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP021', 'Suresh Maniam', 50, '011-530 1021', 'Stock Clerk', 2150.00, 'Active', DATE '2019-03-28', 'BR003');
 
-
--- =========================================================
--- BR004: 5 employees
--- =========================================================
-
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP022', 'Syafiq Zainal', 37, '012-540 1022', 'Manager', 4600.00, 'Active', DATE '2022-02-08', 'BR004');
 
@@ -1879,11 +1831,6 @@ VALUES ('EMP025', 'Dinesh Raj', 32, '016-540 1025', 'Stock Clerk', 2350.00, 'Act
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP026', 'Puteri Balqis', 19, '017-540 1026', 'Cashier', 1750.00, 'Active', DATE '2026-01-05', 'BR004');
-
-
--- =========================================================
--- BR005: 9 employees
--- =========================================================
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP027', 'Amirul Naim', 41, '012-550 1027', 'Manager', 5000.00, 'Active', DATE '2020-09-12', 'BR005');
@@ -1912,11 +1859,6 @@ VALUES ('EMP034', 'Salmah Ibrahim', 48, '011-550 1034', 'Stock Clerk', 1750.00, 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP035', 'Ravi Chandran', 52, '010-550 1035', 'Stock Clerk', 2200.00, 'Inactive', DATE '2019-10-10', 'BR005');
 
-
--- =========================================================
--- BR006: 6 employees
--- =========================================================
-
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP036', 'Hakim Roslan', 39, '012-560 1036', 'Manager', 4750.00, 'Active', DATE '2021-08-21', 'BR006');
 
@@ -1934,11 +1876,6 @@ VALUES ('EMP040', 'Liew Jun Kit', 22, '017-560 1040', 'Cashier', 1800.00, 'Activ
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP041', 'Zulkifli Omar', 45, '018-560 1041', 'Stock Clerk', 2100.00, 'Active', DATE '2020-04-16', 'BR006');
-
-
--- =========================================================
--- BR007: 7 employees
--- =========================================================
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP042', 'Fikri Azman', 36, '012-570 1042', 'Manager', 4650.00, 'Active', DATE '2022-01-11', 'BR007');
@@ -1960,11 +1897,6 @@ VALUES ('EMP047', 'Mei Ling', 20, '018-570 1047', 'Cashier', 1750.00, 'Active', 
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP048', 'Kumar Selvan', 47, '019-570 1048', 'Stock Clerk', 2050.00, 'Inactive', DATE '2020-02-24', 'BR007');
-
-
--- =========================================================
--- BR008: 10 employees
--- =========================================================
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP049', 'Afiq Imran', 43, '012-580 1049', 'Manager', 5100.00, 'Active', DATE '2019-07-07', 'BR008');
@@ -1996,11 +1928,6 @@ VALUES ('EMP057', 'Rohana Binti Ali', 49, '010-580 1057', 'Stock Clerk', 1800.00
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP058', 'Muthu Krishnan', 54, '015-580 1058', 'Stock Clerk', 2250.00, 'Active', DATE '2018-12-05', 'BR008');
 
-
--- =========================================================
--- BR009: 5 employees
--- =========================================================
-
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP059', 'Shahrul Nizam', 38, '012-590 1059', 'Manager', 4550.00, 'Active', DATE '2022-07-04', 'BR009');
 
@@ -2015,11 +1942,6 @@ VALUES ('EMP062', 'Ganesh Perumal', 35, '016-590 1062', 'Stock Clerk', 2300.00, 
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP063', 'Noraini Musa', 51, '017-590 1063', 'Stock Clerk', 1700.00, 'Inactive', DATE '2019-08-30', 'BR009');
-
-
--- =========================================================
--- BR010: 8 employees
--- =========================================================
 
 INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STATUS, HIRE_DATE, BRANCH_ID)
 VALUES ('EMP064', 'Faizal Rahman', 40, '012-600 1064', 'Manager', 4850.00, 'Active', DATE '2021-03-06', 'BR010');
@@ -2046,10 +1968,8 @@ INSERT INTO EMPLOYEE (EMPLOYEE_ID, NAME, AGE, CONTACT_NO, POSITION, SALARY, STAT
 VALUES ('EMP071', 'Ramesh Kumar', 48, '011-600 1071', 'Stock Clerk', 2150.00, 'Active', DATE '2020-06-18', 'BR010');
 
 -- =========================================================================
--- COURIER  (50 rows, base table)
+-- COURIER  (50 rows)
 -- =========================================================================
--- Couriers for DC001 - GrabExpress
-
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR001', 'Ahmad Firdaus', '012-310 1001', 4.75, 'DC001');
 
@@ -2064,9 +1984,6 @@ VALUES ('CR004', 'Raj Kumar', '016-310 1004', 4.50, 'DC001');
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR005', 'Nur Syafiqah', '017-310 1005', 4.70, 'DC001');
-
-
--- Couriers for DC002 - Lalamove
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR006', 'Mohd Hafiz', '012-320 1006', 4.45, 'DC002');
@@ -2083,9 +2000,6 @@ VALUES ('CR009', 'Arun Prakash', '016-320 1009', 4.30, 'DC002');
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR010', 'Lee Jun Hao', '017-320 1010', 4.90, 'DC002');
 
-
--- Couriers for DC003 - J&T Express
-
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR011', 'Faizal Rahman', '012-330 1011', 4.55, 'DC003');
 
@@ -2100,9 +2014,6 @@ VALUES ('CR014', 'Viknesh Kumar', '016-330 1014', 4.40, 'DC003');
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR015', 'Adam Hakimi', '017-330 1015', 4.65, 'DC003');
-
-
--- Couriers for DC004 - Pos Laju
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR016', 'Khairul Anwar', '012-340 1016', 4.35, 'DC004');
@@ -2119,9 +2030,6 @@ VALUES ('CR019', 'Azlan Ismail', '016-340 1019', 4.25, 'DC004');
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR020', 'Chan Kok Leong', '017-340 1020', 4.55, 'DC004');
 
-
--- Couriers for DC005 - Ninja Van
-
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR021', 'Syafiq Zainal', '012-350 1021', 4.90, 'DC005');
 
@@ -2136,9 +2044,6 @@ VALUES ('CR024', 'Dinesh Raj', '016-350 1024', 4.45, 'DC005');
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR025', 'Irfan Danish', '017-350 1025', 4.85, 'DC005');
-
-
--- Couriers for DC006 - DHL eCommerce
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR026', 'Amirul Naim', '012-360 1026', 4.50, 'DC006');
@@ -2155,9 +2060,6 @@ VALUES ('CR029', 'Karthik Muthu', '016-360 1029', 4.35, 'DC006');
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR030', 'Daniel Lim', '017-360 1030', 4.95, 'DC006');
 
-
--- Couriers for DC007 - City-Link Express
-
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR031', 'Hakim Roslan', '012-370 1031', 4.40, 'DC007');
 
@@ -2172,9 +2074,6 @@ VALUES ('CR034', 'Suresh Maniam', '016-370 1034', 4.25, 'DC007');
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR035', 'Zulkifli Omar', '017-370 1035', 4.60, 'DC007');
-
-
--- Couriers for DC008 - GDEX
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR036', 'Fikri Azman', '012-380 1036', 4.80, 'DC008');
@@ -2191,9 +2090,6 @@ VALUES ('CR039', 'Ravi Chandran', '016-380 1039', 4.30, 'DC008');
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR040', 'Kelvin Yap', '017-380 1040', 4.50, 'DC008');
 
-
--- Couriers for DC009 - Best Express
-
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR041', 'Shahrul Nizam', '012-390 1041', 4.15, 'DC009');
 
@@ -2208,9 +2104,6 @@ VALUES ('CR044', 'Kumar Selvan', '016-390 1044', 4.10, 'DC009');
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR045', 'Haziq Ridzuan', '017-390 1045', 4.40, 'DC009');
-
-
--- Couriers for DC010 - Flash Express
 
 INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMPANY_ID)
 VALUES ('CR046', 'Afiq Imran', '012-400 1046', 4.85, 'DC010');
@@ -2228,12 +2121,8 @@ INSERT INTO COURIER (COURIER_ID, NAME, CONTACT_NO, AVERAGE_RATING, DELIVERY_COMP
 VALUES ('CR050', 'Chia Wen Jie', '017-400 1050', 4.75, 'DC010');
 
 -- =========================================================================
--- MEMBER_SUBSCRIPTION  (437 rows, transaction table)
+-- MEMBER_SUBSCRIPTION  (437 rows)
 -- =========================================================================
--- =========================================================
--- Current VIP member: MB002
--- Previous subscription expired, current subscription active
--- =========================================================
 
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
@@ -2245,11 +2134,6 @@ INSERT INTO MEMBER_SUBSCRIPTION
 VALUES
     ('SUB002', DATE '2026-02-01', DATE '2027-01-31', 12.00, 'Paid', 'MB002');
 
-
--- =========================================================
--- Current VIP member: MB004
--- =========================================================
-
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
 VALUES
@@ -2260,21 +2144,10 @@ INSERT INTO MEMBER_SUBSCRIPTION
 VALUES
     ('SUB004', DATE '2026-06-15', DATE '2027-06-14', 12.00, 'Paid', 'MB004');
 
-
--- =========================================================
--- Current Normal member: MB003
--- Previously subscribed to VIP, but did not renew
--- =========================================================
-
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
 VALUES
     ('SUB005', DATE '2024-01-10', DATE '2025-01-09', 12.00, 'Expired', 'MB003');
-
-
--- =========================================================
--- Current VIP member: MB006
--- =========================================================
 
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
@@ -2286,21 +2159,10 @@ INSERT INTO MEMBER_SUBSCRIPTION
 VALUES
     ('SUB007', DATE '2025-09-01', DATE '2026-08-31', 12.00, 'Paid', 'MB006');
 
-
--- =========================================================
--- Current Normal member: MB005
--- Previously registered for VIP but cancelled
--- =========================================================
-
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
 VALUES
     ('SUB008', DATE '2025-03-01', DATE '2026-02-28', 12.00, 'Cancelled', 'MB005');
-
-
--- =========================================================
--- Current VIP member: MB009
--- =========================================================
 
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
@@ -2312,12 +2174,6 @@ INSERT INTO MEMBER_SUBSCRIPTION
 VALUES
     ('SUB010', DATE '2025-11-20', DATE '2026-11-19', 12.00, 'Paid', 'MB009');
 
-
--- =========================================================
--- Current Normal member: MB008
--- Was previously VIP, subscription has expired
--- =========================================================
-
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
 VALUES
@@ -2327,11 +2183,6 @@ INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
 VALUES
     ('SUB012', DATE '2024-08-15', DATE '2025-08-14', 12.00, 'Expired', 'MB008');
-
-
--- =========================================================
--- Current VIP member: MB011
--- =========================================================
 
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
@@ -2343,21 +2194,10 @@ INSERT INTO MEMBER_SUBSCRIPTION
 VALUES
     ('SUB014', DATE '2026-03-10', DATE '2027-03-09', 12.00, 'Paid', 'MB011');
 
-
--- =========================================================
--- Current Normal member: MB012
--- Application was cancelled before activation
--- =========================================================
-
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
 VALUES
     ('SUB015', DATE '2025-10-01', DATE '2026-09-30', 12.00, 'Cancelled', 'MB012');
-
-
--- =========================================================
--- Current VIP member: MB013
--- =========================================================
 
 INSERT INTO MEMBER_SUBSCRIPTION
     (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
@@ -2369,7 +2209,6 @@ INSERT INTO MEMBER_SUBSCRIPTION
 VALUES
     ('SUB017', DATE '2026-08-01', DATE '2027-07-31', 12.00, 'Pending', 'MB013');
 
--- Subscriptions for the additional members (SUB018 onwards)
 INSERT INTO MEMBER_SUBSCRIPTION (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
 VALUES ('SUB018', DATE '2023-03-02', DATE '2024-03-02', 12.00, 'Expired', 'MB001');
 INSERT INTO MEMBER_SUBSCRIPTION (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOUNT, PAYMENT_STATUS, MEMBER_ID)
@@ -3212,7 +3051,7 @@ INSERT INTO MEMBER_SUBSCRIPTION (SUBSCRIPTION_ID, START_DATE, END_DATE, FEE_AMOU
 VALUES ('SUB437', DATE '2024-09-13', DATE '2025-09-13', 12.00, 'Expired', 'MB242');
 
 -- =========================================================================
--- REWARD_REDEMPTION  (152 rows, transaction table)
+-- REWARD_REDEMPTION  (152 rows)
 -- =========================================================================
 INSERT INTO REWARD_REDEMPTION (REDEMPTION_ID, QUANTITY_REDEEMED, POINT_SPENT, ISSUE_DATE, EXPIRY_DATE, STATUS, MEMBER_ID, REWARD_ID)
 VALUES ('RD0001', 1, 400, DATE '2024-06-07', DATE '2025-06-07', 'Expired', 'MB163', 'RW006');
@@ -3520,7 +3359,7 @@ INSERT INTO REWARD_REDEMPTION (REDEMPTION_ID, QUANTITY_REDEEMED, POINT_SPENT, IS
 VALUES ('RD0152', 1, 500, DATE '2026-06-23', DATE '2027-06-23', 'Active', 'MB192', 'RW001');
 
 -- =========================================================================
--- INVENTORY  (500 rows, associative table)
+-- INVENTORY  (500 rows)
 -- =========================================================================
 INSERT INTO INVENTORY (BRANCH_ID, ITEM_ID, QUANTITY, LAST_RESTOCK_DATE) VALUES ('BR001', 'IT001', 54, DATE '2026-02-25');
 INSERT INTO INVENTORY (BRANCH_ID, ITEM_ID, QUANTITY, LAST_RESTOCK_DATE) VALUES ('BR001', 'IT002', 284, DATE '2026-04-17');
@@ -4024,12 +3863,8 @@ INSERT INTO INVENTORY (BRANCH_ID, ITEM_ID, QUANTITY, LAST_RESTOCK_DATE) VALUES (
 INSERT INTO INVENTORY (BRANCH_ID, ITEM_ID, QUANTITY, LAST_RESTOCK_DATE) VALUES ('BR010', 'IT050', 110, DATE '2026-02-21');
 
 -- =========================================================================
--- ORDERS  (3000 rows, transaction table)
+-- ORDERS  (3000 rows)
 -- =========================================================================
--- TOTAL_AMOUNT = SUBTOTAL_AMOUNT + delivery fee (DELIVERY_REQUEST) - DISCOUNT_AMOUNT.
--- POINTS_EARNED = FLOOR(SUBTOTAL_AMOUNT - DISCOUNT_AMOUNT) x POINT_RATE; delivery
--- fees do not earn points. IS_MYKASIH_PURCHASE = Y is capped at RM100.00 of
--- cumulative TOTAL_AMOUNT per identified customer.
 INSERT INTO ORDERS (ORDER_NO, ORDER_DATE_TIME, ORDER_TYPE, SERVICE_TYPE, SUBTOTAL_AMOUNT, TOTAL_AMOUNT, POINTS_EARNED, DISCOUNT_AMOUNT, ORDER_STATUS, IS_MYKASIH_PURCHASE, REDEMPTION_ID, CUSTOMER_ID, BRANCH_ID)
 VALUES ('ORD00001', TO_TIMESTAMP('2024-01-01 11:25:00','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Delivery', 26.60, 35.40, 52, 0.00, 'Completed', 'N', NULL, 'CUS0177', 'BR003');
 INSERT INTO ORDERS (ORDER_NO, ORDER_DATE_TIME, ORDER_TYPE, SERVICE_TYPE, SUBTOTAL_AMOUNT, TOTAL_AMOUNT, POINTS_EARNED, DISCOUNT_AMOUNT, ORDER_STATUS, IS_MYKASIH_PURCHASE, REDEMPTION_ID, CUSTOMER_ID, BRANCH_ID)
@@ -10032,7 +9867,7 @@ INSERT INTO ORDERS (ORDER_NO, ORDER_DATE_TIME, ORDER_TYPE, SERVICE_TYPE, SUBTOTA
 VALUES ('ORD03000', TO_TIMESTAMP('2026-07-20 21:45:00','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Delivery', 22.20, 28.20, 0, 0.00, 'Processing', 'N', NULL, 'CUS0231', 'BR003');
 
 -- =========================================================================
--- ORDER_DETAIL  (12237 rows, associative table)
+-- ORDER_DETAIL  (12237 rows)
 -- =========================================================================
 INSERT INTO ORDER_DETAIL (ORDER_NO, ITEM_ID, SUBTOTAL, QUANTITY, UNIT_PRICE) VALUES ('ORD00001', 'IT005', 4.20, 1, 4.20);
 INSERT INTO ORDER_DETAIL (ORDER_NO, ITEM_ID, SUBTOTAL, QUANTITY, UNIT_PRICE) VALUES ('ORD00001', 'IT007', 8.40, 2, 4.20);
@@ -22273,7 +22108,7 @@ INSERT INTO ORDER_DETAIL (ORDER_NO, ITEM_ID, SUBTOTAL, QUANTITY, UNIT_PRICE) VAL
 INSERT INTO ORDER_DETAIL (ORDER_NO, ITEM_ID, SUBTOTAL, QUANTITY, UNIT_PRICE) VALUES ('ORD03000', 'IT037', 17.00, 2, 8.50);
 
 -- =========================================================================
--- PAYMENT  (3000 rows, transaction table)
+-- PAYMENT  (3000 rows)
 -- =========================================================================
 INSERT INTO PAYMENT (PAYMENT_ID, PAYMENT_METHOD, PAYMENT_DATE_TIME, REFERENCE_NO, PAYMENT_STATUS, ORDER_NO)
 VALUES ('PAY00001', 'Online Banking', TO_TIMESTAMP('2024-01-01 11:32:00','YYYY-MM-DD HH24:MI:SS'), 'REF24010100001', 'Paid', 'ORD00001');
@@ -28277,10 +28112,8 @@ INSERT INTO PAYMENT (PAYMENT_ID, PAYMENT_METHOD, PAYMENT_DATE_TIME, REFERENCE_NO
 VALUES ('PAY03000', 'Online Banking', TO_TIMESTAMP('2026-07-20 22:01:00','YYYY-MM-DD HH24:MI:SS'), 'REF26072003000', 'Pending', 'ORD03000');
 
 -- =========================================================================
--- RETURN_REQUEST  (300 rows, transaction table)
+-- RETURN_REQUEST  (300 rows)
 -- =========================================================================
--- The reason suits the item (only food expires, only liquids leak) and the channel
--- (a walk-in purchase is never a wrong item delivered). REMARKS match reason + status.
 INSERT INTO RETURN_REQUEST (RETURN_ID, REASON, REQUEST_DATE, STATUS, REFUND_AMOUNT, REMARKS, RETURN_QUANTITY, ORDER_NO, ITEM_ID, REVIEWED_BY)
 VALUES ('RTN0001', 'Item expired', DATE '2025-05-16', 'Approved', 0.00, 'Expiry verified, refund will be credited within three working days.', 1, 'ORD01638', 'IT009', 'EMP024');
 INSERT INTO RETURN_REQUEST (RETURN_ID, REASON, REQUEST_DATE, STATUS, REFUND_AMOUNT, REMARKS, RETURN_QUANTITY, ORDER_NO, ITEM_ID, REVIEWED_BY)
@@ -28883,11 +28716,8 @@ INSERT INTO RETURN_REQUEST (RETURN_ID, REASON, REQUEST_DATE, STATUS, REFUND_AMOU
 VALUES ('RTN0300', 'Changed mind after purchase', DATE '2024-02-24', 'Rejected', 0.00, 'The item has been opened, so a change of mind is not covered by the policy.', 1, 'ORD00152', 'IT026', 'EMP025');
 
 -- =========================================================================
--- FEEDBACK  (300 rows, transaction table)
+-- FEEDBACK  (300 rows)
 -- =========================================================================
--- The wording matches the channel of the order: walk-in feedback talks about the
--- counter and the aisles, delivery feedback about the courier and the packing.
--- Feedback that names a product only names a product bought in that same order.
 INSERT INTO FEEDBACK (FEEDBACK_ID, TITLE, DESCRIPTION, FEEDBACK_DATE, ORDER_NO)
 VALUES ('FB0001', 'Convenient operating hours', 'Staying open until late at night is very useful for those of us who only finish work after nine.', DATE '2026-01-11', 'ORD02405');
 INSERT INTO FEEDBACK (FEEDBACK_ID, TITLE, DESCRIPTION, FEEDBACK_DATE, ORDER_NO)
@@ -29490,7 +29320,7 @@ INSERT INTO FEEDBACK (FEEDBACK_ID, TITLE, DESCRIPTION, FEEDBACK_DATE, ORDER_NO)
 VALUES ('FB0300', 'Courier could not locate my address', 'The rider called three times asking for directions even though the full address was provided when the order was placed.', DATE '2026-01-11', 'ORD02408');
 
 -- =========================================================================
--- RATING  (650 rows, transaction table)
+-- RATING  (650 rows)
 -- =========================================================================
 INSERT INTO RATING (RATING_ID, SCORE, COMMENTS, RATING_DATE, ORDER_NO, ITEM_ID)
 VALUES ('RT0001', 3, 'Acceptable, but I expected a little better.', DATE '2024-12-06', 'ORD01118', 'IT014');
@@ -30794,10 +30624,8 @@ INSERT INTO RATING (RATING_ID, SCORE, COMMENTS, RATING_DATE, ORDER_NO, ITEM_ID)
 VALUES ('RT0650', 5, 'Crispy and fresh, the packet was well sealed.', DATE '2026-02-21', 'ORD02554', 'IT032');
 
 -- =========================================================================
--- DELIVERY_REQUEST  (748 rows, transaction table)
+-- DELIVERY_REQUEST  (748 rows)
 -- =========================================================================
--- delivery_fee = delivery company base_delivery_fee + total order weight in kg.
--- A redeemed Free Delivery voucher waives the fee (0.00).
 INSERT INTO DELIVERY_REQUEST (DELIVERY_REQUEST_ID, RECIPIENT_NAME, RECIPIENT_PHONE_NO, DELIVERY_ADDRESS, DELIVERY_FEE, DELIVERED_DATE_TIME, STATUS, RATING, ORDER_NO, COURIER_ID)
 VALUES ('DR00001', 'Salmah Binti Jamal', '012-756 1177', 'No. 150, Jalan Dahlia, 43000 Kajang, Selangor', 8.80, TO_TIMESTAMP('2024-01-04 17:30:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD00001', 'CR050');
 INSERT INTO DELIVERY_REQUEST (DELIVERY_REQUEST_ID, RECIPIENT_NAME, RECIPIENT_PHONE_NO, DELIVERY_ADDRESS, DELIVERY_FEE, DELIVERED_DATE_TIME, STATUS, RATING, ORDER_NO, COURIER_ID)
@@ -32296,3 +32124,23 @@ INSERT INTO DELIVERY_REQUEST (DELIVERY_REQUEST_ID, RECIPIENT_NAME, RECIPIENT_PHO
 VALUES ('DR00748', 'Boon Siang Menon', '018-720 1231', 'No. 21, Jalan Anggerik, 41150 Klang, Selangor', 6.00, NULL, 'In Transit', NULL, 'ORD03000', 'CR039');
 
 COMMIT;
+SET FEEDBACK ON;
+
+SELECT COUNT(*) AS NoOfMember             FROM Member;
+SELECT COUNT(*) AS NoOfReward             FROM Reward;
+SELECT COUNT(*) AS NoOfBranch             FROM Branch;
+SELECT COUNT(*) AS NoOfDeliveryCompany    FROM Delivery_Company;
+SELECT COUNT(*) AS NoOfItem               FROM Item;
+SELECT COUNT(*) AS NoOfCustomer           FROM Customer;
+SELECT COUNT(*) AS NoOfEmployee           FROM Employee;
+SELECT COUNT(*) AS NoOfCourier            FROM Courier;
+SELECT COUNT(*) AS NoOfMemberSubscription FROM Member_Subscription;
+SELECT COUNT(*) AS NoOfRewardRedemption   FROM Reward_Redemption;
+SELECT COUNT(*) AS NoOfInventory          FROM Inventory;
+SELECT COUNT(*) AS NoOfOrders             FROM Orders;
+SELECT COUNT(*) AS NoOfOrderDetail        FROM Order_Detail;
+SELECT COUNT(*) AS NoOfPayment            FROM Payment;
+SELECT COUNT(*) AS NoOfReturnRequest      FROM Return_Request;
+SELECT COUNT(*) AS NoOfFeedback           FROM Feedback;
+SELECT COUNT(*) AS NoOfRating             FROM Rating;
+SELECT COUNT(*) AS NoOfDeliveryRequest    FROM Delivery_Request;
