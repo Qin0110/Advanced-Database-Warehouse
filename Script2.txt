@@ -1,13 +1,7 @@
--- 88 SPEEDMART SYSTEM
--- BMCS3183 Advanced Database Management
--- Task 2 (schema) and Task 3 (data), with sequences and triggers.
--- Trading history 01-JAN-2020 to 20-JUL-2026. Run once with F5 (Run Script).
--- The DROP statements report that the objects do not exist on a fresh schema.
 SET LINESIZE 200
 SET PAGESIZE 100
 SET SERVEROUTPUT ON SIZE 1000000
 
--- TASK 2 : TABLE DEFINITIONS
 DROP TABLE Delivery_Request CASCADE CONSTRAINTS;
 DROP TABLE Rating CASCADE CONSTRAINTS;
 DROP TABLE Feedback CASCADE CONSTRAINTS;
@@ -422,9 +416,6 @@ NOCACHE;
 
 -- TRIGGERS
 
--- 1. Prices the delivery when no fee is given: company base fee plus the
---    weight of the order. A fee supplied explicitly is kept, which is how a
---    redeemed Free Delivery voucher records 0.00.
 CREATE OR REPLACE TRIGGER trg_delivery_fee
 BEFORE INSERT ON Delivery_Request
 FOR EACH ROW
@@ -454,7 +445,7 @@ BEGIN
 END;
 /
 
--- 2. Every order is placed inside trading hours, 09:00 to 22:00.
+
 CREATE OR REPLACE TRIGGER trg_order_business_hours
 BEFORE INSERT OR UPDATE OF order_date_time ON Orders
 FOR EACH ROW
@@ -473,8 +464,8 @@ BEGIN
 END;
 /
 
--- 3. A payment is taken inside trading hours, never before its order, and
---    within fifteen minutes of the order being created.
+
+
 CREATE OR REPLACE TRIGGER trg_payment_time
 BEFORE INSERT OR UPDATE OF payment_date_time ON Payment
 FOR EACH ROW
@@ -510,8 +501,8 @@ BEGIN
 END;
 /
 
--- 4. A delivery is handed over inside trading hours, never before its order,
---    and within two hours of the order being created.
+
+
 CREATE OR REPLACE TRIGGER trg_delivery_time
 BEFORE INSERT OR UPDATE OF delivered_date_time ON Delivery_Request
 FOR EACH ROW
@@ -547,7 +538,7 @@ BEGIN
 END;
 /
 
--- 5. Checks the branch holds enough stock, then deducts it.
+
 CREATE OR REPLACE TRIGGER trg_deduct_stock
 AFTER INSERT ON Order_Detail
 FOR EACH ROW
@@ -586,8 +577,8 @@ BEGIN
 END;
 /
 
--- 6. Keeps the order subtotal and total in step with its lines when a line is
---    added, changed or removed.
+
+
 CREATE OR REPLACE TRIGGER trg_order_amounts
 AFTER INSERT OR UPDATE OR DELETE ON Order_Detail
 FOR EACH ROW
@@ -610,8 +601,8 @@ BEGIN
 END;
 /
 
--- 7. Takes the delivery fee from the delivery request and adds it to the
---    order total.
+
+
 CREATE OR REPLACE TRIGGER trg_delivery_fee_to_order
 AFTER INSERT ON Delivery_Request
 FOR EACH ROW
@@ -621,7 +612,8 @@ BEGIN
 END;
 /
 
--- 8. Settling the payment completes the order.
+
+
 CREATE OR REPLACE TRIGGER trg_payment_completes_order
 AFTER UPDATE OF payment_status ON Payment
 FOR EACH ROW
@@ -632,8 +624,8 @@ BEGIN
 END;
 /
 
--- 9. Completing the order awards the loyalty points, on the merchandise value
---    only and at the member rate. Delivery fees earn nothing.
+
+
 CREATE OR REPLACE TRIGGER trg_award_points
 BEFORE UPDATE OF order_status ON Orders
 FOR EACH ROW
@@ -658,8 +650,8 @@ BEGIN
 END;
 /
 
--- 10. Cancelling an order restores the stock, removes the points that were
---    awarded and cancels the payment.
+
+
 CREATE OR REPLACE TRIGGER trg_cancel_order
 AFTER UPDATE OF order_status ON Orders
 FOR EACH ROW
@@ -681,14 +673,19 @@ BEGIN
         END IF;
     END IF;
 
+    IF :OLD.redemption_id IS NOT NULL THEN
+        UPDATE Reward_Redemption 
+        SET status = 'Active' 
+        WHERE redemption_id = :OLD.redemption_id;
+    END IF;
+
     UPDATE Payment SET payment_status = 'Cancelled'
     WHERE  order_no = :NEW.order_no AND payment_status IN ('Pending', 'Failed');
 END;
 /
 
--- 11. Redeeming a reward: the member must be active, the reward must still be
---    offered and in stock, and the balance must cover it. The points spent, the
---    expiry date, the member balance and the reward stock are all set here.
+
+
 CREATE OR REPLACE TRIGGER trg_redeem_reward
 BEFORE INSERT ON Reward_Redemption
 FOR EACH ROW
@@ -740,9 +737,8 @@ BEGIN
 END;
 /
 
--- 12. A paid subscription that is still running makes the member a VIP; when it
---    expires or goes unpaid the member drops back to Normal. Statement level so
---    it may read the table it fires on.
+
+
 CREATE OR REPLACE TRIGGER trg_subscription_vip
 AFTER INSERT OR UPDATE OF payment_status, end_date ON Member_Subscription
 BEGIN
@@ -768,8 +764,8 @@ BEGIN
 END;
 /
 
--- 13. A return is accepted only on a completed order, within seven days, and
---    for no more than the quantity bought.
+
+
 CREATE OR REPLACE TRIGGER trg_validate_return
 BEFORE INSERT ON Return_Request
 FOR EACH ROW
@@ -809,9 +805,8 @@ EXCEPTION
 END;
 /
 
--- 14. Once the payment is refunded the goods go back on the branch shelf: the
---    quantities of any refunded return requests, or the whole order when the
---    refund is not tied to a return.
+
+
 CREATE OR REPLACE TRIGGER trg_refund_restores_stock
 AFTER UPDATE OF payment_status ON Payment
 FOR EACH ROW
@@ -839,8 +834,8 @@ BEGIN
 END;
 /
 
--- 15. A new delivery rating refreshes the courier average. Statement level to
---    avoid the mutating table error.
+
+
 CREATE OR REPLACE TRIGGER trg_courier_average_rating
 AFTER INSERT OR UPDATE OF rating ON Delivery_Request
 BEGIN
@@ -852,8 +847,8 @@ BEGIN
 END;
 /
 
--- 16. Warns when a branch runs out (0) or falls to a reorder level (1 to 19),
---     naming the supplier to reorder from and how long the delivery will take.
+
+
 CREATE OR REPLACE TRIGGER trg_low_stock_alert
 AFTER UPDATE OF quantity ON Inventory
 FOR EACH ROW
@@ -880,7 +875,8 @@ BEGIN
 END;
 /
 
--- 17. A completed order is an accounting record and may not be deleted.
+
+
 CREATE OR REPLACE TRIGGER trg_protect_completed_order
 BEFORE DELETE ON Orders
 FOR EACH ROW
@@ -891,8 +887,9 @@ BEGIN
 END;
 /
 
--- 18. An item that is on sale must be sourced from a supplier that is still
---     trading with us. A discontinued line may keep its old supplier.
+
+
+
 CREATE OR REPLACE TRIGGER trg_item_supplier_active
 BEFORE INSERT OR UPDATE OF supplier_id, status ON Item
 FOR EACH ROW
@@ -919,8 +916,8 @@ EXCEPTION
 END;
 /
 
--- 19. A supplier may not be closed while it still supplies products that are on
---     sale, and may not be deleted at all once it has supplied anything.
+
+
 CREATE OR REPLACE TRIGGER trg_supplier_status_guard
 BEFORE UPDATE OF status OR DELETE ON Supplier
 FOR EACH ROW
@@ -950,9 +947,9 @@ BEGIN
 END;
 /
 
--- 20. The employee recorded against an order must work at the branch that made
---     the sale, must hold a counter position, and must still be employed. This
---     is what makes ORDERS.HANDLED_BY accountable rather than decorative.
+
+
+
 CREATE OR REPLACE TRIGGER trg_order_handler_valid
 BEFORE INSERT OR UPDATE OF handled_by, branch_id ON Orders
 FOR EACH ROW
@@ -989,12 +986,7 @@ END;
 /
 
 
--- The six triggers below write to a second table when a row is INSERTED. The
--- data that follows is a finished trading history in which the stock was already
--- taken, the points already awarded and the totals already struck, so they are
--- switched off for the load and switched on again after COMMIT. The other eleven
--- only validate, fill in their own row, or fire on UPDATE and DELETE, so they
--- stay on and the load itself proves the data obeys them.
+
 ALTER TRIGGER trg_deduct_stock           DISABLE;
 ALTER TRIGGER trg_order_amounts          DISABLE;
 ALTER TRIGGER trg_delivery_fee_to_order  DISABLE;
@@ -155157,7 +155149,6 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Thanuja Khoo'
 
 COMMIT;
 
--- ROW COUNT PER TABLE
 SELECT COUNT(*) AS NoOfMember             FROM Member;
 SELECT COUNT(*) AS NoOfReward             FROM Reward;
 SELECT COUNT(*) AS NoOfBranch             FROM Branch;
@@ -155177,387 +155168,3 @@ SELECT COUNT(*) AS NoOfReturnRequest      FROM Return_Request;
 SELECT COUNT(*) AS NoOfFeedback           FROM Feedback;
 SELECT COUNT(*) AS NoOfRating             FROM Rating;
 SELECT COUNT(*) AS NoOfDeliveryRequest    FROM Delivery_Request;
-
--- Trading period and daily coverage: every day carries at least 10 order lines
-SELECT MIN(TRUNC(order_date_time)) AS first_day,
-       MAX(TRUNC(order_date_time)) AS last_day,
-       COUNT(DISTINCT TRUNC(order_date_time)) AS trading_days
-FROM   Orders;
-
-SELECT MIN(lines_that_day) AS fewest_lines_in_a_day,
-       MAX(lines_that_day) AS most_lines_in_a_day,
-       ROUND(AVG(lines_that_day), 1) AS average_lines_per_day
-FROM   (SELECT TRUNC(o.order_date_time) AS d, COUNT(*) AS lines_that_day
-        FROM   Orders o JOIN Order_Detail od ON od.order_no = o.order_no
-        GROUP  BY TRUNC(o.order_date_time));
-
--- All timestamps fall inside trading hours (0 rows expected)
-SELECT order_no, order_date_time FROM Orders
-WHERE  TO_NUMBER(TO_CHAR(order_date_time,'HH24')) NOT BETWEEN 9 AND 21
-UNION ALL
-SELECT order_no, payment_date_time FROM Payment
-WHERE  TO_NUMBER(TO_CHAR(payment_date_time,'HH24')) NOT BETWEEN 9 AND 21
-UNION ALL
-SELECT order_no, delivered_date_time FROM Delivery_Request
-WHERE  delivered_date_time IS NOT NULL
-AND    TO_NUMBER(TO_CHAR(delivered_date_time,'HH24')) NOT BETWEEN 9 AND 21;
-
--- At least three employees per branch from the opening day
-SELECT branch_id, COUNT(*) AS opening_team
-FROM   Employee WHERE hire_date = DATE '2020-01-01'
-GROUP  BY branch_id ORDER BY branch_id;
-
--- TREND : revenue and volume grow year by year
-SELECT EXTRACT(YEAR FROM order_date_time) AS trading_year,
-       COUNT(*)                           AS completed_orders,
-       SUM(total_amount)                  AS revenue,
-       ROUND(AVG(total_amount), 2)        AS average_basket
-FROM   Orders WHERE order_status = 'Completed'
-GROUP  BY EXTRACT(YEAR FROM order_date_time)
-ORDER  BY trading_year;
-
--- TREND : the shift from walk-in to online
-SELECT EXTRACT(YEAR FROM order_date_time) AS trading_year,
-       SUM(CASE WHEN order_type = 'Walk-In' THEN 1 ELSE 0 END) AS walk_in,
-       SUM(CASE WHEN order_type = 'Online'  THEN 1 ELSE 0 END) AS online,
-       ROUND(SUM(CASE WHEN order_type = 'Online' THEN 1 ELSE 0 END) * 100 / COUNT(*), 1)
-           AS online_percent
-FROM   Orders
-GROUP  BY EXTRACT(YEAR FROM order_date_time)
-ORDER  BY trading_year;
-
--- TREND : cash gives way to e-wallet
-SELECT EXTRACT(YEAR FROM o.order_date_time) AS trading_year,
-       ROUND(SUM(CASE WHEN p.payment_method = 'Cash'     THEN 1 ELSE 0 END)*100/COUNT(*),1) AS cash_pct,
-       ROUND(SUM(CASE WHEN p.payment_method = 'E-Wallet' THEN 1 ELSE 0 END)*100/COUNT(*),1) AS ewallet_pct,
-       ROUND(SUM(CASE WHEN p.payment_method = 'MyKasih'  THEN 1 ELSE 0 END)*100/COUNT(*),1) AS mykasih_pct
-FROM   Payment p JOIN Orders o ON o.order_no = p.order_no
-GROUP  BY EXTRACT(YEAR FROM o.order_date_time)
-ORDER  BY trading_year;
-
--- TREND : branches grow at very different speeds
-SELECT b.branch_id, b.name,
-       SUM(CASE WHEN EXTRACT(YEAR FROM o.order_date_time)=2020 THEN o.total_amount END) AS rev_2020,
-       SUM(CASE WHEN EXTRACT(YEAR FROM o.order_date_time)=2025 THEN o.total_amount END) AS rev_2025
-FROM   Branch b JOIN Orders o ON o.branch_id = b.branch_id
-WHERE  o.order_status = 'Completed'
-GROUP  BY b.branch_id, b.name
-ORDER  BY rev_2025 DESC;
-
--- TREND : category mix moves over the years
-SELECT EXTRACT(YEAR FROM o.order_date_time) AS trading_year, i.category,
-       SUM(od.quantity) AS units_sold
-FROM   Order_Detail od
-       JOIN Orders o ON o.order_no = od.order_no
-       JOIN Item i   ON i.item_id  = od.item_id
-GROUP  BY EXTRACT(YEAR FROM o.order_date_time), i.category
-ORDER  BY trading_year, units_sold DESC;
-
--- INTEGRITY : every parent record is used by a child record (all zero expected)
-SELECT 'Items never ordered' AS orphan_check, COUNT(*) AS should_be_zero FROM Item i
-       WHERE NOT EXISTS (SELECT 1 FROM Order_Detail od WHERE od.item_id = i.item_id)
-UNION ALL SELECT 'Branches with no orders', COUNT(*) FROM Branch b
-       WHERE NOT EXISTS (SELECT 1 FROM Orders o WHERE o.branch_id = b.branch_id)
-UNION ALL SELECT 'Members with no orders', COUNT(*) FROM Member m
-       WHERE NOT EXISTS (SELECT 1 FROM Orders o JOIN Customer c ON c.customer_id = o.customer_id
-                         WHERE c.member_id = m.member_id)
-UNION ALL SELECT 'Rewards never redeemed', COUNT(*) FROM Reward r
-       WHERE NOT EXISTS (SELECT 1 FROM Reward_Redemption rr WHERE rr.reward_id = r.reward_id)
-UNION ALL SELECT 'Couriers with no delivery', COUNT(*) FROM Courier c
-       WHERE NOT EXISTS (SELECT 1 FROM Delivery_Request d WHERE d.courier_id = c.courier_id)
-UNION ALL SELECT 'Employees reviewing nothing', COUNT(*) FROM Employee e
-       WHERE NOT EXISTS (SELECT 1 FROM Return_Request r WHERE r.reviewed_by = e.employee_id);
-
--- INTEGRITY : points balance = points earned minus points redeemed (0 rows expected)
-SELECT m.member_id, m.points_balance, NVL(e.earned,0) AS earned, NVL(s.spent,0) AS spent
-FROM   Member m
-       LEFT JOIN (SELECT c.member_id, SUM(o.points_earned) AS earned
-                  FROM Orders o JOIN Customer c ON c.customer_id = o.customer_id
-                  WHERE c.member_id IS NOT NULL GROUP BY c.member_id) e ON e.member_id = m.member_id
-       LEFT JOIN (SELECT member_id, SUM(point_spent) AS spent
-                  FROM Reward_Redemption GROUP BY member_id) s ON s.member_id = m.member_id
-WHERE  m.points_balance <> NVL(e.earned,0) - NVL(s.spent,0);
-
--- INTEGRITY : order total = subtotal + delivery fee - discount (0 rows expected)
-SELECT o.order_no, o.subtotal_amount, NVL(d.delivery_fee,0) AS delivery_fee,
-       o.discount_amount, o.total_amount
-FROM   Orders o LEFT JOIN Delivery_Request d ON d.order_no = o.order_no
-WHERE  o.total_amount <> o.subtotal_amount + NVL(d.delivery_fee,0) - o.discount_amount;
-
--- INTEGRITY : order header agrees with its lines (0 rows expected)
-SELECT o.order_no, o.subtotal_amount, SUM(od.subtotal) AS sum_of_lines
-FROM   Orders o JOIN Order_Detail od ON od.order_no = o.order_no
-GROUP  BY o.order_no, o.subtotal_amount
-HAVING o.subtotal_amount <> SUM(od.subtotal);
-
--- INTEGRITY : MyKasih subsidy never exceeds RM100 per shopper (0 rows expected)
-SELECT customer_id, COUNT(*) AS mykasih_orders, SUM(total_amount) AS mykasih_spend
-FROM   Orders WHERE is_mykasih_purchase = 'Y'
-GROUP  BY customer_id HAVING SUM(total_amount) > 100;
-
--- TRIGGER 3 : one payment per order, settled within fifteen minutes (0 rows expected)
-SELECT o.order_no, o.order_date_time, p.payment_date_time,
-       ROUND((CAST(p.payment_date_time AS DATE) - CAST(o.order_date_time AS DATE)) * 1440, 1)
-           AS gap_minutes
-FROM   Orders o JOIN Payment p ON p.order_no = o.order_no
-WHERE  p.payment_date_time < o.order_date_time
-   OR  (CAST(p.payment_date_time AS DATE) - CAST(o.order_date_time AS DATE)) * 1440 > 15;
-
-SELECT 'Orders with no payment' AS check_name, COUNT(*) AS should_be_zero FROM Orders o
-       WHERE NOT EXISTS (SELECT 1 FROM Payment p WHERE p.order_no = o.order_no);
-
--- INTEGRITY : delivery requests only on online delivery orders (0 rows expected)
-SELECT d.delivery_request_id, o.order_type, o.service_type
-FROM   Delivery_Request d JOIN Orders o ON o.order_no = d.order_no
-WHERE  o.service_type <> 'Delivery' OR o.order_type <> 'Online';
-
--- INTEGRITY : a member's delivery is addressed to that member (0 rows expected)
-SELECT d.delivery_request_id, d.recipient_name, m.name AS member_name
-FROM   Delivery_Request d
-       JOIN Orders o   ON o.order_no    = d.order_no
-       JOIN Customer c ON c.customer_id = o.customer_id
-       JOIN Member m   ON m.member_id   = c.member_id
-WHERE  d.recipient_name <> m.name OR d.recipient_phone_no <> m.phone_no;
-
--- TRIGGER 4 : every delivery handed over within two hours of its order (0 rows)
-SELECT d.delivery_request_id, o.order_date_time, d.delivered_date_time,
-       ROUND((CAST(d.delivered_date_time AS DATE) - CAST(o.order_date_time AS DATE)) * 1440, 1)
-           AS gap_minutes
-FROM   Delivery_Request d JOIN Orders o ON o.order_no = d.order_no
-WHERE  d.delivered_date_time IS NOT NULL
-AND    ((CAST(d.delivered_date_time AS DATE) - CAST(o.order_date_time AS DATE)) * 1440 > 120
-        OR d.delivered_date_time < o.order_date_time);
-
--- TRIGGER 11 : only an active member holds a redemption (0 rows expected)
-SELECT rr.redemption_id, rr.member_id, m.status
-FROM   Reward_Redemption rr JOIN Member m ON m.member_id = rr.member_id
-WHERE  m.status <> 'Active';
-
--- Surrogate keys run in date order
-SELECT employee_id, hire_date, branch_id FROM Employee ORDER BY employee_id FETCH FIRST 12 ROWS ONLY;
-SELECT subscription_id, start_date, payment_status FROM Member_Subscription
-ORDER  BY subscription_id FETCH FIRST 5 ROWS ONLY;
-
--- The sequences were consumed by the load and now sit one past the last key
-SELECT sequence_name, last_number AS next_value FROM user_sequences ORDER BY sequence_name;
-
-SELECT 'MEMBER' AS table_name, MIN(member_id) AS first_key, MAX(member_id) AS last_key, COUNT(*) AS rows_loaded FROM Member
-UNION ALL SELECT 'REWARD',              MIN(reward_id),           MAX(reward_id),           COUNT(*) FROM Reward
-UNION ALL SELECT 'BRANCH',              MIN(branch_id),           MAX(branch_id),           COUNT(*) FROM Branch
-UNION ALL SELECT 'DELIVERY_COMPANY',    MIN(delivery_company_id), MAX(delivery_company_id), COUNT(*) FROM Delivery_Company
-UNION ALL SELECT 'ITEM',                MIN(item_id),             MAX(item_id),             COUNT(*) FROM Item
-UNION ALL SELECT 'SUPPLIER',            MIN(supplier_id),         MAX(supplier_id),         COUNT(*) FROM Supplier
-UNION ALL SELECT 'CUSTOMER',            MIN(customer_id),         MAX(customer_id),         COUNT(*) FROM Customer
-UNION ALL SELECT 'EMPLOYEE',            MIN(employee_id),         MAX(employee_id),         COUNT(*) FROM Employee
-UNION ALL SELECT 'COURIER',             MIN(courier_id),          MAX(courier_id),          COUNT(*) FROM Courier
-UNION ALL SELECT 'MEMBER_SUBSCRIPTION', MIN(subscription_id),     MAX(subscription_id),     COUNT(*) FROM Member_Subscription
-UNION ALL SELECT 'REWARD_REDEMPTION',   MIN(redemption_id),       MAX(redemption_id),       COUNT(*) FROM Reward_Redemption
-UNION ALL SELECT 'ORDERS',              MIN(order_no),            MAX(order_no),            COUNT(*) FROM Orders
-UNION ALL SELECT 'PAYMENT',             MIN(payment_id),          MAX(payment_id),          COUNT(*) FROM Payment
-UNION ALL SELECT 'RETURN_REQUEST',      MIN(return_id),           MAX(return_id),           COUNT(*) FROM Return_Request
-UNION ALL SELECT 'FEEDBACK',            MIN(feedback_id),         MAX(feedback_id),         COUNT(*) FROM Feedback
-UNION ALL SELECT 'RATING',              MIN(rating_id),           MAX(rating_id),           COUNT(*) FROM Rating
-UNION ALL SELECT 'DELIVERY_REQUEST',    MIN(delivery_request_id), MAX(delivery_request_id), COUNT(*) FROM Delivery_Request
-ORDER  BY table_name;
-
--- Values produced by triggers rather than keyed in (0 rows expected)
-SELECT od.order_no, od.item_id, od.unit_price, i.unit_price AS item_price, od.subtotal
-FROM   Order_Detail od JOIN Item i ON i.item_id = od.item_id
-WHERE  od.unit_price <> i.unit_price OR od.subtotal <> od.quantity * od.unit_price;
-
-SELECT m.member_id, m.membership_type, m.point_rate FROM Member m
-WHERE  (m.membership_type = 'VIP'    AND m.point_rate <> 2.00)
-   OR  (m.membership_type = 'Normal' AND m.point_rate <> 1.00);
-
-SELECT o.order_no, o.points_earned FROM Orders o
-       JOIN Customer c ON c.customer_id = o.customer_id
-       LEFT JOIN Member m ON m.member_id = c.member_id
-WHERE  o.points_earned <> CASE WHEN o.order_status = 'Completed' AND m.member_id IS NOT NULL
-                               THEN FLOOR(o.subtotal_amount - o.discount_amount) * m.point_rate
-                               ELSE 0 END;
-
--- SUPPLIER : how many lines each one carries and what those lines sell
-SELECT s.supplier_id, s.company_name, s.lead_time_days, s.status,
-       COUNT(DISTINCT i.item_id)                      AS products_supplied,
-       SUM(CASE WHEN i.status = 'Active' THEN 1 END)  AS on_sale,
-       NVL(SUM(od.quantity), 0)                       AS units_sold,
-       NVL(SUM(od.subtotal), 0)                       AS sales_value
-FROM   Supplier s
-       LEFT JOIN Item i          ON i.supplier_id = s.supplier_id
-       LEFT JOIN Order_Detail od ON od.item_id    = i.item_id
-GROUP  BY s.supplier_id, s.company_name, s.lead_time_days, s.status
-ORDER  BY sales_value DESC;
-
--- TRIGGER 18 : no product on sale comes from a closed supplier (0 rows expected)
-SELECT i.item_id, i.name, s.company_name, s.status AS supplier_status
-FROM   Item i JOIN Supplier s ON s.supplier_id = i.supplier_id
-WHERE  i.status = 'Active' AND s.status <> 'Active';
-
--- Stock that needs reordering, with the supplier to call and the lead time
-SELECT b.name AS branch, i.name AS item, inv.quantity AS on_hand,
-       s.company_name AS reorder_from, s.lead_time_days, s.contact_no
-FROM   Inventory inv
-       JOIN Item i     ON i.item_id     = inv.item_id
-       JOIN Branch b   ON b.branch_id   = inv.branch_id
-       JOIN Supplier s ON s.supplier_id = i.supplier_id
-WHERE  inv.quantity < 50
-ORDER  BY inv.quantity;
-
--- TRIGGER 20 : the employee on an order works at that branch, at the counter,
--- and was already hired on the day of the sale (0 rows expected)
-SELECT o.order_no, o.branch_id, o.handled_by, e.branch_id AS staff_branch,
-       e.position, e.hire_date
-FROM   Orders o JOIN Employee e ON e.employee_id = o.handled_by
-WHERE  e.branch_id <> o.branch_id
-   OR  e.position NOT IN ('Cashier', 'Supervisor', 'Manager')
-   OR  e.hire_date > o.order_date_time;
-
--- Counter staff who served no order at all (0 rows expected)
-SELECT e.employee_id, e.name, e.position, e.branch_id
-FROM   Employee e
-WHERE  e.position IN ('Cashier', 'Supervisor', 'Manager')
-AND    NOT EXISTS (SELECT 1 FROM Orders o WHERE o.handled_by = e.employee_id);
-
--- Who served the most, and what they took
-SELECT e.employee_id, e.name, e.position, b.name AS branch,
-       COUNT(*)            AS orders_served,
-       SUM(o.total_amount) AS takings
-FROM   Orders o
-       JOIN Employee e ON e.employee_id = o.handled_by
-       JOIN Branch b   ON b.branch_id   = o.branch_id
-WHERE  o.order_status = 'Completed'
-GROUP  BY e.employee_id, e.name, e.position, b.name
-ORDER  BY takings DESC
-FETCH FIRST 15 ROWS ONLY;
-
--- Delivery status only ever takes the three allowed values
-SELECT status, COUNT(*) AS deliveries FROM Delivery_Request GROUP BY status ORDER BY status;
-
--- Switch the six load-disabled triggers back on.
-ALTER TRIGGER trg_deduct_stock           ENABLE;
-ALTER TRIGGER trg_order_amounts          ENABLE;
-ALTER TRIGGER trg_delivery_fee_to_order  ENABLE;
-ALTER TRIGGER trg_redeem_reward          ENABLE;
-ALTER TRIGGER trg_subscription_vip       ENABLE;
-ALTER TRIGGER trg_courier_average_rating ENABLE;
-
-SELECT trigger_name, triggering_event, status FROM user_triggers ORDER BY trigger_name;
-SELECT sequence_name, min_value, max_value, last_number FROM user_sequences ORDER BY sequence_name;
-
--- LIVE DEMONSTRATION
--- A walk-in sale goes through without a single key, amount or point value being
--- typed in. Every one of them comes from a sequence or a trigger.
-SET SERVEROUTPUT ON
-
-PROMPT ===== 1. BEFORE THE SALE =====
-SELECT i.item_id, i.name, i.unit_price, inv.quantity AS stock_on_hand
-FROM   Inventory inv JOIN Item i ON i.item_id = inv.item_id
-WHERE  inv.branch_id = 'BR001' AND inv.item_id IN ('IT001','IT002');
-
-SELECT member_id, membership_type, point_rate, points_balance
-FROM   Member WHERE member_id = 'MB00022';
-
-PROMPT ===== 2. RECORD THE ORDER : the key comes from order_seq =====
-INSERT INTO Orders
-VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'),
-       TRUNC(SYSDATE) + INTERVAL '14' HOUR, 'Walk-In', 'Pickup',
-       0, 0, 0, 0, 'Processing', 'N', NULL, 'CUS00022', 'BR001');
-
-SELECT MAX(order_no) AS order_number_generated FROM Orders;
-
-PROMPT ===== 3. ADD THE LINES : trigger 5 deducts stock, trigger 6 builds the total =====
-INSERT INTO Order_Detail
-VALUES((SELECT MAX(order_no) FROM Orders), 'IT001', 8.40, 3, 2.80);
-
-INSERT INTO Order_Detail
-VALUES((SELECT MAX(order_no) FROM Orders), 'IT002', 3.00, 2, 1.50);
-
-SELECT inv.item_id, i.name, inv.quantity AS stock_after_deduction
-FROM   Inventory inv JOIN Item i ON i.item_id = inv.item_id
-WHERE  inv.branch_id = 'BR001' AND inv.item_id IN ('IT001','IT002');
-
-SELECT order_no, subtotal_amount, discount_amount, total_amount, points_earned, order_status
-FROM   Orders WHERE order_no = (SELECT MAX(order_no) FROM Orders);
-
-PROMPT ===== 4. TAKE THE PAYMENT : trigger 3 checks the hour and the 15 minute rule =====
-INSERT INTO Payment
-VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash',
-       TRUNC(SYSDATE) + INTERVAL '14' HOUR + INTERVAL '4' MINUTE,
-       'REF-DEMO-' || TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS'), 'Pending',
-       (SELECT MAX(order_no) FROM Orders));
-
-PROMPT ===== 5. SETTLE IT : trigger 8 completes the order, trigger 9 awards the points =====
-UPDATE Payment SET payment_status = 'Paid'
-WHERE  order_no = (SELECT MAX(order_no) FROM Orders);
-
-SELECT order_no, order_status, subtotal_amount, total_amount, points_earned
-FROM   Orders WHERE order_no = (SELECT MAX(order_no) FROM Orders);
-
-SELECT member_id, membership_type, point_rate, points_balance
-FROM   Member WHERE member_id = 'MB00022';
-
-PROMPT ===== 6. REDEEM A REWARD : trigger 11 prices it and spends the points =====
-SELECT reward_id, name, points_required, quantity AS vouchers_left
-FROM   Reward WHERE reward_id = 'RW006';
-
-INSERT INTO Reward_Redemption
-VALUES('RD' || TO_CHAR(redemption_seq.nextval, 'FM00000'),
-       1, 0, SYSDATE, NULL, 'Active', 'MB00022', 'RW006');
-
-SELECT redemption_id, point_spent, issue_date, expiry_date, status
-FROM   Reward_Redemption
-WHERE  redemption_id = (SELECT MAX(redemption_id) FROM Reward_Redemption);
-
-SELECT reward_id, quantity AS vouchers_left FROM Reward WHERE reward_id = 'RW006';
-SELECT member_id, points_balance FROM Member WHERE member_id = 'MB00022';
-
-COMMIT;
-
--- 7. THE RULES THAT PROTECT THE DATA. Each statement below must fail.
--- Trigger 2, outside trading hours                          -> ORA-20102
---   INSERT INTO Orders
---   VALUES('ORD' || TO_CHAR(order_seq.nextval,'FM000000'),
---          TRUNC(SYSDATE) + INTERVAL '3' HOUR, 'Walk-In', 'Pickup',
---          0, 0, 0, 0, 'Processing', 'N', NULL, 'CUS00022', 'BR001');
---
--- Trigger 3, paid more than 15 minutes after the order      -> ORA-20105
---   INSERT INTO Payment
---   VALUES('PAY' || TO_CHAR(payment_seq.nextval,'FM000000'), 'Cash',
---          TRUNC(SYSDATE) + INTERVAL '16' HOUR, 'REF-LATE-1', 'Pending',
---          (SELECT MAX(order_no) FROM Orders));
---
--- Trigger 5, selling stock the branch does not hold         -> ORA-20110
---   INSERT INTO Order_Detail
---   VALUES((SELECT MAX(order_no) FROM Orders), 'IT003', 7900000.00, 999999, 7.90);
---
--- Trigger 11, a member who cannot afford the reward         -> ORA-20114
---   INSERT INTO Reward_Redemption
---   VALUES('RD' || TO_CHAR(redemption_seq.nextval,'FM00000'),
---          99, 0, SYSDATE, NULL, 'Active', 'MB00300', 'RW010');
---
--- Trigger 13, returning more units than were bought         -> ORA-20117
---   INSERT INTO Return_Request
---   VALUES('RTN' || TO_CHAR(return_seq.nextval,'FM000000'), 'Item defective', SYSDATE,
---          'Requested', 0, 'demo', 9999, (SELECT MAX(order_no) FROM Orders), 'IT001', NULL);
---
--- Trigger 17, deleting a completed order                    -> ORA-20120
---   DELETE FROM Orders WHERE order_no = 'ORD000005';
-
--- 8. TRIGGER 10 : cancelling restores the stock and takes the points back
---   UPDATE Orders SET order_status = 'Cancelled'
---   WHERE  order_no = (SELECT MAX(order_no) FROM Orders);
---   SELECT item_id, quantity FROM Inventory
---   WHERE  branch_id = 'BR001' AND item_id IN ('IT001','IT002');
---   SELECT member_id, points_balance FROM Member WHERE member_id = 'MB00022';
-
--- 9. TRIGGER 14 : refunding the payment puts the goods back on the shelf
---   UPDATE Payment SET payment_status = 'Refunded'
---   WHERE  order_no = (SELECT MAX(order_no) FROM Orders);
---   SELECT item_id, quantity FROM Inventory
---   WHERE  branch_id = 'BR001' AND item_id IN ('IT001','IT002');
-
--- 10. TRIGGER 12 : a paid subscription promotes the member to VIP
---   INSERT INTO Member_Subscription
---   VALUES('SUB' || TO_CHAR(subscription_seq.nextval,'FM00000'),
---          SYSDATE, ADD_MONTHS(SYSDATE,12), 12.00, 'Paid', 'MB00022');
---   SELECT member_id, membership_type, point_rate FROM Member WHERE member_id = 'MB00022';
