@@ -142,6 +142,7 @@ CREATE TABLE BRANCH_DIM(
 	BRANCHID VARCHAR2(20),
 	BRANCHNAME VARCHAR2(100),
 	BRANCHAREA VARCHAR2(50),
+	BRANCHSTATE VARCHAR2(30),
 	STATUS VARCHAR2(10),
 	BRANCHOPENTIME VARCHAR2(10) ,
 	BRANCHCLOSETIME VARCHAR2(10),
@@ -255,7 +256,6 @@ VALUES (-1, NULL, 'No Redemption', 'Not Applicable', 0,
        0, 'N/A', DATE '2020-01-01', DATE '9999-12-31', 'Y');
 	   
 	   
-	   
 -- DIMENSION INITIAL LOAD
 INSERT INTO BRANCH_DIM SELECT 
 	BRANCH_DIM_SEQ.NEXTVAL, 
@@ -264,6 +264,103 @@ INSERT INTO BRANCH_DIM SELECT
 	INITCAP(
 		REGEXP_SUBSTR(b.name, 'speedmart[[:space:]]+(.+)$', 1, 1, 'i', 1)
 	),
+	TRIM(REGEXP_REPLACE(REGEXP_SUBSTR(b.address, '[^,]+$'),'^[0-9]{5}[[:space:]]+','')),
 	b.status,
 	b.open_time, b.close_time, DATE '2020-01-01', DATE '9999-12-31', 'Y'
-FROM   WAREHOUSEDATA.Branch b;
+FROM WAREHOUSEDATA.Branch b;
+
+INSERT INTO COURIER_DIM
+SELECT COURIER_DIM_SEQ.NEXTVAL, c.courier_id, c.name,
+       c.delivery_company_id, dc.company_name,
+       DATE '2020-01-01', DATE '9999-12-31', 'Y'
+FROM   WAREHOUSEDATA.Courier c
+JOIN   WAREHOUSEDATA.Delivery_Company dc
+       ON dc.delivery_company_id = c.delivery_company_id;
+
+INSERT INTO ORDER_PROFILE_DIM
+SELECT ORDER_PROFILE_DIM_SEQ.NEXTVAL, x.order_type, x.service_type,
+       x.order_status, x.mykasih
+FROM ( SELECT DISTINCT
+              o.order_type,
+              o.service_type,
+              o.order_status,
+              CASE WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
+                   ELSE 'Standard Purchase' END AS mykasih
+       FROM   WAREHOUSEDATA.Orders o ) x;
+
+INSERT INTO REWARD_DIM
+SELECT REWARD_DIM_SEQ.NEXTVAL, r.reward_id, r.name, r.reward_type,
+       r.points_required, r.value, r.status,
+       DATE '2020-01-01', DATE '9999-12-31', 'Y'
+FROM   WAREHOUSEDATA.Reward r;
+
+INSERT INTO PRODUCT_DIM
+SELECT PRODUCT_DIM_SEQ.NEXTVAL, i.item_id, i.supplier_id, s.company_name,
+       i.name, i.unit_price, i.unit_of_measure, i.unit_weight_kg,
+       i.is_mykasih_eligible, i.status,
+       DATE '2020-01-01', DATE '9999-12-31', 'Y'
+FROM   WAREHOUSEDATA.Item i
+JOIN   WAREHOUSEDATA.Supplier s ON s.supplier_id = i.supplier_id;
+
+INSERT INTO DELIVERY_STATUS_DIM VALUES (DELIVERY_STATUS_DIM_SEQ.NEXTVAL, 'Delivered');
+INSERT INTO DELIVERY_STATUS_DIM VALUES (DELIVERY_STATUS_DIM_SEQ.NEXTVAL, 'Processing');
+INSERT INTO DELIVERY_STATUS_DIM VALUES (DELIVERY_STATUS_DIM_SEQ.NEXTVAL, 'Failed');
+
+INSERT INTO EMPLOYEE_DIM 
+SELECT EMPLOYEE_DIM_SEQ.NEXTVAL, e.employee_id, e.name, e.position, e.salary,
+       e.hire_date, DATE '9999-12-31',
+       DATE '2020-01-01', DATE '9999-12-31', 'Y'
+FROM   WAREHOUSEDATA.Employee e;
+
+-- Customer Dimension (Fix Later)
+DECLARE
+    v_start DATE;
+BEGIN
+    -- (a) Customers with no membership: single Normal-equivalent version.
+    INSERT INTO CUSTOMER_DIM
+    SELECT CUSTOMER_DIM_SEQ.NEXTVAL, c.customer_id, NULL,
+           'Non-Member', 'Unknown', 'None', 0,
+           DATE '2020-01-01', DATE '9999-12-31', 'Y'
+    FROM   WAREHOUSEDATA.Customer c
+    WHERE  c.member_id IS NULL;
+ 
+    -- (b) Members: walk the paid subscription windows in date order.
+    FOR m IN (SELECT c.customer_id, c.member_id, mb.name, mb.gender
+              FROM   WAREHOUSEDATA.Customer c
+              JOIN   WAREHOUSEDATA.Member   mb ON mb.member_id = c.member_id)
+    LOOP
+        v_start := DATE '2020-01-01';
+ 
+        FOR s IN (SELECT ms.start_date, ms.end_date
+                  FROM   WAREHOUSEDATA.Member_Subscription ms
+                  WHERE  ms.member_id      = m.member_id
+                  AND    ms.payment_status = 'Paid'
+                  ORDER  BY ms.start_date)
+        LOOP
+            -- Normal period before this VIP window opens
+            IF s.start_date > v_start THEN
+                INSERT INTO CUSTOMER_DIM
+                VALUES (CUSTOMER_DIM_SEQ.NEXTVAL, m.customer_id, m.member_id,
+                        m.name, m.gender, 'Normal', 1.00,
+                        v_start, s.start_date - 1, 'N');
+            END IF;
+ 
+            -- The VIP window itself
+            INSERT INTO CUSTOMER_DIM
+            VALUES (CUSTOMER_DIM_SEQ.NEXTVAL, m.customer_id, m.member_id,
+                    m.name, m.gender, 'VIP', 2.00,
+                    s.start_date, s.end_date, 'N');
+ 
+            v_start := s.end_date + 1;
+        END LOOP;
+ 
+        -- Trailing Normal period after the last subscription lapsed
+        INSERT INTO CUSTOMER_DIM
+        VALUES (CUSTOMER_DIM_SEQ.NEXTVAL, m.customer_id, m.member_id,
+                m.name, m.gender, 'Normal', 1.00,
+                v_start, DATE '9999-12-31', 'N');
+    END LOOP;
+ 
+    COMMIT;
+END;
+/
