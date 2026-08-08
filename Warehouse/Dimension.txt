@@ -264,7 +264,7 @@ INSERT INTO BRANCH_DIM SELECT
 	INITCAP(
 		REGEXP_SUBSTR(b.name, 'speedmart[[:space:]]+(.+)$', 1, 1, 'i', 1)
 	),
-	TRIM(REGEXP_REPLACE(REGEXP_SUBSTR(b.address, '[^,]+$'),'^[0-9]{5}[[:space:]]+','')),
+	TRIM(REGEXP_REPLACE(REGEXP_SUBSTR(b.address, '[^,]+$'), '^[[:space:]]*[0-9]{5}[[:space:]]+', '')),
 	b.status,
 	b.open_time, b.close_time, DATE '2020-01-01', DATE '9999-12-31', 'Y'
 FROM WAREHOUSEDATA.Branch b;
