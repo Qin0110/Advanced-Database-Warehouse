@@ -1210,13 +1210,13 @@ VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Aina Farhana', 24, '014
 INSERT INTO Employee
 VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Amirul Naim', 41, '012-550 1027', 'Manager', 5000.00, 'Active', DATE '2020-01-01', 'BR005');
 INSERT INTO Employee
-VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Ng Chee Hong', 33, '+6013-5501028', 'Supervisor', 3600.00, 'Active', DATE '2020-01-01', 'BR005');
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Ng Chee Hong', 33, '013-550 1028', 'Supervisor', 3600.00, 'Active', DATE '2020-01-01', 'BR005');
 INSERT INTO Employee
 VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Nadia Izzati', 25, '014-550 1029', 'Cashier', 2000.00, 'Active', DATE '2020-01-01', 'BR005');
 INSERT INTO Employee
 VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Hakim Roslan', 39, '012-560 1036', 'Manager', 4750.00, 'Active', DATE '2020-01-01', 'BR006');
 INSERT INTO Employee
-VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Ong Kai Wen', 32, '+6013-5601037', 'Supervisor', 3450.00, 'Active', DATE '2020-01-01', 'BR006');
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Ong Kai Wen', 32, '013-560 1037', 'Supervisor', 3450.00, 'Active', DATE '2020-01-01', 'BR006');
 INSERT INTO Employee
 VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Siti Mariam', 26, '014-560 1038', 'Cashier', NULL, 'Active', DATE '2020-01-01', 'BR006');
 INSERT INTO Employee
@@ -1290,7 +1290,7 @@ VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Puteri Balqis', 19, ' 0
 INSERT INTO Employee
 VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Mala Devi', 46, '018-520 1013', 'Stock Clerk', 1700.00, 'Active', DATE '2023-12-07', 'BR002');
 INSERT INTO Employee
-VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Azlan Ismail', 35, '+6017-5301018', 'Stock Clerk', 2400.00, 'Active', DATE '2024-01-27', 'BR003');
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Azlan Ismail', 35, '017-530 1018', 'Stock Clerk', 2400.00, 'Active', DATE '2024-01-27', 'BR003');
 INSERT INTO Employee
 VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Ramesh Kumar', 48, '011-600 1071', 'Stock Clerk', 2150.00, 'Active', DATE '2024-01-29', 'BR010');
 INSERT INTO Employee
@@ -1563,7 +1563,7 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), '  Nazrin Ng', 21, 'Male'
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Shu Yi Binti Salleh   ', 63, 'Female', '011-794 1043', 'shu.yisalleh@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Luqman Koh', 59, 'Male', '+6019-7501044', 'luqman.koh@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Luqman Koh', 59, 'Male', '019-750 1044', 'luqman.koh@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Ganesh Bin Hassan', 41, 'Male', '019-793 1045', 'ganesh.hassan@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
@@ -1741,7 +1741,7 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Xin Yi Lee', 66, 'Female
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Mohd Menon', 57, 'Male', '016-703 1132', 'mohd.menon@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Xin Ru Foo', 38, 'Female', '+6016-7281133', 'xin.rufoo@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Xin Ru Foo', 38, 'Female', '016-728 1133', 'xin.rufoo@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Chui Ping Teoh', 17, 'Female', '014-740 1134', 'chui.pingteoh@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
@@ -1815,7 +1815,7 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Arjun Bin Salleh', 48, '
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Hasnah Yong', 27, 'Female', '019-705 1169', 'hasnah.yong@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Sathish Koh', 27, 'Male', '+6011-7221170', 'sathish.koh@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Sathish Koh', 27, 'Male', '011-722 1170', 'sathish.koh@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Shalini Nair', 50, 'Female', '013-723 1171', 'shalini.nair@email.com', 0, 'Normal', 1.00, 'Inactive');
 INSERT INTO Member
@@ -1921,7 +1921,7 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Chui Ping Yong', 40, 'Fe
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Kavitha Yong', 53, 'Female', '010-771 1222', 'kavitha.yong@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Hafiz Bin Jamal', 38, 'Male', '+6010-7961223', 'hafiz.jamal@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Hafiz Bin Jamal', 38, 'Male', '010-796 1223', 'hafiz.jamal@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Sharmila Binti Mansor', 63, 'Female', '012-795 1224', 'sharmila.mansor@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
@@ -2001,7 +2001,7 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Thanuja Goh', 59, 'Femal
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Amirah Yong', 66, 'Female', '018-723 1262', 'amirah.yong@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Lavanya Binti Hassan', 40, 'Female', '+6017-7831263', 'lavanya.hassan@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Lavanya Binti Hassan', 40, 'Female', '017-783 1263', 'lavanya.hassan@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Jun Kit Teoh', 36, 'Male', '017-765 1264', 'jun.kitteoh@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
@@ -2027,7 +2027,7 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Bala Bin Mansor', 20, 'M
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Marina Loo', 48, 'Female', '018-779 1275', 'marina.loo@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Li Ying Chong', 30, 'Female', '+6018-7471276', 'li.yingchong@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Li Ying Chong', 30, 'Female', '018-747 1276', 'li.yingchong@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Aisyah Lee', 47, 'Female', '010-709 1277', 'aisyah.lee@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
@@ -2079,7 +2079,7 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Ahmad Rao', 57, 'Male', 
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Shafika Koh', 41, 'Female', '010-705 1301', 'shafika.koh@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Yong Sheng Menon', 61, 'Male', '+6014-7741302', 'yong.shengmenon@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Yong Sheng Menon', 61, 'Male', '014-774 1302', 'yong.shengmenon@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Suresh Tan', 33, 'Male', '0117471303', 'suresh.tan@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
@@ -2127,15 +2127,15 @@ VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Hasnah Binti Ismail', 43
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Kamarul Lim', 43, 'Male', '014-784 1325', 'kamarul.lim@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'SITI SIM', 60, 'Female', '+6014-7281281', 'siti.sim.91@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'SITI SIM', 60, 'Female', '014-728 1281', 'siti.sim.91@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'LUQMAN KOH', 59, 'Male', '+6019 7501044', 'luqman.koh.78@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'LUQMAN KOH', 59, 'Male', '019 750 1044', 'luqman.koh.78@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Aisyah Lee', 47, 'Female', '+6010-7091277', 'aisyah.lee.75@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Aisyah Lee', 47, 'Female', '010-709 1277', 'aisyah.lee.75@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
 VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'MEI LING OOI', 56, 'Female', '0167541227', 'mei.ling.ooi.87@email.com', 0, 'Normal', 1.00, 'Active');
 INSERT INTO Member
-VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Lee Jun Hao', 38, 'Male', '+6010-7101009', 'lee.jun.hao.87@email.com', 0, 'Normal', 1.00, 'Active');
+VALUES('MB' || TO_CHAR(member_seq.nextval, 'FM00000'), 'Lee Jun Hao', 38, 'Male', '010-710 1009', 'lee.jun.hao.87@email.com', 0, 'Normal', 1.00, 'Active');
 
 -- CUSTOMER (4498 rows)
 INSERT INTO Customer
@@ -124334,7 +124334,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Wong Zi Xuan'
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kamala Binti Mansor', '017-731 1052', 'No. 170, Jalan Kenari, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2021-12-26 21:27:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD002465', 'CR0045');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2021-12-31 11:57:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD002482', 'CR0005');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2021-12-31 11:57:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD002482', 'CR0005');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Rosli Rao', '019-706 1068', 'No. 80, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2022-01-03 20:36:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD002498', 'CR0005');
 INSERT INTO Delivery_Request
@@ -124350,9 +124350,9 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Wei Sheng Bin
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Krishnan', '013-746 1073', 'No. 111, Lorong Merak, 43000 Kajang, Selangor', NULL, TO_TIMESTAMP('2022-02-12 16:17:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD002653', 'CR0045');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2022-02-20 18:49:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD002684', 'CR0028');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2022-02-20 18:49:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD002684', 'CR0028');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-03-02 15:22:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD002726', 'CR0039');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-03-02 15:22:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD002726', 'CR0039');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Rosnah Khoo', '016-727 1036', 'No. 11, Lorong Merak, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2022-03-04 14:25:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD002733', 'CR0047');
 INSERT INTO Delivery_Request
@@ -124364,7 +124364,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Krishnan
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kamala Binti Mansor', '017-731 1052', 'No. 170, Jalan Kenari, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2022-03-10 16:46:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD002763', 'CR0038');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-03-14 14:07:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD002783', 'CR0018');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-03-14 14:07:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD002783', 'CR0018');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chan Yoke Lin', '012-721 1864', 'No. 67, Persiaran Setia, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-03-25 19:34:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD002832', 'CR0019');
 INSERT INTO Delivery_Request
@@ -124378,7 +124378,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'sofea yap', '
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Nabilah Sim', '010-725 1050', 'No. 180, Lorong Damai, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-04-03 21:21:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD002869', 'CR0040');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-04-07 13:01:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD002880', 'CR0018');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-04-07 13:01:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD002880', 'CR0018');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Thanuja Devi', '010-790 1056', 'No. 66, Jalan Melati, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2022-04-07 14:01:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD002881', 'CR0018');
 INSERT INTO Delivery_Request
@@ -124400,7 +124400,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hui Min Chan'
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Faridah Omar', '012-282 9973', 'No. 141, Jalan Melati, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2022-05-13 12:15:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003012', 'CR0012');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2022-05-19 20:32:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD003044', 'CR0046');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2022-05-19 20:32:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD003044', 'CR0046');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Priya Devi', '011-710 1008', 'No. 126, Jalan Anggerik, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2022-05-21 13:38:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD003051', 'CR0018');
 INSERT INTO Delivery_Request
@@ -124414,9 +124414,9 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Ravi Krishnan
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chui Ping Ramasamy', '018-708 1055', 'No. 49, Jln Bunga Raya, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2022-05-26 14:12:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003071', 'CR0008');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-05-27 10:06:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003073', 'CR0042');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-05-27 10:06:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003073', 'CR0042');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-05-27 18:11:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003075', 'CR0031');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-05-27 18:11:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003075', 'CR0031');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aisyah Wong', '012-710 1038', 'No. 67, Persiaran Harmoni, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-05-28 18:29:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003080', 'CR0016');
 INSERT INTO Delivery_Request
@@ -124440,7 +124440,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Ng Sook Yee',
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Bernard Chua', '011-497 2297', 'No. 108, Jalan Cempaka, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-07-02 18:14:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003215', 'CR0014');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2022-07-03 16:59:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003218', 'CR0004');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2022-07-03 16:59:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003218', 'CR0004');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Thanuja Devi', '010-790 1056', 'No. 66, Jalan Melati, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2022-07-09 19:13:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003241', 'CR0049');
 INSERT INTO Delivery_Request
@@ -124462,7 +124462,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chan Yoke Lin
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chui Ping Ramasamy', '018-708 1055', 'No. 49, Jln Bunga Raya, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2022-07-24 11:43:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003304', 'CR0035');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-07-24 21:23:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003309', 'CR0047');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-07-24 21:23:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003309', 'CR0047');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hui Min Binti Mansor', '016-786 1026', 'No. 76, Jalan Kenari, 43000 Kajang, Selangor', NULL, TO_TIMESTAMP('2022-07-31 14:21:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD003335', 'CR0026');
 INSERT INTO Delivery_Request
@@ -124470,7 +124470,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Iskandar Tan'
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zulhaimi Kadir', '011-631 1703', 'No. 49, Jalan Dahlia, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2022-08-04 19:02:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003350', 'CR0033');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-08-05 17:35:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003352', 'CR0048');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-08-05 17:35:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003352', 'CR0048');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Krishnan', '013-746 1073', 'No. 111, Lorong Merak, 43000 Kajang, Selangor', NULL, TO_TIMESTAMP('2022-08-06 16:33:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003358', 'CR0029');
 INSERT INTO Delivery_Request
@@ -124522,7 +124522,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Anitha Ramasa
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Mohd Yap', '011 769 1066', 'No. 4, Persiaran Harmoni, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2022-09-24 18:45:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003558', 'CR0010');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2022-10-01 16:18:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD003587', 'CR0034');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2022-10-01 16:18:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD003587', 'CR0034');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Siti Hajar', '016-710 1004', 'NO. 88, JALAN TERATAI, 41150 KLANG, SELANGOR', NULL, TO_TIMESTAMP('2022-10-02 13:28:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD003591', 'CR0035');
 INSERT INTO Delivery_Request
@@ -124600,7 +124600,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kamala Yap', 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sofea Binti Rahman', '010 755 1103', 'No. 155, Jalan Anggerik, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2022-12-17 11:16:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003917', 'CR0010');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2022-12-17 12:45:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003918', 'CR0022');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2022-12-17 12:45:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD003918', 'CR0022');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Wei Sheng Bin Jamal', '017-731 1075', 'NO. 135, JALAN MELATI, 68000 AMPANG, SELANGOR', NULL, TO_TIMESTAMP('2022-12-18 17:51:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD003922', 'CR0014');
 INSERT INTO Delivery_Request
@@ -124674,9 +124674,9 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Meena Tee', '
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aisyah Wong', '012-710 1038', 'No. 67, Persiaran Harmoni, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-03-03 17:08:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD004277', 'CR0020');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2023-03-04 12:50:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD004282', 'CR0008');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2023-03-04 12:50:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD004282', 'CR0008');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', 0.00, TO_TIMESTAMP('2023-03-05 12:47:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD004287', 'CR0035');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', 0.00, TO_TIMESTAMP('2023-03-05 12:47:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD004287', 'CR0035');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chan Yoke Lin', '012-721 1864', 'No. 67, Persiaran Setia, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-03-07 17:01:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD004300', 'CR0010');
 INSERT INTO Delivery_Request
@@ -124708,7 +124708,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Farah Khoo', 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Izzati Cheah', '012-754 1024', 'No. 164,Jalan Teratai,47500 Subang Jaya,Selangor', NULL, TO_TIMESTAMP('2023-03-24 21:40:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD004393', 'CR0022');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2023-03-26 13:45:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 3, 'ORD004403', 'CR0012');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2023-03-26 13:45:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 3, 'ORD004403', 'CR0012');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Wei Sheng Bin Jamal', '017-731 1075', 'NO. 135, JALAN MELATI, 68000 AMPANG, SELANGOR', NULL, TO_TIMESTAMP('2023-03-27 10:10:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD004407', 'CR0023');
 INSERT INTO Delivery_Request
@@ -124722,7 +124722,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Krishnan
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Faizal Rao', '012-732 1096', 'No. 154, Persiaran Harmoni, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2023-04-05 17:35:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD004450', 'CR0001');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-04-07 16:14:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD004459', 'CR0030');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-04-07 16:14:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD004459', 'CR0030');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Krishnan', '013-746 1073', 'No. 111, Lorong Merak, 43000 Kajang, Selangor', NULL, TO_TIMESTAMP('2023-04-08 17:33:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD004464', 'CR0043');
 INSERT INTO Delivery_Request
@@ -124862,7 +124862,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Wei Sheng Bin
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), '  Sook Fun Sim', '012-720 1112', 'No. 156, Jalan Dahlia, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2023-08-02 12:27:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD005007', 'CR0018');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-08-03 11:11:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD005013', 'CR0032');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-08-03 11:11:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD005013', 'CR0032');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Wei Sheng Bin Ismail', '011-765 1091', 'No. 33,Jalan Cempaka,40100 Shah Alam,Selangor', NULL, TO_TIMESTAMP('2023-08-04 17:18:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD005020', 'CR0044');
 INSERT INTO Delivery_Request
@@ -124904,7 +124904,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Fikri Tan', '
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Rajesh Kumar', '017-710 1005', 'No. 29, Lorong Damai, 43300 Seri Kembangan, Selangor', NULL, NULL, 'Failed', NULL, 'ORD005175', 'CR0045');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2023-09-09 17:25:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005206', 'CR0014');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2023-09-09 17:25:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005206', 'CR0014');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Krishnan', '013-746 1073', 'No. 111, Lorong Merak, 43000 Kajang, Selangor', NULL, TO_TIMESTAMP('2023-09-10 20:45:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005212', 'CR0039');
 INSERT INTO Delivery_Request
@@ -124916,7 +124916,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Krishnan
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Thanuja Khoo', '012-705 1032', 'No. 12, Lorong Damai, 43000 Kajang, Selangor', NULL, TO_TIMESTAMP('2023-09-19 20:04:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD005253', 'CR0004');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '+6016-7281133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2023-09-24 13:45:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005276', 'CR0009');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '016-728 1133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2023-09-24 13:45:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005276', 'CR0009');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Priya Devi', '011-710 1008', 'No. 126, Jalan Anggerik, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2023-09-29 16:40:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD005297', 'CR0045');
 INSERT INTO Delivery_Request
@@ -124942,7 +124942,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Ganesh Pang',
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Siti Hajar', '016-710 1004', 'NO. 88, JALAN TERATAI, 41150 KLANG, SELANGOR', NULL, NULL, 'Failed', NULL, 'ORD005353', 'CR0024');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '+6016-7281133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2023-10-11 13:20:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005355', 'CR0021');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '016-728 1133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2023-10-11 13:20:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005355', 'CR0021');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Ganesh Pang', '014-796 1097', 'No. 77, Jalan Teratai, 41150 Klang, Selangor', NULL, TO_TIMESTAMP('2023-10-11 18:11:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD005358', 'CR0044');
 INSERT INTO Delivery_Request
@@ -124966,7 +124966,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kok Wah Lee',
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Syafiq Pang', '010-704 1035', 'No. 132, Jalan Teratai, 41150 Klang, Selangor', NULL, TO_TIMESTAMP('2023-10-27 17:25:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD005434', 'CR0031');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-10-27 21:58:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD005437', 'CR0041');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2023-10-27 21:58:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD005437', 'CR0041');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kok Wah Lee', '0117421163', 'No. 27, Jalan Anggerik, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2023-10-29 18:46:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005447', 'CR0015');
 INSERT INTO Delivery_Request
@@ -125038,7 +125038,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Nadia Tee', '
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Boon Siang Bin Jamal', '017-710 1106', 'No. 44, Persiaran Mutiara, 41150 Klang, Selangor', 0.00, TO_TIMESTAMP('2023-12-02 15:10:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD005636', 'CR0032');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2023-12-03 13:28:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005642', 'CR0001');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2023-12-03 13:28:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD005642', 'CR0001');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Suresh Krishnan', '013-717 1069', 'No. 110, Persiaran Harmoni, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2023-12-03 20:34:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD005645', 'CR0026');
 INSERT INTO Delivery_Request
@@ -125342,7 +125342,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Suhaila  Khoo
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Salmah Ooi', '017-726 1054', 'No. 177, Persiaran Setia, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2024-05-25 16:52:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD006678', 'CR0046');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '+6016-7281133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2024-05-26 13:50:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD006681', 'CR0038');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '016-728 1133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2024-05-26 13:50:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD006681', 'CR0038');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), '  Sook Fun Sim', '012-720 1112', 'No. 156, Jalan Dahlia, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2024-05-27 20:02:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD006689', 'CR0011');
 INSERT INTO Delivery_Request
@@ -125420,7 +125420,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hasnah Wong',
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Faizal Ng', '013-758 1099', 'No. 179, Jalan Cempaka, 43300 Seri Kembangan, Selangor', NULL, TO_TIMESTAMP('2024-07-08 18:52:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD006930', 'CR0039');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '+6010-7961223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2024-07-08 20:33:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD006931', 'CR0006');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '010-796 1223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2024-07-08 20:33:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD006931', 'CR0006');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Cheah', '010-776 1028', 'No. 98, Lorong Merak, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2024-07-09 21:05:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD006939', 'CR0001');
 INSERT INTO Delivery_Request
@@ -125464,7 +125464,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Suresh Krishn
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chin Hooi Chong   ', '0117461164', 'No. 32, Jalan Dahlia, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2024-07-31 16:28:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD007060', 'CR0029');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '+6016-7281133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2024-07-31 21:46:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD007065', 'CR0033');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '016-728 1133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2024-07-31 21:46:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD007065', 'CR0033');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hui Min Chan', '017-774 1078', 'No. 145, Persiaran Harmoni, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2024-08-01 13:13:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD007066', 'CR0015');
 INSERT INTO Delivery_Request
@@ -125598,7 +125598,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Nadia Tee', '
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kok Wah Lee', '0117421163', 'No. 27, Jalan Anggerik, 47810 Petaling Jaya, Selangor', NULL, NULL, 'Failed', NULL, 'ORD007427', 'CR0027');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2024-10-05 18:13:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD007429', 'CR0011');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2024-10-05 18:13:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD007429', 'CR0011');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Meena Tee', '011-745 1092', 'No. 10, Persiaran Harmoni, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2024-10-06 11:51:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD007436', 'CR0008');
 INSERT INTO Delivery_Request
@@ -125790,7 +125790,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kamala Binti 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Rosnah Khoo', '016-727 1036', 'No. 11, Lorong Merak, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2024-12-23 21:45:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD007946', 'CR0015');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2024-12-24 11:26:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD007947', 'CR0017');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2024-12-24 11:26:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD007947', 'CR0017');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aziz Wong', '014-755 1188', 'NO. 31, JALAN KENARI, 40100 SHAH ALAM, SELANGOR', NULL, TO_TIMESTAMP('2024-12-25 21:54:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD007957', 'CR0004');
 INSERT INTO Delivery_Request
@@ -125882,7 +125882,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kah Wei Bin H
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), '  Norhayati Chan', '014-732 1079', 'No. 84, Jalan Kenari, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2025-02-02 13:08:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD008214', 'CR0037');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lavanya Binti Hassan', '+6017-7831263', 'No. 47, Jalan Melati, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-02-02 21:09:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008219', 'CR0046');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lavanya Binti Hassan', '017-783 1263', 'No. 47, Jalan Melati, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-02-02 21:09:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008219', 'CR0046');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Anis Sofea', '017-720 1014', 'NO. 126, JALAN NURI, 43000 KAJANG, SELANGOR', NULL, TO_TIMESTAMP('2025-02-03 18:37:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD008223', 'CR0035');
 INSERT INTO Delivery_Request
@@ -125898,7 +125898,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Rizal Muthu',
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Anitha Ramasamy', '014-725 1082', 'No. 77, Jalan Cempaka, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2025-02-05 15:48:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD008239', 'CR0023');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2025-02-06 17:54:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008247', 'CR0023');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2025-02-06 17:54:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008247', 'CR0023');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zi Hao Goh', '010-771 1153', 'No. 124, Lorong Damai, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-02-06 21:53:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD008249', 'CR0014');
 INSERT INTO Delivery_Request
@@ -125908,7 +125908,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Manoharan Bin
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sook Fun Goh', '016-772 1220', 'No. 146, Persiaran Setia, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2025-02-08 13:10:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008261', 'CR0022');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-02-08 19:16:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008265', 'CR0028');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019-750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-02-08 19:16:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008265', 'CR0028');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Fikri Koh', '019-762 1033', 'No. 70, Jalan Seri Impian, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-02-08 19:55:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008268', 'CR0010');
 INSERT INTO Delivery_Request
@@ -125922,7 +125922,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hakim Roslan'
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Zaid Teoh', '014-785 1030', 'No. 109, Jalan Teratai, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-02-12 21:26:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD008293', 'CR0011');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-02-13 10:33:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008294', 'CR0020');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-02-13 10:33:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008294', 'CR0020');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Prakash Ooi', '019-763 1184', 'No. 96, Persiaran Harmoni, 43300 Seri Kembangan, Selangor', NULL, TO_TIMESTAMP('2025-02-14 12:26:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008302', 'CR0038');
 INSERT INTO Delivery_Request
@@ -125952,7 +125952,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'bala bin yuso
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Salmah Ng', '010-718 1192', 'No. 174, Persiaran Setia, 47810 Petaling Jaya, Selangor', NULL, NULL, 'Failed', NULL, 'ORD008360', 'CR0019');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '+6016-7281133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2025-02-22 14:04:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD008365', 'CR0050');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '016-728 1133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2025-02-22 14:04:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD008365', 'CR0050');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Siti Sim', '014-728 1281', 'No. 158, Jalan Kenari, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-02-22 19:52:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008370', 'CR0016');
 INSERT INTO Delivery_Request
@@ -126124,7 +126124,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Fikri Tan', '
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Alia Selvam', '013-778 1109', 'No. 74, Persiaran Mutiara, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-05-05 21:18:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD008888', 'CR0034');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '+6010-7961223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2025-05-06 15:33:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008893', 'CR0036');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '010-796 1223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2025-05-06 15:33:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008893', 'CR0036');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kah Wei Bin Salleh', '011-740 1145', 'No. 131, Jalan Teratai, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-05-08 18:22:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008904', 'CR0035');
 INSERT INTO Delivery_Request
@@ -126164,9 +126164,9 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Bernard Chua'
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Prakash Bin Kadir', '011-798 1200', 'No. 135, Jalan Anggerik, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2025-05-17 21:48:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD008973', 'CR0028');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2025-05-17 21:57:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD008974', 'CR0029');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2025-05-17 21:57:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD008974', 'CR0029');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sathish Koh', '+6011-7221170', 'No. 71, Persiaran Mutiara, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-05-18 09:49:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD008975', 'CR0004');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sathish Koh', '011-722 1170', 'No. 71, Persiaran Mutiara, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-05-18 09:49:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD008975', 'CR0004');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Ganesh Bin Hassan', '019-793 1045', 'No. 104, Lorong Damai, 41150 Klang, Selangor', NULL, TO_TIMESTAMP('2025-05-18 10:35:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD008976', 'CR0020');
 INSERT INTO Delivery_Request
@@ -126190,7 +126190,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Faizal Rao', 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Faridah Omar', '010-356 1861', 'No. 17, Jalan Teratai, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2025-05-25 13:03:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD009019', 'CR0019');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-05-25 15:15:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD009022', 'CR0030');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-05-25 15:15:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD009022', 'CR0030');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Thanuja Tan', '013-749 1287', 'No. 144, Jalan Dahlia, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-05-27 18:10:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD009034', 'CR0022');
 INSERT INTO Delivery_Request
@@ -126206,7 +126206,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Gopal Krishna
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Nadia Wong', '013-706 1051', 'No. 144, Jalan Teratai, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2025-05-31 21:56:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD009062', 'CR0027');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-06-01 11:42:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD009063', 'CR0047');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-06-01 11:42:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD009063', 'CR0047');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Bernard Chua', '012-781 9904', 'No. 65, Jalan Dahlia, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-06-01 11:40:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD009064', 'CR0033');
 INSERT INTO Delivery_Request
@@ -126590,7 +126590,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Pei Shan Loo'
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kah Wei Bin Salleh', '011-740 1145', 'No. 131, Jalan Teratai, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-10-04 14:23:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD009926', 'CR0012');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'SITI SIM', '+6014-7281281', 'No. 81, Jalan Anggerik, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-10-04 14:41:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD009927', 'CR0026');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'SITI SIM', '014-728 1281', 'No. 81, Jalan Anggerik, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-10-04 14:41:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD009927', 'CR0026');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hasnah Devi', '011-735 1122', 'No. 120,Jalan Anggerik,40100 Shah Alam,Selangor', NULL, NULL, 'Failed', NULL, 'ORD009934', 'CR0024');
 INSERT INTO Delivery_Request
@@ -126646,7 +126646,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Yoke Lin Bint
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Arjun Bin Salleh', '013-795 1168', 'No. 158, Jalan Nuri, 41150 Klang, Selangor', NULL, TO_TIMESTAMP('2025-10-18 15:40:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010029', 'CR0029');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '+6019-7501044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', 0.00, TO_TIMESTAMP('2025-10-19 11:43:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010035', 'CR0024');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Koh', '019-750 1044', 'No. 61, Jalan Anggerik, 52100 Kuala Lumpur', 0.00, TO_TIMESTAMP('2025-10-19 11:43:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010035', 'CR0024');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Boon Siang Bin Rahman', '019-731 1234', 'No. 14, Jalan Dahlia, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2025-10-20 13:59:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD010045', 'CR0031');
 INSERT INTO Delivery_Request
@@ -126864,7 +126864,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Shu Yi Koh', 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chan Yoke Lin', '018-803 7280', 'No. 143, Persiaran Mutiara, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2025-12-19 21:38:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010521', 'CR0050');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aisyah Lee', '+6010-7091277', 'No. 41, Jalan Nuri, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2025-12-20 15:45:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010525', 'CR0018');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aisyah Lee', '010-709 1277', 'No. 41, Jalan Nuri, 47810 Petaling Jaya, Selangor', NULL, TO_TIMESTAMP('2025-12-20 15:45:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010525', 'CR0018');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Wei Sheng Bin Jamal', '017-731 1075', 'NO. 135, JALAN MELATI, 68000 AMPANG, SELANGOR', NULL, TO_TIMESTAMP('2025-12-20 16:53:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010526', 'CR0038');
 INSERT INTO Delivery_Request
@@ -126924,7 +126924,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Vasanthi Nair
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Yi Lee', '014-734 1131', 'No. 108, Jalan Nuri, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-01-02 09:56:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD010638', 'CR0027');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '+6016-7281133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2026-01-02 12:33:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 2, 'ORD010639', 'CR0012');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Ru Foo', '016-728 1133', 'No. 64, Jalan Kenari, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2026-01-02 12:33:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 2, 'ORD010639', 'CR0012');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Xin Yi Sim', '018-702 1177', 'NO. 111, JALAN CEMPAKA, 43000 KAJANG, SELANGOR', NULL, TO_TIMESTAMP('2026-01-03 21:17:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010653', 'CR0008');
 INSERT INTO Delivery_Request
@@ -127008,13 +127008,13 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Bernard Chua'
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Prakash Loo', '011-779 1143', 'No. 141, Persiaran Mutiara, 53300 Kuala Lumpur ', NULL, TO_TIMESTAMP('2026-01-24 16:07:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010794', 'CR0008');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '+6010-7961223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2026-01-24 16:23:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010795', 'CR0032');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '010-796 1223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2026-01-24 16:23:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010795', 'CR0032');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Rosli Bin Yusof', ' 014-744 1140', 'No. 179,Lorong Damai,68000 Ampang,Selangor', NULL, TO_TIMESTAMP('2026-01-24 18:27:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010798', 'CR0022');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Thanuja Devi', '010-790 1056', 'No. 66, Jalan Melati, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2026-01-25 16:54:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD010801', 'CR0006');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'SITI SIM', '+6014-7281281', 'No. 81, Jalan Anggerik, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-01-25 19:03:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010805', 'CR0028');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'SITI SIM', '014-728 1281', 'No. 81, Jalan Anggerik, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-01-25 19:03:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010805', 'CR0028');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aisyah Lee', '010-709 1277', 'No. 171, Persiaran Harmoni, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2026-01-25 21:59:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD010808', 'CR0049');
 INSERT INTO Delivery_Request
@@ -127044,7 +127044,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aisyah Lee', 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Selvam Teoh', '011-782 1291', 'No. 30, Jln Melati, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2026-02-04 15:33:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010874', 'CR0032');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sathish Koh', '+6011-7221170', 'No. 71, Persiaran Mutiara, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-02-05 17:40:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010880', 'CR0039');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sathish Koh', '011-722 1170', 'No. 71, Persiaran Mutiara, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-02-05 17:40:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010880', 'CR0039');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Bernard Chua', '017-259 8490', 'No. 27, Jalan Kenari, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-02-05 18:31:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD010881', 'CR0020');
 INSERT INTO Delivery_Request
@@ -127126,7 +127126,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Faizal Ooi', 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Athirah Lim', '016-770 1046', 'No. 160, Persiaran Setia, 43000 Kajang, Selangor', NULL, TO_TIMESTAMP('2026-02-24 11:37:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD011047', 'CR0026');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '+6010-7961223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2026-02-25 13:27:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD011051', 'CR0016');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '010-796 1223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, TO_TIMESTAMP('2026-02-25 13:27:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD011051', 'CR0016');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Fikri Tee', '019-777 1199', 'No. 163, Jalan Anggerik, 53300 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-02-25 15:46:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD011053', 'CR0024');
 INSERT INTO Delivery_Request
@@ -127168,7 +127168,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Devi Nair', '
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Shu Yi Binti Salleh   ', '011-794 1043', 'No. 19, Jalan Kenari, 52100 Kuala Lumpur', NULL, NULL, 'Failed', NULL, 'ORD011142', 'CR0035');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sathish Koh', '+6011-7221170', 'No. 71, Persiaran Mutiara, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-03-08 11:47:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD011145', 'CR0002');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Sathish Koh', '011-722 1170', 'No. 71, Persiaran Mutiara, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-03-08 11:47:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD011145', 'CR0002');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Izzati Cheah', '012-754 1024', 'No. 164,Jalan Teratai,47500 Subang Jaya,Selangor', NULL, TO_TIMESTAMP('2026-03-08 11:38:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD011146', 'CR0003');
 INSERT INTO Delivery_Request
@@ -127262,7 +127262,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Naveen Teoh',
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Ramesh Pillai', '010-308 5780', 'No. 49, Lorong Merak, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2026-03-25 13:09:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD011301', 'CR0048');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lavanya Binti Hassan', '+6017-7831263', 'No. 47, Jalan Melati, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-03-26 18:57:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD011311', 'CR0022');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lavanya Binti Hassan', '017-783 1263', 'No. 47, Jalan Melati, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-03-26 18:57:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD011311', 'CR0022');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aziz Wong', '014-755 1188', 'NO. 31, JALAN KENARI, 40100 SHAH ALAM, SELANGOR', NULL, TO_TIMESTAMP('2026-03-26 19:23:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD011312', 'CR0037');
 INSERT INTO Delivery_Request
@@ -127542,7 +127542,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao',
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Syazwani Binti Kadir', '014-755 1156', 'No. 148, Jalan Melati, 47500 Subang Jaya, Selangor', NULL, NULL, 'Failed', NULL, 'ORD011843', 'CR0017');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'SITI SIM', '+6014-7281281', 'No. 81, Jalan Anggerik, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-05-30 20:38:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD011845', 'CR0010');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'SITI SIM', '014-728 1281', 'No. 81, Jalan Anggerik, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-05-30 20:38:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD011845', 'CR0010');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chin Hooi Pang', '012-703 1116', 'No. 48, Persiaran Harmoni, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2026-05-31 14:18:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD011847', 'CR0016');
 INSERT INTO Delivery_Request
@@ -127696,7 +127696,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Aisyah Lee', 
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Luqman Cheah', '014-777 1272', 'No. 75, Persiaran Harmoni, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2026-07-01 21:57:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD012114', 'CR0037');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lavanya Binti Hassan', '+6017-7831263', 'No. 47, Jalan Melati, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-07-02 14:43:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD012117', 'CR0004');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lavanya Binti Hassan', '017-783 1263', 'No. 47, Jalan Melati, 47160 Puchong, Selangor', NULL, TO_TIMESTAMP('2026-07-02 14:43:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD012117', 'CR0004');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Mei Ling Selvam', '018-730 1241', 'No. 26, Lorong Merak, 41150 Klang, Selangor', NULL, TO_TIMESTAMP('2026-07-02 21:46:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD012120', 'CR0046');
 INSERT INTO Delivery_Request
@@ -127732,13 +127732,13 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Kar Mun Binti
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Izzati Cheah', '012-754 1024', 'No. 164,Jalan Teratai,47500 Subang Jaya,Selangor', NULL, TO_TIMESTAMP('2026-07-09 21:42:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD012182', 'CR0030');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '+6019 7501044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2026-07-09 21:56:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD012183', 'CR0001');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'LUQMAN KOH', '019 750 1044', 'No. 109, Jalan Seri Impian, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2026-07-09 21:56:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD012183', 'CR0001');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Yong Sheng Goh', '011-790 1216', 'No. 164, Lorong Damai, 52100 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-07-10 15:03:45','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD012185', 'CR0049');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Iskandar Loo', '013-790 1081', 'No. 141, Lorong Merak, 68000 Ampang, Selangor', NULL, TO_TIMESTAMP('2026-07-10 21:31:30','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 4, 'ORD012191', 'CR0017');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '+6010-7961223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, NULL, 'Failed', NULL, 'ORD012197', 'CR0022');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hafiz Bin Jamal', '010-796 1223', 'No. 59, Jalan Dahlia, 40100 Shah Alam, Selangor', NULL, NULL, 'Failed', NULL, 'ORD012197', 'CR0022');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hidayah Binti Mansor', '016-721 1310', 'NO. 126, PERSIARAN MUTIARA, 52100 KUALA LUMPUR', NULL, TO_TIMESTAMP('2026-07-11 12:56:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD012200', 'CR0026');
 INSERT INTO Delivery_Request
@@ -127774,7 +127774,7 @@ VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Chin Hooi Cho
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Hidayah Khoo', '013-793 1305', 'No. 48, Persiaran Setia, 56000 Kuala Lumpur', NULL, TO_TIMESTAMP('2026-07-11 21:57:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD012250', 'CR0034');
 INSERT INTO Delivery_Request
-VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '+6010-7101009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2026-07-11 21:57:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD012251', 'CR0025');
+VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Lee Jun Hao', '010-710 1009', 'No. 23, Jalan Anggerik, 47500 Subang Jaya, Selangor ', NULL, TO_TIMESTAMP('2026-07-11 21:57:00','YYYY-MM-DD HH24:MI:SS'), 'Delivered', 5, 'ORD012251', 'CR0025');
 INSERT INTO Delivery_Request
 VALUES('DR' || TO_CHAR(delivery_request_seq.nextval, 'FM000000'), 'Rizal Yap', '016-720 1306', 'No. 23, Jalan Seri Impian, 47500 Subang Jaya, Selangor', NULL, TO_TIMESTAMP('2026-07-12 11:23:15','YYYY-MM-DD HH24:MI:SS'), 'Delivered', NULL, 'ORD012254', 'CR0026');
 INSERT INTO Delivery_Request
