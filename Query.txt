@@ -1,0 +1,570 @@
+------------------
+-- Lee Guan Wei -- 
+------------------
+
+-- View Table 1
+CREATE OR REPLACE VIEW v_delivery_performance AS
+	SELECT dc.delivery_company_id, dc.company_name,  dc.base_delivery_fee,  dc.status AS status,
+		EXTRACT(YEAR FROM o.order_date_time) AS year,
+		COUNT(DISTINCT c.courier_id) AS no_riders,
+		COUNT(dr.delivery_request_id) AS no_jobs_taken,
+		SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) AS delivery_success,
+		SUM(CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END) AS delivery_failed,
+		ROUND(SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) * 100 / NULLIF(SUM(CASE WHEN dr.status IN ('Delivered', 'Failed') THEN 1 ELSE 0 END), 0), 1) AS success_rate, 	
+		ROUND(AVG(c.average_rating), 2) AS company_avg_rating,
+		ROUND(AVG((CAST(dr.delivered_date_time AS DATE) - CAST(o.order_date_time AS DATE)) * 1440), 0) AS avg_minutes,
+		SUM(dr.delivery_fee) AS fee_paid,
+		SUM(o.total_amount) AS total_order_value
+	FROM Delivery_Company dc
+		JOIN Courier c ON c.delivery_company_id = dc.delivery_company_id
+		JOIN Delivery_Request dr ON dr.courier_id = c.courier_id
+		JOIN Orders o ON o.order_no = dr.order_no 
+	GROUP BY dc.delivery_company_id, dc.company_name, dc.status, dc.base_delivery_fee, EXTRACT(YEAR FROM o.order_date_time);
+
+
+-- View Table 2
+CREATE OR REPLACE VIEW v_branch_stock_status AS 
+WITH Past_6_Months_Sales AS (
+    SELECT o.branch_id, 
+           od.item_id, 
+           SUM(od.quantity) AS units_6m
+    FROM   Order_Detail od
+           JOIN Orders o ON o.order_no = od.order_no
+    WHERE  o.order_status = 'Completed'
+    AND    o.order_date_time >= ADD_MONTHS((SELECT MAX(order_date_time) FROM Orders), -6)
+    GROUP  BY o.branch_id, od.item_id
+)
+SELECT inv.branch_id, 
+b.name AS branch_name, 
+i.item_id,
+       	i.name AS item_name, 
+       	i.unit_price, 
+	i.category,
+       	i.status AS item_status, 
+       	inv.quantity AS quantity_on_hand, 
+       	inv.last_restock_date, 
+       	inv.quantity * i.unit_price AS stock_value, 
+       	s.supplier_id, 
+	s.company_name AS supplier_name,
+	s.contact_no AS supplier_phone,
+       	s.lead_time_days, 
+       	s.status AS supplier_status, 
+       	CASE WHEN inv.quantity = 0 THEN 'Out of Stock'
+            	WHEN inv.quantity < 20 THEN 'Critical'
+            	WHEN inv.quantity < 100 THEN 'Low'
+            	ELSE 'Good' 
+       	END AS stock_level,
+       	NVL(sold.units_6m, 0) AS units_sold_6m, 
+       	CASE WHEN NVL(sold.units_6m, 0) = 0 THEN NULL 
+            	ELSE ROUND(inv.quantity / (sold.units_6m / 182), 0) 
+       	END AS days_of_cover,
+       	ROUND(NVL(sold.units_6m, 0) / 26, 1) AS avg_weekly_demand
+FROM   Inventory inv 
+JOIN Item i ON i.item_id = inv.item_id
+       	JOIN Branch b ON b.branch_id = inv.branch_id
+       	JOIN Supplier s ON s.supplier_id = i.supplier_id 
+       	LEFT JOIN Past_6_Months_Sales sold ON sold.branch_id = inv.branch_id AND sold.item_id = inv.item_id;
+
+
+
+-- Query 1
+SET LINESIZE 135
+SET PAGESIZE 60
+SET FEEDBACK OFF
+SET TAB OFF
+SET WRAP OFF
+
+COLUMN reason       FORMAT A28       HEADING 'Reason Given by the Customer'
+COLUMN fault_type   FORMAT A17       HEADING 'Fault Type'
+COLUMN cases        FORMAT 9,999     HEADING 'Cases'
+COLUMN units        FORMAT 9,999     HEADING 'Units'
+COLUMN refund_value FORMAT 99,990.00 HEADING 'Refunded|RM'
+COLUMN avg_refund   FORMAT 990.00    HEADING 'Avg per|Case RM'
+COLUMN pct_cases    FORMAT 990.9     HEADING '% of Returns'
+COLUMN refunded     FORMAT 999       HEADING 'Refunded'
+COLUMN approved     FORMAT 999       HEADING 'Approved'
+COLUMN rejected     FORMAT 999       HEADING 'Rejected'
+COLUMN pending      FORMAT 999       HEADING 'Pending'
+
+TTITLE CENTER '88 SPEEDMART SDN BHD - RETURN REASON AND REFUND COST ANALYSIS' SKIP 1 -
+       CENTER '=============================================================' SKIP 2
+
+BREAK ON REPORT
+COMPUTE SUM LABEL 'ALL REASONS' OF cases units refund_value ON REPORT
+
+SELECT rr.reason,
+       CASE WHEN rr.reason IN ('Changed mind after purchase')
+            THEN 'Customer choice'
+            ELSE 'Shop or supplier'
+       END AS fault_type,
+       COUNT(*) AS cases,
+       SUM(rr.return_quantity) AS units,
+       SUM(CASE WHEN rr.status = 'Refunded'
+                THEN rr.refund_amount ELSE 0 END) AS 	        refund_value,
+       ROUND(SUM(CASE WHEN rr.status = 'Refunded'
+                      THEN rr.refund_amount ELSE 0 END) / COUNT(*), 2) AS avg_refund,
+       ROUND(COUNT(*) * 100 /
+             (SELECT COUNT(*) FROM Return_Request), 1) AS pct_cases,
+       SUM(CASE WHEN rr.status = 'Refunded'  THEN 1 ELSE 0 END) AS refunded,
+       SUM(CASE WHEN rr.status = 'Approved'  THEN 1 ELSE 0 END) AS approved,
+       SUM(CASE WHEN rr.status = 'Rejected'  THEN 1 ELSE 0 END) AS rejected,
+       SUM(CASE WHEN rr.status = 'Requested' THEN 1 ELSE 0 END) AS pending
+FROM   Return_Request rr
+GROUP  BY rr.reason
+ORDER  BY refund_value DESC,
+          cases        DESC;
+
+CLEAR BREAKS
+CLEAR COMPUTES
+CLEAR COLUMNS
+TTITLE OFF
+SET FEEDBACK ON
+SET WRAP ON
+
+
+-- Query 2
+SET LINESIZE 160
+SET PAGESIZE 150
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+ 
+TTITLE CENTER '88 SPEEDMART – LOW STOCK ALERT AND REORDER LIST' SKIP 1 -
+       CENTER '===============================================' SKIP 2
+BTITLE CENTER 'Operational   -   run at the start of every trading day'
+ 
+COLUMN branch_name HEADING 'Branch' FORMAT A28
+COLUMN item_name HEADING 'Product' FORMAT A50
+COLUMN quantity_on_hand HEADING 'Quantity' FORMAT 9,990
+COLUMN stock_level HEADING 'Level' FORMAT A14
+COLUMN avg_weekly_demand HEADING 'Weekly|Demand' FORMAT 9990.9
+COLUMN days_of_cover HEADING 'Days of|Cover' FORMAT 99990
+COLUMN lead_time_days  HEADING 'Lead|Days' FORMAT 9990
+COLUMN supplier_id  HEADING 'Reorder From' FORMAT A14
+COLUMN urgency HEADING 'Urgency' FORMAT A15
+ 
+BREAK ON branch_name SKIP 1
+COMPUTE COUNT LABEL 'Products to Order' OF item_name ON branch_name
+
+SELECT bs.branch_name, 
+bs.item_name,
+       	bs.quantity_on_hand,
+       	bs.stock_level,
+       	bs.avg_weekly_demand,
+       	bs.days_of_cover,
+       	bs.lead_time_days, 
+       	bs.supplier_id,
+       	CASE WHEN bs.quantity_on_hand < 20 OR bs.days_of_cover <= bs.lead_time_days THEN 'ORDER NOW'
+            	WHEN bs.quantity_on_hand < 50 OR bs.days_of_cover <= bs.lead_time_days + 7 THEN 'This week'
+            	WHEN bs.days_of_cover IS NULL THEN 'No recent sales'
+            	ELSE 'Monitor'
+       	END AS urgency
+FROM   v_branch_stock_status bs
+WHERE  bs.item_status = 'Active'
+AND    (bs.quantity_on_hand < 100 OR bs.days_of_cover <= bs.lead_time_days + 7)
+ORDER  BY bs.branch_name, 
+          	CASE WHEN bs.quantity_on_hand = 0  THEN 0
+               	WHEN bs.quantity_on_hand < 20 THEN 1
+               	WHEN bs.quantity_on_hand < 50 THEN 2
+               	ELSE 3
+          END, 
+          Bs.quantity_on_hand;
+
+-- Procedure 1
+CREATE OR REPLACE PROCEDURE prc_restock_item (
+    p_branch_id IN Branch.branch_id%TYPE,
+    p_item_id   IN Item.item_id%TYPE,
+    p_quantity  IN NUMBER
+) AS
+    v_branch_name   Branch.name%TYPE;
+    v_branch_status Branch.status%TYPE; 
+    v_item_name     Item.name%TYPE;
+    v_item_status   Item.status%TYPE;
+    v_supplier      Supplier.company_name%TYPE;
+    v_sup_status    Supplier.status%TYPE;
+    v_lead          Supplier.lead_time_days%TYPE;
+    v_before        Inventory.quantity%TYPE;
+BEGIN
+    SELECT b.name, b.status 
+    INTO   v_branch_name, v_branch_status
+    FROM   Branch b 
+    WHERE  b.branch_id = p_branch_id;
+
+    SELECT i.name, i.status, s.company_name, s.status, s.lead_time_days
+    INTO   v_item_name, v_item_status, v_supplier, v_sup_status, v_lead
+    FROM   Item i 
+           JOIN Supplier s ON s.supplier_id = i.supplier_id
+    WHERE  i.item_id = p_item_id;
+
+    IF p_quantity IS NULL OR p_quantity <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20301, 'The quantity received must be a positive number.');
+    ELSIF p_quantity > 1000000 THEN
+        RAISE_APPLICATION_ERROR(-20302, 'Quantity exceeds the maximum single-delivery limit (1,000,000 units).');
+    ELSIF v_branch_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20303, v_branch_name || ' is inactive and cannot receive stock.');
+    ELSIF v_item_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20304, v_item_name || ' has been discontinued and cannot be restocked.');
+    ELSIF v_sup_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20305, 'Supplier ' || v_supplier || ' is inactive.');
+    END IF;
+
+    BEGIN
+        SELECT quantity INTO v_before
+        FROM   Inventory
+        WHERE  branch_id = p_branch_id AND item_id = p_item_id
+        FOR UPDATE;
+
+        UPDATE Inventory
+        SET    quantity = quantity + p_quantity, 
+               last_restock_date = SYSDATE
+        WHERE  branch_id = p_branch_id AND item_id = p_item_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            v_before := 0;
+            INSERT INTO Inventory (branch_id, item_id, quantity, last_restock_date)
+            VALUES (p_branch_id, p_item_id, p_quantity, SYSDATE);
+            DBMS_OUTPUT.PUT_LINE('New product line opened at ' || v_branch_name || '.');
+    END;
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------');
+    DBMS_OUTPUT.PUT_LINE('RESTock CONFIRMATION REPORT');
+    DBMS_OUTPUT.PUT_LINE('  Branch   : ' || p_branch_id || ' - ' || v_branch_name);
+    DBMS_OUTPUT.PUT_LINE('  Product  : ' || p_item_id || ' - ' || v_item_name);
+    DBMS_OUTPUT.PUT_LINE('  Supplier : ' || v_supplier || ' (lead time ' || v_lead || ' day(s))');
+    DBMS_OUTPUT.PUT_LINE('  Received : ' || p_quantity || ' unit(s)');
+    DBMS_OUTPUT.PUT_LINE('  On hand  : ' || v_before || ' -> ' || (v_before + p_quantity));
+    DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------');
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(-20306, 'Branch ' || p_branch_id || ' or item ' || p_item_id || ' does not exist.');
+END prc_restock_item;
+/
+
+
+-- Procedure 2
+CREATE OR REPLACE PROCEDURE prc_dispatch_delivery (
+	p_order_no IN Orders.order_no%TYPE,
+    	p_company_id IN Delivery_Company.delivery_company_id%TYPE,
+    	p_recipient_name  IN Delivery_Request.recipient_name%TYPE,
+    	p_recipient_phone IN Delivery_Request.recipient_phone_no%TYPE,
+    	p_address IN Delivery_Request.delivery_address%TYPE
+) AS
+   	
+ 
+    	CURSOR c_best_rider IS
+        	SELECT c.courier_id, c.name, c.average_rating
+       		FROM Courier c
+        	WHERE c.delivery_company_id = p_company_id
+			AND NOT EXISTS ( SELECT 1 FROM Delivery_Request dr 
+			WHERE dr.courier_id = c.courier_id AND dr.status IN ('Processing', 'Picked Up', 'On the way') ) 
+        	ORDER BY c.average_rating DESC NULLS LAST, c.courier_id;
+
+ 
+    	v_order_type Orders.order_type%TYPE;
+    	v_service Orders.service_type%TYPE;
+    	v_status Orders.order_status%TYPE;
+    	v_partner Delivery_Company.company_name%TYPE;
+    	v_partner_stat Delivery_Company.status%TYPE;
+    	v_base_fee Delivery_Company.base_delivery_fee%TYPE;
+    	v_courier Courier.courier_id%TYPE;
+    	v_rider_name Courier.name%TYPE;
+    	v_rating Courier.average_rating%TYPE;
+    	v_ref Delivery_Request.delivery_request_id%TYPE;
+    	v_fee Delivery_Request.delivery_fee%TYPE;
+BEGIN
+    	SELECT o.order_type, o.service_type, o.order_status
+    	INTO v_order_type, v_service, v_status
+    	FROM Orders o WHERE o.order_no = p_order_no;
+ 
+    	IF v_service <> 'Delivery' 
+		THEN RAISE_APPLICATION_ERROR(-20321, 'Order ' || p_order_no || ' was placed for ' || v_service || ' and must not be sent out with a courier.');
+    	END IF;
+    	IF v_status <> 'Processing' 
+		THEN RAISE_APPLICATION_ERROR(-20322, 'Order ' || p_order_no || ' is ' || v_status || '. Only an order still being processed can be dispatched.'); 
+	END IF;
+ 
+    	SELECT dc.company_name, dc.status, dc.base_delivery_fee
+    	INTO   v_partner, v_partner_stat, v_base_fee
+    	FROM   Delivery_Company dc WHERE dc.delivery_company_id = p_company_id;
+ 
+    	IF v_partner_stat <> 'Active' 
+		THEN RAISE_APPLICATION_ERROR(-20323, v_partner || ' is no longer under contract. Choose another partner.');
+    	END IF;
+ 
+    	OPEN c_best_rider;
+    		FETCH c_best_rider INTO v_courier, v_rider_name, v_rating;
+    		IF c_best_rider%NOTFOUND 
+			THEN CLOSE c_best_rider;
+        		RAISE_APPLICATION_ERROR(-20324, v_partner || ' has no rider on file to take this job.');
+    		END IF;
+    	CLOSE c_best_rider;
+ 
+   	v_ref := 'DR' || TO_CHAR(delivery_request_seq.NEXTVAL, 'FM000000');
+ 
+    	INSERT INTO Delivery_Request (delivery_request_id, recipient_name, recipient_phone_no, delivery_address, delivery_fee, delivered_date_time, status, rating, order_no, courier_id)
+    	VALUES (v_ref, p_recipient_name, p_recipient_phone, p_address, NULL, NULL, 'Processing', NULL, p_order_no, v_courier);
+ 
+    	SELECT delivery_fee INTO v_fee
+    	FROM   Delivery_Request WHERE delivery_request_id = v_ref;
+ 
+    	COMMIT;
+ 
+    	DBMS_OUTPUT.PUT_LINE('-----------------------------------------------------------------------');
+    	DBMS_OUTPUT.PUT_LINE('DISPATCH NOTE ' || v_ref);
+    	DBMS_OUTPUT.PUT_LINE('Order     : ' || p_order_no || '  (' || v_order_type || ')');
+    	DBMS_OUTPUT.PUT_LINE('Partner   : ' || v_partner);
+    	DBMS_OUTPUT.PUT_LINE('Rider     : ' || v_courier || '  ' || v_rider_name || '(rating: ' || NVL(TO_CHAR(v_rating, '0.00'), ' n/a') || ')' );
+    	DBMS_OUTPUT.PUT_LINE('Deliver to: ' || p_recipient_name || '  ' || p_recipient_phone);
+    	DBMS_OUTPUT.PUT_LINE('Address   : ' || p_address);
+    	DBMS_OUTPUT.PUT_LINE('Fee       : RM ' || TO_CHAR(v_fee, '990.00') || ' (base RM ' || TO_CHAR(v_base_fee, '990.00') || ' plus the weight of the basket');
+    	DBMS_OUTPUT.PUT_LINE('Promise   : delivered within 2 hours, by ' || TO_CHAR(SYSDATE + 2/24, 'HH24:MI'));
+    	DBMS_OUTPUT.PUT_LINE('-----------------------------------------------------------------------');
+	EXCEPTION
+    		WHEN NO_DATA_FOUND 
+		THEN RAISE_APPLICATION_ERROR(-20325, 'Order ' || p_order_no || ' or delivery company ' || p_company_id ||' does not exist.');
+    	WHEN DUP_VAL_ON_INDEX 
+		THEN RAISE_APPLICATION_ERROR(-20326, 'Order ' || p_order_no || ' has already been dispatched.');
+    	
+
+END prc_dispatch_delivery;
+/
+
+
+-- Report 1 
+CREATE OR REPLACE PROCEDURE rpt_delivery_fulfilment (
+    	p_year IN NUMBER DEFAULT NULL
+) AS
+    	CURSOR c_year (cp_year NUMBER) IS
+        	SELECT DISTINCT year
+        	FROM v_delivery_performance
+        	WHERE (cp_year IS NULL OR year = cp_year)
+        	ORDER BY year DESC;
+
+    	CURSOR c_partner (cp_year NUMBER) IS
+        	SELECT delivery_company_id, company_name, no_jobs_taken, success_rate, fee_paid
+        	FROM v_delivery_performance
+        	WHERE year = cp_year
+        	ORDER BY no_jobs_taken DESC;
+
+    	CURSOR c_rider (cp_company Delivery_Company.delivery_company_id%TYPE, cp_year NUMBER) IS
+        	SELECT c.name,
+               		NVL(c.average_rating, 0) AS rating,
+               		COUNT(dr.delivery_request_id) AS jobs,
+               		SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) AS delivered,
+               		SUM(CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END) AS failed
+        	FROM Courier c
+               		JOIN Delivery_Request dr ON dr.courier_id = c.courier_id
+               		JOIN Orders o ON o.order_no = dr.order_no
+        	WHERE c.delivery_company_id = cp_company
+        		AND EXTRACT(YEAR FROM o.order_date_time) = cp_year
+        		GROUP BY c.name, c.average_rating
+        		ORDER BY jobs DESC;
+
+    	v_total_years   NUMBER := 0;
+    	v_year_partners NUMBER;
+	BEGIN
+    		IF p_year IS NOT NULL AND p_year NOT BETWEEN 2020 AND 2026 THEN
+        		RAISE_APPLICATION_ERROR(-20341, 'The trading history runs from 2020 to 2026. Year ' || p_year || ' is outside it.');
+    		END IF;
+
+    		DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+    		IF p_year IS NULL THEN
+        		DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MULTI-YEAR DELIVERY FULFILMENT AND RIDER REPORT (ALL YEARS)');
+    		ELSE
+        		DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   DELIVERY FULFILMENT AND RIDER REPORT FOR YEAR ' || p_year);
+    		END IF;
+    			DBMS_OUTPUT.PUT_LINE('Generated on ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
+    			DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+
+    		FOR y IN c_year(p_year) LOOP
+        		v_total_years := v_total_years + 1;
+        		v_year_partners := 0;
+
+        		DBMS_OUTPUT.PUT_LINE(CHR(10) || '---------------------------------------------------------------------------------');
+        		DBMS_OUTPUT.PUT_LINE('>> PERFORMANCE REPORT FOR YEAR: ' || y.year);
+        		DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------------------------');
+
+        		FOR p IN c_partner(y.year) LOOP
+            			v_year_partners := v_year_partners + 1;
+
+            			DBMS_OUTPUT.PUT_LINE(CHR(10) || '  Partner: ' || p.company_name ||
+                                 ' | Jobs: ' || p.no_jobs_taken ||
+                                 ' | Success: ' || p.success_rate || '%' ||
+                                 ' | Fees: RM ' || p.fee_paid);
+            			DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
+            			DBMS_OUTPUT.PUT_LINE('  ' || RPAD('Rider Name', 28) || LPAD('Rating', 8) || 
+                                 LPAD('Jobs', 8) || LPAD('Delivered', 12) || LPAD('Failed', 8));
+            			DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
+
+            			FOR r IN c_rider(p.delivery_company_id, y.year) LOOP
+                			DBMS_OUTPUT.PUT_LINE('    ' || RPAD(SUBSTR(r.name, 1, 26), 28) ||
+                                     	LPAD(TO_CHAR(r.rating, '9.0'), 8) ||
+                                     	LPAD(r.jobs, 8) ||
+                                     	LPAD(r.delivered, 12) ||
+                                     	LPAD(r.failed, 8));
+            			END LOOP;
+        		END LOOP;
+
+        		IF v_year_partners = 0 THEN
+            			DBMS_OUTPUT.PUT_LINE('  No delivery data recorded for ' || y.year);
+        		END IF;
+    		END LOOP;
+
+    	DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('=', 85, '='));
+    	DBMS_OUTPUT.PUT_LINE('END OF REPORT. Evaluated ' || v_total_years || ' year(s) of history.');
+    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+END rpt_delivery_fulfilment;
+/
+
+
+-- Report 2
+
+CREATE OR REPLACE PROCEDURE rpt_mykasih_subsidy (
+    	p_year IN NUMBER DEFAULT NULL
+) AS
+    	CURSOR c_year (cp_year NUMBER) IS
+        	SELECT DISTINCT EXTRACT(YEAR FROM o.order_date_time) AS order_year
+        	FROM Orders o
+        	WHERE o.is_mykasih_purchase = 'Y'
+        	AND o.order_status = 'Completed'
+        	AND (cp_year IS NULL OR EXTRACT(YEAR FROM o.order_date_time) = cp_year)
+        	ORDER BY order_year DESC;
+
+    	CURSOR c_supplier IS 
+        	SELECT s.supplier_id, s.company_name, s.contact_no
+        	FROM Supplier s
+        	WHERE EXISTS (
+            		SELECT 1 
+            		FROM Item i 
+            		WHERE i.supplier_id = s.supplier_id 
+            		AND i.is_mykasih_eligible = 'Y'
+        		)
+        	ORDER  BY s.company_name;
+
+    	CURSOR c_item (cp_supplier Supplier.supplier_id%TYPE, cp_year NUMBER) IS
+        	SELECT i.item_id, 
+               		i.name, 
+               		i.category,
+               		(SELECT NVL(SUM(quantity), 0) 
+                FROM Inventory 
+                WHERE item_id = i.item_id) AS total_stock,
+               		NVL(SUM(od.quantity), 0) AS mykasih_units_sold,
+               		NVL(SUM(od.subtotal), 0) AS mykasih_revenue
+        	FROM Item i
+               		LEFT JOIN Order_Detail od ON i.item_id = od.item_id
+               		LEFT JOIN Orders o ON od.order_no = o.order_no 
+                                  AND o.is_mykasih_purchase = 'Y' 
+                                  AND o.order_status = 'Completed'
+                                  AND EXTRACT(YEAR FROM o.order_date_time) = cp_year
+        	WHERE i.supplier_id = cp_supplier
+        		AND i.is_mykasih_eligible = 'Y'
+        		AND i.status = 'Active'
+        	GROUP BY i.item_id, i.name, i.category
+        	HAVING NVL(SUM(od.subtotal), 0) > 0  -- Only show items that had MyKasih sales in this year
+        	ORDER BY mykasih_revenue DESC, i.name;
+
+    	v_total_years NUMBER := 0;
+    	v_suppliers NUMBER;
+    	v_items NUMBER;
+    	v_sup_revenue NUMBER;
+    	v_year_revenue NUMBER;
+    	v_grand_revenue NUMBER := 0;
+BEGIN
+    	IF p_year IS NOT NULL AND p_year NOT BETWEEN 2020 AND 2026 THEN
+        	RAISE_APPLICATION_ERROR(-20341, 'The trading history runs from 2020 to 2026. Year ' || p_year || ' is outside it.');
+    	END IF;
+
+    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
+    	IF p_year IS NULL THEN
+        	DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MULTI-YEAR MYKASIH WELFARE SUBSIDY REPORT (ALL YEARS)');
+    	ELSE
+        	DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MYKASIH WELFARE SUBSIDY REPORT FOR YEAR ' || p_year);
+    	END IF;
+    	DBMS_OUTPUT.PUT_LINE('Tracking sales of essential goods purchased using MyKasih government funds.');
+    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
+
+    	FOR y IN c_year(p_year) LOOP
+        	v_total_years := v_total_years + 1;
+        	v_suppliers := 0;
+        	v_items := 0;
+        	v_year_revenue := 0;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10) || '========================================================================================');
+        DBMS_OUTPUT.PUT_LINE('>> SUBSIDY AUDIT FOR YEAR: ' || y.order_year);
+        DBMS_OUTPUT.PUT_LINE('========================================================================================');
+
+        FOR s IN c_supplier LOOP
+            	v_sup_revenue := 0;
+
+            	DECLARE
+                	v_printed_header BOOLEAN := FALSE;
+            	BEGIN
+                	FOR i IN c_item(s.supplier_id, y.order_year) LOOP
+                    		IF NOT v_printed_header THEN
+                        		v_suppliers := v_suppliers + 1;
+                        		DBMS_OUTPUT.PUT_LINE(CHR(10) || 'Supplier: ' || s.company_name || '   [Contact: ' || s.contact_no || ']');
+                        		DBMS_OUTPUT.PUT_LINE('  ' || RPAD('Product Name', 30) || 
+                                             RPAD('Category', 24) || 
+                                             LPAD('Total Stock', 12) || 
+                                             LPAD('Sold (MK)', 12) || 
+                                             LPAD('Subsidy (RM)', 18));
+                        		DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 98, '-'));
+                        		v_printed_header := TRUE;
+                    		END IF;
+
+                    		v_items := v_items + 1;
+                    		v_sup_revenue := v_sup_revenue + i.mykasih_revenue;
+
+                    		DBMS_OUTPUT.PUT_LINE('    ' || RPAD(SUBSTR(i.name, 1, 28), 30) ||
+                                         RPAD(i.category, 24) ||
+                                         LPAD(i.total_stock, 12) ||
+                                         LPAD(i.mykasih_units_sold, 12) ||
+                                         LPAD(TO_CHAR(i.mykasih_revenue, '999,990.00'), 18));
+                	END LOOP;
+
+                	IF v_printed_header THEN
+                    		DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 98, '-'));
+                    		DBMS_OUTPUT.PUT_LINE(LPAD('Supplier MyKasih Total: RM ' || TO_CHAR(v_sup_revenue, '999,990.00'), 98));
+                    		v_year_revenue := v_year_revenue + v_sup_revenue;
+                	END IF;
+            	END;
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('-', 105, '-'));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.order_year || ' SUMMARY -> ACTIVE SUPPLIERS: ' || v_suppliers || 
+                             '   ITEMS SOLD: ' || v_items || 
+                             '   TOTAL CLAIM: RM ' || TO_CHAR(v_year_revenue, '9,999,990.00'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 105, '-'));
+
+        v_grand_revenue := v_grand_revenue + v_year_revenue;
+    	END LOOP;
+
+    	DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('=', 105, '='));
+    	IF v_total_years = 0 THEN
+        	DBMS_OUTPUT.PUT_LINE('No MyKasih transaction data found for the selected criteria.');
+    	ELSE
+        	DBMS_OUTPUT.PUT_LINE('GRAND TOTAL MYKASIH SUBSIDY CLAIM ACROSS ' || v_total_years || ' YEAR(S): RM ' || TO_CHAR(v_grand_revenue, '99,999,990.00'));
+    	END IF;
+    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
+END rpt_mykasih_subsidy;
+/
+
+
+------------------
+--  Lee Ka Qin  -- 
+------------------
+
+
+------------------
+-- Mak Xuan Er  -- 
+------------------
+
+
+------------------
+--  Ng Wei Hao  -- 
+------------------
+
