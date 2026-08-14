@@ -563,7 +563,665 @@ END rpt_mykasih_subsidy;
 ------------------
 --  Lee Ka Qin  -- 
 ------------------
+-- Procedure 1
+CREATE OR REPLACE PROCEDURE proc_redeem_reward (
+    p_member_id     IN  VARCHAR2,
+    p_reward_id     IN  VARCHAR2,
+    p_quantity      IN  NUMBER   DEFAULT 1,
+    p_redemption_id OUT VARCHAR2
+) IS
+    v_member_name     Member.name%TYPE;
+    v_reward_name     Reward.name%TYPE;
+    v_points_required Reward.points_required%TYPE;
+ 
+    v_cost            NUMBER;
+    v_issue_date      DATE := SYSDATE;
+    v_expiry_date     Reward_Redemption.expiry_date%TYPE;
+    v_balance_after   Member.points_balance%TYPE;
+BEGIN
+    IF p_quantity IS NULL OR p_quantity < 1 THEN
+        RAISE_APPLICATION_ERROR(-20020,
+            'Redemption quantity must be at least 1.');
+    END IF;
 
+    BEGIN
+        SELECT name INTO v_member_name
+        FROM   Member WHERE member_id = p_member_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20021,
+                'Member ' || p_member_id || ' does not exist.');
+    END;
+ 
+
+    BEGIN
+        SELECT name, points_required INTO v_reward_name, v_points_required
+        FROM   Reward WHERE reward_id = p_reward_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20023,
+                'Reward ' || p_reward_id || ' does not exist.');
+    END;
+ 
+    v_cost := v_points_required * p_quantity;
+    p_redemption_id := 'RD' || TO_CHAR(redemption_seq.NEXTVAL, 'FM00000');
+ 
+
+    INSERT INTO Reward_Redemption (
+        redemption_id, quantity_redeemed, point_spent,
+        issue_date, expiry_date, status, member_id, reward_id
+    ) VALUES (
+        p_redemption_id, p_quantity, v_cost,
+        v_issue_date, NULL, 'Active', p_member_id, p_reward_id
+    );
+ 
+    SELECT rr.expiry_date, m.points_balance
+    INTO   v_expiry_date, v_balance_after
+    FROM   Reward_Redemption rr JOIN Member m ON m.member_id = rr.member_id
+    WHERE  rr.redemption_id = p_redemption_id;
+ 
+    DBMS_OUTPUT.PUT_LINE('=== REDEMPTION SUCCESSFUL ===');
+    DBMS_OUTPUT.PUT_LINE('Redemption ID    : ' || p_redemption_id);
+    DBMS_OUTPUT.PUT_LINE('Member           : ' || p_member_id || ' - ' || v_member_name);
+    DBMS_OUTPUT.PUT_LINE('Reward           : ' || p_reward_id || ' - ' || v_reward_name);
+    DBMS_OUTPUT.PUT_LINE('Quantity         : ' || p_quantity);
+    DBMS_OUTPUT.PUT_LINE('Points spent     : ' || v_cost);
+    DBMS_OUTPUT.PUT_LINE('Balance left     : ' || v_balance_after);
+    DBMS_OUTPUT.PUT_LINE('Issued  / Expiry : ' ||
+        TO_CHAR(v_issue_date,  'DD-MON-YYYY') || ' / ' ||
+        TO_CHAR(v_expiry_date, 'DD-MON-YYYY'));
+ 
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;              
+        p_redemption_id := NULL;
+        DBMS_OUTPUT.PUT_LINE('=== REDEMPTION FAILED ===');
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+        RAISE;
+END;
+/
+
+-- Procedure 2
+CREATE OR REPLACE PROCEDURE proc_upgrade_member_to_vip (
+    p_member_id       IN  VARCHAR2,
+    p_months          IN  NUMBER   DEFAULT 12,
+    p_pay_now         IN  CHAR     DEFAULT 'Y',
+    p_subscription_id OUT VARCHAR2
+) IS
+    v_member_name   Member.name%TYPE;
+    v_member_status Member.status%TYPE;
+    v_current_type  Member.membership_type%TYPE;
+ 
+    v_current_end   Member_Subscription.end_date%TYPE;
+    v_start_date    DATE;
+    v_end_date      DATE;
+    v_pay_status    Member_Subscription.payment_status%TYPE;
+ 
+    v_new_type      Member.membership_type%TYPE;
+    v_new_rate      Member.point_rate%TYPE;
+    v_is_renewal    BOOLEAN := FALSE;
+BEGIN
+    IF p_months IS NULL OR p_months < 1 THEN
+        RAISE_APPLICATION_ERROR(-20024,
+            'Subscription length must be at least 1 month.');
+    END IF;
+ 
+    IF p_pay_now IS NULL OR UPPER(p_pay_now) NOT IN ('Y', 'N') THEN
+        RAISE_APPLICATION_ERROR(-20025,
+            'p_pay_now must be Y (paid now) or N (leave as Pending).');
+    END IF;
+ 
+    v_pay_status := CASE WHEN UPPER(p_pay_now) = 'Y' THEN 'Paid' ELSE 'Pending' END;
+
+    BEGIN
+        SELECT name, status, membership_type
+        INTO   v_member_name, v_member_status, v_current_type
+        FROM   Member
+        WHERE  member_id = p_member_id
+        FOR UPDATE;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20026,
+                'Member ' || p_member_id || ' does not exist.');
+    END;
+ 
+    IF v_member_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20027,
+            'Member ' || p_member_id || ' (' || v_member_name ||
+            ') is Inactive and cannot be upgraded.');
+    END IF;
+	
+	
+    SELECT MAX(end_date)
+    INTO   v_current_end
+    FROM   Member_Subscription
+    WHERE  member_id = p_member_id
+    AND    payment_status = 'Paid'
+    AND    end_date > SYSDATE;
+ 
+    IF v_current_end IS NOT NULL THEN
+        v_is_renewal := TRUE;
+        v_start_date := v_current_end;
+    ELSE
+        v_start_date := TRUNC(SYSDATE);
+    END IF;
+ 
+    v_end_date := ADD_MONTHS(v_start_date, p_months);
+    p_subscription_id := 'SUB' || TO_CHAR(subscription_seq.NEXTVAL, 'FM00000');
+ 
+    INSERT INTO Member_Subscription (
+        subscription_id, start_date, end_date,
+        fee_amount, payment_status, member_id
+    ) VALUES (
+        p_subscription_id, v_start_date, v_end_date,
+        12.00, v_pay_status, p_member_id
+    );
+ 
+
+    SELECT membership_type, point_rate
+    INTO   v_new_type, v_new_rate
+    FROM   Member
+    WHERE  member_id = p_member_id;
+ 
+    DBMS_OUTPUT.PUT_LINE('=== ' ||
+        CASE WHEN v_is_renewal THEN 'VIP RENEWAL' ELSE 'VIP UPGRADE' END ||
+        ' SUCCESSFUL ===');
+    DBMS_OUTPUT.PUT_LINE('Subscription ID : ' || p_subscription_id);
+    DBMS_OUTPUT.PUT_LINE('Member          : ' || p_member_id || ' - ' || v_member_name);
+    DBMS_OUTPUT.PUT_LINE('Term            : ' ||
+        TO_CHAR(v_start_date, 'DD-MON-YYYY') || ' to ' ||
+        TO_CHAR(v_end_date,   'DD-MON-YYYY') || '  (' || p_months || ' month(s))');
+    DBMS_OUTPUT.PUT_LINE('Fee             : RM 12.00');
+    DBMS_OUTPUT.PUT_LINE('Payment status  : ' || v_pay_status);
+    DBMS_OUTPUT.PUT_LINE('Membership      : ' || v_current_type || ' -> ' || v_new_type);
+    DBMS_OUTPUT.PUT_LINE('Point rate      : ' || TO_CHAR(v_new_rate, 'FM90.00') || ' x');
+ 
+    IF v_pay_status = 'Pending' THEN
+        DBMS_OUTPUT.PUT_LINE('NOTE: still Pending, so the member stays ' ||
+            v_new_type || '. Call sp_confirm_subscription_payment(''' ||
+            p_subscription_id || ''') once the RM12 is collected.');
+    END IF;
+ 
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        p_subscription_id := NULL;
+        DBMS_OUTPUT.PUT_LINE('=== VIP UPGRADE FAILED ===');
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+        RAISE;
+END;
+/
+ 
+
+-- Procedure 3
+CREATE OR REPLACE PROCEDURE proc_confirm_subscription (
+    p_subscription_id IN VARCHAR2
+) IS
+    v_member_id  Member_Subscription.member_id%TYPE;
+    v_pay_status Member_Subscription.payment_status%TYPE;
+    v_end_date   Member_Subscription.end_date%TYPE;
+    v_new_type   Member.membership_type%TYPE;
+BEGIN
+    BEGIN
+        SELECT member_id, payment_status, end_date
+        INTO   v_member_id, v_pay_status, v_end_date
+        FROM   Member_Subscription
+        WHERE  subscription_id = p_subscription_id
+        FOR UPDATE;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20028,
+                'Subscription ' || p_subscription_id || ' does not exist.');
+    END;
+ 
+    IF v_pay_status = 'Paid' THEN
+        RAISE_APPLICATION_ERROR(-20029,
+            'Subscription ' || p_subscription_id || ' is already paid.');
+    ELSIF v_pay_status <> 'Pending' THEN
+        RAISE_APPLICATION_ERROR(-20030,
+            'Subscription ' || p_subscription_id || ' is ' || v_pay_status ||
+            ' and can no longer be paid.');
+    END IF;
+ 
+    UPDATE Member_Subscription
+    SET    payment_status = 'Paid'
+    WHERE  subscription_id = p_subscription_id;
+ 
+    SELECT membership_type INTO v_new_type
+    FROM   Member WHERE member_id = v_member_id;
+ 
+    DBMS_OUTPUT.PUT_LINE('=== PAYMENT CONFIRMED ===');
+    DBMS_OUTPUT.PUT_LINE('Subscription    : ' || p_subscription_id);
+    DBMS_OUTPUT.PUT_LINE('Member          : ' || v_member_id);
+    DBMS_OUTPUT.PUT_LINE('Membership now  : ' || v_new_type ||
+        ' (valid to ' || TO_CHAR(v_end_date, 'DD-MON-YYYY') || ')');
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('=== PAYMENT CONFIRMATION FAILED ===');
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+        RAISE;
+END;
+/
+
+
+
+-- VIEW
+CREATE OR REPLACE VIEW v_order_revenue AS
+SELECT o.order_no,
+       o.order_date_time,
+       EXTRACT(YEAR FROM o.order_date_time)     AS order_year,
+       TO_CHAR(o.order_date_time, 'YYYY-MM')    AS order_month,
+       o.order_type,
+       o.service_type,
+       o.branch_id,
+       b.name                                   AS branch_name,
+       o.customer_id,
+       c.member_id,
+       CASE WHEN c.member_id IS NULL
+            THEN 'Non-Member' ELSE 'Member' END AS customer_class,
+       NVL(m.membership_type, 'None')           AS membership_type,
+       o.subtotal_amount,
+       o.discount_amount,
+       o.subtotal_amount - o.discount_amount    AS net_sales,
+       NVL(dr.delivery_fee, 0)                  AS delivery_fee,
+       o.points_earned,
+       o.redemption_id
+FROM   Orders o
+       JOIN Branch           b  ON b.branch_id   = o.branch_id
+       JOIN Customer         c  ON c.customer_id = o.customer_id
+       LEFT JOIN Member      m  ON m.member_id   = c.member_id
+       LEFT JOIN Delivery_Request dr ON dr.order_no = o.order_no
+WHERE  o.order_status = 'Completed';
+
+
+CREATE OR REPLACE VIEW v_order_basket AS
+SELECT od.order_no,
+       COUNT(DISTINCT od.item_id)                     AS line_count,
+       SUM(od.quantity)                               AS units_sold,
+       COUNT(DISTINCT i.category)                     AS category_count,
+       ROUND(SUM(i.unit_weight_kg * od.quantity), 3)  AS basket_weight_kg
+FROM   Order_Detail od
+       JOIN Item i ON i.item_id = od.item_id
+GROUP  BY od.order_no;
+
+CREATE OR REPLACE VIEW v_member_value AS
+SELECT r.member_id,
+       COUNT(*)                    AS total_orders,
+       SUM(r.net_sales)            AS lifetime_spend,
+       SUM(r.points_earned)        AS lifetime_points_earned,
+       MAX(r.order_date_time)      AS last_order_date
+FROM   v_order_revenue r
+WHERE  r.member_id IS NOT NULL
+GROUP  BY r.member_id;
+
+CREATE OR REPLACE VIEW v_member_home_branch AS
+SELECT member_id, branch_id, branch_name, orders_at_branch
+FROM  (SELECT r.member_id,
+              r.branch_id,
+              r.branch_name,
+              COUNT(*) AS orders_at_branch,
+              ROW_NUMBER() OVER (PARTITION BY r.member_id
+                                 ORDER BY COUNT(*) DESC, r.branch_id) AS rn
+       FROM   v_order_revenue r
+       WHERE  r.member_id IS NOT NULL
+       GROUP  BY r.member_id, r.branch_id, r.branch_name)
+WHERE rn = 1;
+
+
+-- Queries
+-- Query 1
+SELECT r.order_year AS yr,
+       r.order_type AS channel,
+       COUNT(*) AS orders,
+       ROUND(SUM(r.net_sales), 2) AS net_revenue,
+       ROUND(100 * RATIO_TO_REPORT(SUM(r.net_sales)) OVER (PARTITION BY r.order_year), 1) AS pct_of_year,
+       ROUND(100 * (SUM(r.net_sales)
+             - LAG(SUM(r.net_sales)) OVER (PARTITION BY r.order_type
+                                           ORDER BY r.order_year))
+             / NULLIF(LAG(SUM(r.net_sales)) OVER (PARTITION BY r.order_type
+                                           ORDER BY r.order_year), 0), 1)
+                                                                 AS yoy_growth_pct,
+       ROUND(AVG(r.net_sales), 2)                                AS avg_basket_value,
+       ROUND(AVG(bk.units_sold), 1)                              AS avg_units,
+       ROUND(AVG(bk.basket_weight_kg), 2)                        AS avg_weight_kg,
+       ROUND(SUM(r.delivery_fee), 2)                             AS delivery_fee_charged,
+       ROUND(100 * (SUM(r.net_sales) - SUM(r.delivery_fee))
+             / NULLIF(SUM(r.net_sales), 0), 1)                   AS delivery_margin_pct,
+       ROUND(SUM(r.discount_amount), 2)                          AS discount_given,
+       SUM(r.points_earned)                                      AS points_issued,
+       ROUND(100 * COUNT(CASE WHEN r.customer_class = 'Member'
+                              THEN 1 END) / COUNT(*), 1)         AS pct_member_orders
+FROM   v_order_revenue r
+       JOIN v_order_basket bk ON bk.order_no = r.order_no
+GROUP  BY r.order_year, r.order_type
+ORDER  BY r.order_year, r.order_type;
+
+
+-- Query 2
+WITH sales AS (
+    SELECT order_year,
+           SUM(CASE WHEN customer_class = 'Member'     THEN net_sales END)   AS member_revenue,
+           SUM(CASE WHEN customer_class = 'Non-Member' THEN net_sales END)   AS nonmember_revenue,
+           COUNT(CASE WHEN customer_class = 'Member'     THEN 1 END)         AS member_orders,
+           COUNT(CASE WHEN customer_class = 'Non-Member' THEN 1 END)         AS nonmember_orders,
+           COUNT(DISTINCT member_id)                                         AS active_members,
+           SUM(points_earned)                                                AS points_issued,
+           SUM(discount_amount)                                              AS discount_given
+    FROM   v_order_revenue
+    GROUP  BY order_year
+),
+redeemed AS (
+    SELECT EXTRACT(YEAR FROM rr.issue_date)                    AS order_year,
+           COUNT(*)                                            AS vouchers_issued,
+           SUM(rr.point_spent)                                 AS points_redeemed,
+           SUM(r.value * rr.quantity_redeemed)                 AS reward_cost_rm,
+           COUNT(CASE WHEN rr.status = 'Used'    THEN 1 END)   AS vouchers_used,
+           COUNT(CASE WHEN rr.status = 'Expired' THEN 1 END)   AS vouchers_expired
+    FROM   Reward_Redemption rr
+           JOIN Reward r ON r.reward_id = rr.reward_id
+    GROUP  BY EXTRACT(YEAR FROM rr.issue_date)
+),
+subs AS (
+    SELECT EXTRACT(YEAR FROM start_date)                              AS order_year,
+           SUM(CASE WHEN payment_status = 'Paid' THEN fee_amount END) AS subscription_rm,
+           COUNT(CASE WHEN payment_status = 'Paid' THEN 1 END)        AS paid_subscriptions
+    FROM   Member_Subscription
+    GROUP  BY EXTRACT(YEAR FROM start_date)
+)
+SELECT s.order_year                                                   AS yr,
+       s.active_members,
+       ROUND(s.member_revenue, 2)                                     AS member_revenue,
+       ROUND(s.nonmember_revenue, 2)                                  AS nonmember_revenue,
+       ROUND(s.member_revenue    / NULLIF(s.member_orders, 0), 2)     AS member_basket,
+       ROUND(s.nonmember_revenue / NULLIF(s.nonmember_orders, 0), 2)  AS nonmember_basket,
+       ROUND(100 * ((s.member_revenue    / NULLIF(s.member_orders, 0))
+                  - (s.nonmember_revenue / NULLIF(s.nonmember_orders, 0)))
+             / NULLIF(s.nonmember_revenue / NULLIF(s.nonmember_orders, 0), 0), 1)
+                                                                      AS basket_uplift_pct,
+       s.points_issued,
+       NVL(d.points_redeemed, 0)                                      AS points_redeemed,
+       ROUND(100 * NVL(d.points_redeemed, 0)
+             / NULLIF(s.points_issued, 0), 1)                         AS redemption_rate_pct,
+       NVL(d.vouchers_issued, 0)                                      AS vouchers_issued,
+       ROUND(100 * NVL(d.vouchers_expired, 0)
+             / NULLIF(d.vouchers_issued, 0), 1)                       AS breakage_pct,
+       ROUND(NVL(d.reward_cost_rm, 0), 2)                             AS reward_cost_rm,
+       ROUND(s.discount_given, 2)                                     AS discount_given_rm,
+       NVL(u.paid_subscriptions, 0)                                   AS paid_subscriptions,
+       ROUND(NVL(u.subscription_rm, 0), 2)                            AS subscription_rm,
+       ROUND(NVL(u.subscription_rm, 0) - NVL(d.reward_cost_rm, 0), 2) AS programme_net_rm,
+       ROUND(100 * NVL(d.reward_cost_rm, 0)
+             / NULLIF(s.member_revenue, 0), 2)                        AS reward_cost_pct_of_member_rev
+FROM   sales s
+       LEFT JOIN redeemed d ON d.order_year = s.order_year
+       LEFT JOIN subs     u ON u.order_year = s.order_year
+ORDER  BY s.order_year;
+
+
+
+
+-- Report
+CREATE OR REPLACE PROCEDURE report_channel_revenue (
+    p_date_from IN DATE     DEFAULT NULL,
+    p_date_to   IN DATE     DEFAULT NULL,
+    p_branch_id IN VARCHAR2 DEFAULT NULL
+) IS
+    c_width  CONSTANT NUMBER := 112;
+ 
+    v_from   DATE;
+    v_to     DATE;
+    v_branch_label VARCHAR2(120);
+ 
+    -- branch level accumulators (reset on every control break)
+    v_b_on_ord NUMBER;  v_b_on_rev NUMBER;
+    v_b_wi_ord NUMBER;  v_b_wi_rev NUMBER;
+    v_b_fee    NUMBER;
+ 
+    -- report level accumulators
+    v_g_on_ord NUMBER := 0;  v_g_on_rev NUMBER := 0;
+    v_g_wi_ord NUMBER := 0;  v_g_wi_rev NUMBER := 0;
+    v_g_fee    NUMBER := 0;
+    v_branches NUMBER := 0;
+ 
+    -- OUTER cursor : one row per branch with sales in the period
+    CURSOR c_branch (cp_from DATE, cp_to DATE, cp_branch VARCHAR2) IS
+        SELECT r.branch_id,
+               r.branch_name,
+               SUM(r.net_sales) AS branch_revenue
+        FROM   v_order_revenue r
+        WHERE  r.order_date_time >= cp_from
+        AND    r.order_date_time <  cp_to + 1
+        AND   (cp_branch IS NULL OR r.branch_id = cp_branch)
+        GROUP  BY r.branch_id, r.branch_name
+        ORDER  BY SUM(r.net_sales) DESC;
+ 
+    -- INNER cursor : months inside ONE branch.
+    -- cp_branch is fed from the outer cursor row, which is what makes this
+    -- a true nested cursor rather than two independent ones.
+    CURSOR c_month (cp_branch VARCHAR2, cp_from DATE, cp_to DATE) IS
+        SELECT r.order_month,
+               COUNT(CASE WHEN r.order_type = 'Online'  THEN 1 END)          AS on_ord,
+               NVL(SUM(CASE WHEN r.order_type = 'Online'  THEN r.net_sales END), 0) AS on_rev,
+               COUNT(CASE WHEN r.order_type = 'Walk-In' THEN 1 END)          AS wi_ord,
+               NVL(SUM(CASE WHEN r.order_type = 'Walk-In' THEN r.net_sales END), 0) AS wi_rev,
+               SUM(r.net_sales)                                              AS tot_rev,
+               SUM(r.delivery_fee)                                           AS fee
+        FROM   v_order_revenue r
+        WHERE  r.branch_id = cp_branch
+        AND    r.order_date_time >= cp_from
+        AND    r.order_date_time <  cp_to + 1
+        GROUP  BY r.order_month
+        ORDER  BY r.order_month;
+ 
+    -- Closing summary cursor : company-wide picture per channel
+    CURSOR c_channel (cp_from DATE, cp_to DATE, cp_branch VARCHAR2) IS
+        SELECT r.order_type,
+               COUNT(*)                            AS orders,
+               SUM(r.net_sales)                    AS revenue,
+               AVG(r.net_sales)                    AS avg_basket,
+               SUM(r.delivery_fee)                 AS fee,
+               AVG(bk.basket_weight_kg)            AS avg_weight,
+               AVG(bk.units_sold)                  AS avg_units
+        FROM   v_order_revenue r
+               JOIN v_order_basket bk ON bk.order_no = r.order_no
+        WHERE  r.order_date_time >= cp_from
+        AND    r.order_date_time <  cp_to + 1
+        AND   (cp_branch IS NULL OR r.branch_id = cp_branch)
+        GROUP  BY r.order_type
+        ORDER  BY r.order_type;
+ 
+    -- local formatting helpers (declared last, as PL/SQL requires)
+    FUNCTION money (p_val NUMBER, p_width NUMBER DEFAULT 13) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN LPAD(TO_CHAR(NVL(p_val, 0), 'FM999,999,990.00'), p_width);
+    END money;
+ 
+    FUNCTION num (p_val NUMBER, p_width NUMBER DEFAULT 8) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN LPAD(TO_CHAR(NVL(p_val, 0), 'FM999,999,990'), p_width);
+    END num;
+ 
+    FUNCTION pct (p_num NUMBER, p_den NUMBER, p_width NUMBER DEFAULT 8) RETURN VARCHAR2 IS
+    BEGIN
+        IF NVL(p_den, 0) = 0 THEN
+            RETURN LPAD('-', p_width);
+        END IF;
+        RETURN LPAD(TO_CHAR(ROUND(100 * p_num / p_den, 1), 'FM990.0') || '%', p_width);
+    END pct;
+ 
+BEGIN
+    -- ---------------------------------------------------------------------
+    -- Resolve the parameters. NULL dates mean "whatever the data covers".
+    -- ---------------------------------------------------------------------
+    IF p_date_from IS NULL OR p_date_to IS NULL THEN
+        SELECT NVL(p_date_from, TRUNC(MIN(order_date_time))),
+               NVL(p_date_to,   TRUNC(MAX(order_date_time)))
+        INTO   v_from, v_to
+        FROM   v_order_revenue;
+    ELSE
+        v_from := TRUNC(p_date_from);
+        v_to   := TRUNC(p_date_to);
+    END IF;
+ 
+    IF v_from > v_to THEN
+        RAISE_APPLICATION_ERROR(-20401,
+            'Report start date must not be later than the end date.');
+    END IF;
+ 
+    IF p_branch_id IS NULL THEN
+        v_branch_label := 'ALL BRANCHES';
+    ELSE
+        BEGIN
+            SELECT p_branch_id || ' - ' || name INTO v_branch_label
+            FROM   Branch WHERE branch_id = p_branch_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(-20402,
+                    'Branch ' || p_branch_id || ' does not exist.');
+        END;
+    END IF;
+ 
+    -- ---------------------------------------------------------------------
+    -- Report header
+    -- ---------------------------------------------------------------------
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+    DBMS_OUTPUT.PUT_LINE('SPEEDMART - CHANNEL REVENUE REPORT   (Online vs Walk-In)');
+    DBMS_OUTPUT.PUT_LINE('Period  : ' || TO_CHAR(v_from, 'DD-Mon-YYYY') ||
+                         '  to  '     || TO_CHAR(v_to,   'DD-Mon-YYYY'));
+    DBMS_OUTPUT.PUT_LINE('Branch  : ' || v_branch_label);
+    DBMS_OUTPUT.PUT_LINE('Printed : ' || TO_CHAR(SYSDATE, 'DD-Mon-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE('Note    : revenue is merchandise net of discount; delivery fees are shown separately.');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+ 
+    -- ---------------------------------------------------------------------
+    -- OUTER LOOP : branches
+    -- ---------------------------------------------------------------------
+    FOR b IN c_branch(v_from, v_to, p_branch_id) LOOP
+ 
+        v_branches := v_branches + 1;
+ 
+        -- reset the branch accumulators at the start of each group
+        v_b_on_ord := 0;  v_b_on_rev := 0;
+        v_b_wi_ord := 0;  v_b_wi_rev := 0;
+        v_b_fee    := 0;
+ 
+        DBMS_OUTPUT.PUT_LINE(' ');
+        DBMS_OUTPUT.PUT_LINE('BRANCH ' || b.branch_id || ' - ' || b.branch_name);
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Month', 9)      || LPAD('Onl Ord', 8)   || LPAD('Online Rev', 14) ||
+            LPAD('Wlk Ord', 9)    || LPAD('Walk-In Rev', 15) ||
+            LPAD('Total Rev', 15) || LPAD('Online %', 10) ||
+            LPAD('Deliv Fee', 14) || LPAD('Avg Basket', 14));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+ 
+        -- -----------------------------------------------------------------
+        -- INNER LOOP : months within this branch
+        -- -----------------------------------------------------------------
+        FOR m IN c_month(b.branch_id, v_from, v_to) LOOP
+ 
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(m.order_month, 9) ||
+                num(m.on_ord, 8)       || money(m.on_rev, 14) ||
+                num(m.wi_ord, 9)       || money(m.wi_rev, 15) ||
+                money(m.tot_rev, 15)   || pct(m.on_rev, m.tot_rev, 10) ||
+                money(m.fee, 14)       ||
+                money(m.tot_rev / NULLIF(m.on_ord + m.wi_ord, 0), 14));
+ 
+            -- accumulate towards the branch subtotal
+            v_b_on_ord := v_b_on_ord + m.on_ord;
+            v_b_on_rev := v_b_on_rev + m.on_rev;
+            v_b_wi_ord := v_b_wi_ord + m.wi_ord;
+            v_b_wi_rev := v_b_wi_rev + m.wi_rev;
+            v_b_fee    := v_b_fee    + m.fee;
+        END LOOP;
+ 
+        -- -----------------------------------------------------------------
+        -- CONTROL BREAK : branch subtotal
+        -- -----------------------------------------------------------------
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('SUBTOTAL', 9)         ||
+            num(v_b_on_ord, 8)          || money(v_b_on_rev, 14) ||
+            num(v_b_wi_ord, 9)          || money(v_b_wi_rev, 15) ||
+            money(v_b_on_rev + v_b_wi_rev, 15) ||
+            pct(v_b_on_rev, v_b_on_rev + v_b_wi_rev, 10) ||
+            money(v_b_fee, 14)          ||
+            money((v_b_on_rev + v_b_wi_rev)
+                  / NULLIF(v_b_on_ord + v_b_wi_ord, 0), 14));
+ 
+        -- roll the branch subtotal up into the report totals
+        v_g_on_ord := v_g_on_ord + v_b_on_ord;
+        v_g_on_rev := v_g_on_rev + v_b_on_rev;
+        v_g_wi_ord := v_g_wi_ord + v_b_wi_ord;
+        v_g_wi_rev := v_g_wi_rev + v_b_wi_rev;
+        v_g_fee    := v_g_fee    + v_b_fee;
+    END LOOP;
+ 
+    -- ---------------------------------------------------------------------
+    -- Nothing to report
+    -- ---------------------------------------------------------------------
+    IF v_branches = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(' ');
+        DBMS_OUTPUT.PUT_LINE('No completed orders found for the selected period and branch.');
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+        RETURN;
+    END IF;
+ 
+    -- ---------------------------------------------------------------------
+    -- GRAND TOTAL
+    -- ---------------------------------------------------------------------
+    DBMS_OUTPUT.PUT_LINE(' ');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('GRAND', 9)            ||
+        num(v_g_on_ord, 8)          || money(v_g_on_rev, 14) ||
+        num(v_g_wi_ord, 9)          || money(v_g_wi_rev, 15) ||
+        money(v_g_on_rev + v_g_wi_rev, 15) ||
+        pct(v_g_on_rev, v_g_on_rev + v_g_wi_rev, 10) ||
+        money(v_g_fee, 14)          ||
+        money((v_g_on_rev + v_g_wi_rev)
+              / NULLIF(v_g_on_ord + v_g_wi_ord, 0), 14));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+ 
+    -- ---------------------------------------------------------------------
+    -- Closing summary block, driven by its own cursor
+    -- ---------------------------------------------------------------------
+    DBMS_OUTPUT.PUT_LINE(' ');
+    DBMS_OUTPUT.PUT_LINE('CHANNEL SUMMARY ACROSS ' || v_branches || ' BRANCH(ES)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('Channel', 10)      || LPAD('Orders', 9)     || LPAD('Net Revenue', 16) ||
+        LPAD('Share', 9)         || LPAD('Avg Basket', 13) ||
+        LPAD('Avg Units', 11)    || LPAD('Avg Wt(kg)', 12) || LPAD('Deliv Fee', 14));
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+ 
+    FOR ch IN c_channel(v_from, v_to, p_branch_id) LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD(ch.order_type, 10) ||
+            num(ch.orders, 9)       || money(ch.revenue, 16) ||
+            pct(ch.revenue, v_g_on_rev + v_g_wi_rev, 9) ||
+            money(ch.avg_basket, 13)||
+            LPAD(TO_CHAR(ROUND(ch.avg_units, 1), 'FM990.0'), 11) ||
+            LPAD(TO_CHAR(ROUND(ch.avg_weight, 2), 'FM990.00'), 12) ||
+            money(ch.fee, 14));
+    END LOOP;
+ 
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+    DBMS_OUTPUT.PUT_LINE('Delivery fees collected: RM ' ||
+        TO_CHAR(v_g_fee, 'FM999,999,990.00') || ' (' ||
+        TO_CHAR(ROUND(100 * v_g_fee / NULLIF(v_g_on_rev, 0), 1), 'FM990.0') ||
+        '% of online net revenue)');
+    DBMS_OUTPUT.PUT_LINE('*** END OF REPORT ***');
+ 
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('*** REPORT FAILED: ' || SQLERRM || ' ***');
+        RAISE;
+END;
+/
 
 ------------------
 -- Mak Xuan Er  -- 
