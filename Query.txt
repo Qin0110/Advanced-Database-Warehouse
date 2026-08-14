@@ -2,6 +2,12 @@
 -- Lee Guan Wei -- 
 ------------------
 
+-- Index 1
+CREATE INDEX idx_courier_rating ON Courier (delivery_company_id, average_rating);
+
+-- Index 2
+CREATE INDEX idx_item_mykasih ON Item (supplier_id, is_mykasih_eligible, status);
+
 -- View Table 1
 CREATE OR REPLACE VIEW v_delivery_performance AS
 	SELECT dc.delivery_company_id, dc.company_name,  dc.base_delivery_fee,  dc.status AS status,
