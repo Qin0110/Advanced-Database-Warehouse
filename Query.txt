@@ -2192,7 +2192,7 @@ END rpt_return_risk;
 /
 
 EXEC rpt_return_risk;
-EXEC rpt_return_risk(‘beverages’);
+EXEC rpt_return_risk('beverages');
 
 
 -- report 2
