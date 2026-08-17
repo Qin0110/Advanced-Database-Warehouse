@@ -1803,47 +1803,47 @@ WHERE  rr.status = 'Requested';
 -- Query 1
 
 SET LINESIZE 135
-SET PAGESIZE 60
+SET PAGESIZE 90
 
-COLUMN reason FORMAT A28 HEADING 'Reason Given by the Customer'
-COLUMN fault_type FORMAT A17 HEADING 'Fault Type'
-COLUMN cases FORMAT 9,999 HEADING 'Cases'
-COLUMN units FORMAT 9,999 HEADING 'Units'
+COLUMN category     FORMAT A26       HEADING 'Product Category'
+COLUMN reason       FORMAT A28       HEADING 'Reason Given by the Customer'
+COLUMN fault_type   FORMAT A17       HEADING 'Fault Type'
+COLUMN branches_hit FORMAT 999       HEADING 'Branches|Affected'
+COLUMN cases        FORMAT 9,999     HEADING 'Cases'
+COLUMN units        FORMAT 9,999     HEADING 'Units'
 COLUMN refund_value FORMAT 99,990.00 HEADING 'Refunded|RM'
-COLUMN avg_refund FORMAT 990.00 HEADING 'Avg per|Case RM'
-COLUMN pct_cases FORMAT 990.9 HEADING '% of Returns'
-COLUMN refunded FORMAT 999 HEADING 'Refunded'
-COLUMN approved FORMAT 999 HEADING 'Approved'
-COLUMN rejected FORMAT 999 HEADING 'Rejected'
-COLUMN pending FORMAT 999 HEADING 'Pending'
+COLUMN avg_refund   FORMAT 990.00    HEADING 'Avg per|Case RM'
+COLUMN pct_cases    FORMAT 990.9     HEADING '% of|Returns'
+COLUMN pending      FORMAT 999       HEADING 'Still|Pending'
 
-TTITLE CENTER '88 SPEEDMART SDN BHD - RETURN REASON AND REFUND COST ANALYSIS' SKIP 1 -
-       CENTER '=============================================================' SKIP 2
+TTITLE CENTER '88 SPEEDMART SDN BHD - RETURN REASON BY PRODUCT CATEGORY' SKIP 1 -
+       CENTER '========================================================' SKIP 2
 
-BREAK ON REPORT
-COMPUTE SUM LABEL 'ALL REASONS' OF cases units refund_value ON REPORT
+BREAK ON category SKIP 1 ON REPORT
+COMPUTE SUM LABEL 'Category total' OF cases units refund_value ON category
+COMPUTE SUM LABEL 'ALL CATEGORIES' OF cases units refund_value ON REPORT
 
-SELECT rr.reason,
-       CASE WHEN rr.reason IN ('Changed mind after purchase')
+SELECT i.category,
+       rr.reason,
+       CASE WHEN rr.reason = 'Changed mind after purchase'
             THEN 'Customer choice'
             ELSE 'Shop or supplier'
        END AS fault_type,
+       COUNT(DISTINCT o.branch_id) AS branches_hit,
        COUNT(*) AS cases,
        SUM(rr.return_quantity) AS units,
-       SUM(CASE WHEN rr.status = 'Refunded'
-                THEN rr.refund_amount ELSE 0 END) AS refund_value,
-       ROUND(SUM(CASE WHEN rr.status = 'Refunded'
-                      THEN rr.refund_amount ELSE 0 END) / COUNT(*), 2) AS avg_refund,
-       ROUND(COUNT(*) * 100 /
-             (SELECT COUNT(*) FROM Return_Request), 1) AS pct_cases,
-       SUM(CASE WHEN rr.status = 'Refunded'  THEN 1 ELSE 0 END) AS refunded,
-       SUM(CASE WHEN rr.status = 'Approved'  THEN 1 ELSE 0 END) AS approved,
-       SUM(CASE WHEN rr.status = 'Rejected'  THEN 1 ELSE 0 END) AS rejected,
+       SUM(CASE WHEN rr.status = 'Refunded' THEN rr.refund_amount ELSE 0 END) AS refund_value,
+       ROUND(SUM(CASE WHEN rr.status = 'Refunded' THEN rr.refund_amount ELSE 0 END)
+             / COUNT(*), 2) AS avg_refund,
+       ROUND(COUNT(*) * 100 / (SELECT COUNT(*) FROM Return_Request), 1) AS pct_cases,
        SUM(CASE WHEN rr.status = 'Requested' THEN 1 ELSE 0 END) AS pending
 FROM   Return_Request rr
-GROUP  BY rr.reason
-ORDER  BY refund_value DESC,
-          cases DESC;
+JOIN   Item   i ON i.item_id   = rr.item_id
+JOIN   Orders o ON o.order_no  = rr.order_no
+JOIN   Branch b ON b.branch_id = o.branch_id
+GROUP  BY i.category, rr.reason
+ORDER  BY i.category, refund_value DESC;
+
 
 
 -- Query 2
@@ -1875,7 +1875,7 @@ SELECT b.name AS branch_name,
        r.score,
        SUBSTR(NVL(r.comments, '(no comment)'), 1, 50) AS comments,
        NVL(m.name, 'Walk-in customer') AS customer_name,
-       COALESCE(m.phone_no, dr.recipient_phone_no,'No Number') AS contact,
+       COALESCE(m.phone_no, dr.recipient_phone_no,'No Number')  	AS contact,
        NVL(m.membership_type, 'Non-member') AS membership_type,
        CASE WHEN rr.return_id IS NULL THEN 'No return'
             ELSE rr.status
@@ -1883,7 +1883,7 @@ SELECT b.name AS branch_name,
        CASE WHEN m.phone_no IS NULL AND dr.recipient_phone_no          
                  IS NULL THEN 'P5 - No Contact' 
             WHEN r.score = 1
-             AND NVL(m.membership_type, 'Non-member') = 'VIP' THEN 'P1 - Manager Call'
+             AND NVL(m.membership_type, 'Non-member') = 'VIP'  THEN 'P1 - Manager Call'
             WHEN TRUNC(SYSDATE) - TRUNC(r.rating_date) > 14
              AND rr.return_id IS NULL THEN 'P2 - Phone Call'
             WHEN r.score = 1 THEN 'P3 - Phone Call' 
@@ -1896,12 +1896,14 @@ JOIN   Branch b ON b.branch_id = o.branch_id
 JOIN   Customer c ON c.customer_id = o.customer_id
 LEFT   JOIN Member m ON m.member_id = c.member_id
 LEFT   JOIN Delivery_Request dr ON dr.order_no = r.order_no
-LEFT   JOIN Return_Request rr ON rr.order_no = r.order_no AND rr.item_id  = r.item_id
+LEFT   JOIN Return_Request rr ON rr.order_no = r.order_no
+                             AND rr.item_id  = r.item_id
 WHERE  r.score <= 2
 AND    r.rating_date >= ADD_MONTHS(SYSDATE, -3)
 ORDER  BY b.name,
           CASE WHEN r.score = 1 THEN 1 ELSE 2 END,
           days_since DESC;
+
 
 
 -- Procedure 1
@@ -2002,7 +2004,6 @@ CREATE OR REPLACE PROCEDURE prc_rate_item (
     PRAGMA EXCEPTION_INIT(e_orphan_line, -2291);
 
     e_order_open  EXCEPTION;                      
-
     v_status    Orders.order_status%TYPE;
     v_item_name Item.name%TYPE;
     v_rating_id Rating.rating_id%TYPE;
@@ -2022,7 +2023,7 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20047,
             'A rating of 1 or 2 star must come with a comment so the buyer can act on it.');
     ELSIF v_status <> 'Completed' THEN
-        RAISE e_order_open;                      
+        RAISE e_order_open;                       
     END IF;
 
     v_rating_id := 'RT' || LPAD(rating_seq.NEXTVAL, 5, '0');
@@ -2070,181 +2071,231 @@ END prc_rate_item;
 
 -- report 1
 
-SET LINESIZE 200
-SET PAGESIZE 100
+CREATE OR REPLACE PROCEDURE rpt_return_risk (
+    p_category IN Item.category%TYPE DEFAULT NULL
+) AS
+    CURSOR c_category IS
+        SELECT DISTINCT category
+        FROM   vw_item_return_analysis
+        WHERE  return_cases > 0
+        AND   (p_category IS NULL OR UPPER(category) = UPPER(p_category))
+        ORDER  BY category;
 
-COLUMN run_stamp NEW_VALUE v_run NOPRINT
-SELECT TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI') AS run_stamp FROM dual;
+    CURSOR c_item (cp_category Item.category%TYPE) IS
+        SELECT item_id, item_name, supplier_name, units_sold, units_returned,
+               return_rate_pct, refund_value, avg_score, risk_band
+        FROM   vw_item_return_analysis
+        WHERE  return_cases > 0
+        AND    category = cp_category
+        ORDER  BY return_rate_pct DESC, refund_value DESC;
 
-COLUMN item_id FORMAT A7 HEADING 'Item|ID'
-COLUMN category FORMAT A25 HEADING 'Category'
-COLUMN item_name FORMAT A40 HEADING 'Item'
-COLUMN supplier_name FORMAT A25 HEADING 'Supplier'
-COLUMN units_sold FORMAT 999,999 HEADING 'Units|Sold'
-COLUMN units_returned FORMAT 9,999 HEADING 'Units|Ret.'
-COLUMN return_rate_pct FORMAT 90.99 HEADING 'Return|Rate %'
-COLUMN refund_value FORMAT 99,990.00 HEADING 'Refund|RM'
-COLUMN avg_score FORMAT 90.00 HEADING 'Avg|Star'
-COLUMN top_reason FORMAT A27 HEADING 'Most Common Reason'
-COLUMN risk_band FORMAT A8 HEADING 'Risk'
+    c_width  CONSTANT PLS_INTEGER := 129;
+    v_rule   VARCHAR2(200) := RPAD('-', 129, '-');
+    v_double VARCHAR2(200) := RPAD('=', 129, '=');
 
-TTITLE LEFT 'Run : ' v_run RIGHT 'Page ' FORMAT 999 SQL.PNO SKIP 1 -
-       CENTER '88 SPEEDMART SDN BHD' SKIP 1 -
-       CENTER 'VOICE OF CUSTOMER - HIGH RETURN ITEMS AND REFUND EXPOSURE' SKIP 1 -
-       CENTER '========================================================' SKIP 2
-
-BTITLE RIGHT 'End of Report 1'
-
-BREAK ON category SKIP 1 ON REPORT
-COMPUTE SUM LABEL 'Subtotal' OF units_returned refund_value ON category
-COMPUTE SUM LABEL 'GRAND TOTAL' OF units_returned refund_value ON REPORT
-
-SELECT category,
-       item_id,
-       SUBSTR(item_name, 1, 40)     AS item_name,
-       SUBSTR(supplier_name, 1, 25) AS supplier_name,
-       units_sold,
-       units_returned,
-       return_rate_pct,
-       refund_value,
-       avg_score,
-       top_reason,
-       risk_band
-FROM   vw_item_return_analysis
-WHERE  return_cases > 0
-ORDER  BY category, return_rate_pct DESC, refund_value DESC;
-
-
-SET LINESIZE 120
-SET PAGESIZE 30
-
-
-COLUMN rnk FORMAT 90 HEADING 'No'
-COLUMN item_name FORMAT A30 HEADING 'Item'
-COLUMN category FORMAT A25 HEADING 'Category'
-COLUMN units_sold FORMAT 999,999 HEADING 'Units|Sold'
-COLUMN units_returned FORMAT 9,999 HEADING 'Units|Ret.'
-COLUMN return_rate_pct FORMAT 90.99 HEADING 'Return|Rate %'
-COLUMN refund_value FORMAT 99,990.00 HEADING 'Refund|RM'
-COLUMN avg_score FORMAT 90.00 HEADING 'Avg|Star'
-
-TTITLE CENTER '88 SPEEDMART SDN BHD - TOP 15 ITEMS BY REFUND EXPOSURE' SKIP 1 -
-       CENTER '======================================================' SKIP 2
-
-BREAK ON REPORT
-COMPUTE SUM LABEL 'TOP 15 TOTAL' OF refund_value units_returned ON REPORT
-
-SELECT ROWNUM AS rnk, item_name, category, units_sold, units_returned,
-       return_rate_pct, refund_value, avg_score
-FROM  (SELECT SUBSTR(item_name, 1, 30) AS item_name, category, units_sold,
-              units_returned, return_rate_pct, refund_value, avg_score
-       FROM   vw_item_return_analysis
-       WHERE  return_cases > 0
-       ORDER  BY refund_value DESC)
-WHERE ROWNUM <= 15;
-
-
--- report 2
-SET LINESIZE 130
-SET PAGESIZE 0
-
-
-DECLARE
-    c_width      CONSTANT PLS_INTEGER := 126;  
-    c_money_end  CONSTANT PLS_INTEGER := 115;   
-
-    v_prev_branch Branch.name%TYPE := NULL;
-    v_branch_sum  NUMBER(12,2) := 0;
-    v_branch_cnt  NUMBER := 0;
-    v_grand_sum   NUMBER(12,2) := 0;
-    v_grand_cnt   NUMBER := 0;
-    v_p1          NUMBER := 0;
-    v_p2          NUMBER := 0;
-    v_p3          NUMBER := 0;
-    v_oldest      NUMBER := 0;
-    v_rule        VARCHAR2(200) := RPAD('-', 126, '-');
-    v_double      VARCHAR2(200) := RPAD('=', 126, '=');
+    v_cat_units  NUMBER := 0;   v_cat_refund NUMBER := 0;   v_cat_lines NUMBER := 0;
+    v_all_units  NUMBER := 0;   v_all_refund NUMBER := 0;   v_all_lines NUMBER := 0;
+    v_critical   NUMBER := 0;   v_watch      NUMBER := 0;
 
     FUNCTION ctr (p_text IN VARCHAR2) RETURN VARCHAR2 IS
     BEGIN
         RETURN LPAD(p_text, FLOOR((c_width + LENGTH(p_text)) / 2));
     END ctr;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(ctr('88 SPEEDMART SDN BHD'));
+    DBMS_OUTPUT.PUT_LINE(ctr('HIGH RETURN ITEMS AND REFUND EXPOSURE'));
+    DBMS_OUTPUT.PUT_LINE(ctr('Scope : ' || NVL(p_category, 'All categories')));
+    DBMS_OUTPUT.PUT_LINE(ctr('As at ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI')));
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(' ');
+
+    FOR cat IN c_category LOOP                      
+        DBMS_OUTPUT.PUT_LINE('CATEGORY : ' || UPPER(cat.category));
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Item',      8) ||
+            RPAD('Product',  36) ||
+            RPAD('Supplier', 31) ||
+            LPAD('Sold',      9) ||
+            LPAD('Ret.',      7) ||
+            LPAD('Rate %',    9) ||
+            LPAD('Refund RM',12) ||
+            LPAD('Star',      7) ||
+            LPAD('Risk',     10));
+        DBMS_OUTPUT.PUT_LINE(v_rule);
+
+        v_cat_units := 0;  v_cat_refund := 0;  v_cat_lines := 0;
+
+        FOR itm IN c_item(cat.category) LOOP         
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(itm.item_id, 8) ||
+                RPAD(SUBSTR(itm.item_name, 1, 34), 36) ||
+                RPAD(SUBSTR(itm.supplier_name, 1, 29), 31) ||
+                LPAD(TO_CHAR(itm.units_sold,      'FM999,990'),    9) ||
+                LPAD(TO_CHAR(itm.units_returned,  'FM9,990'),      7) ||
+                LPAD(TO_CHAR(itm.return_rate_pct, 'FM990.00'),     9) ||
+                LPAD(TO_CHAR(itm.refund_value,    'FM999,990.00'),12) ||
+                LPAD(NVL(TO_CHAR(itm.avg_score,   'FM90.00'), 'n/a'), 7) ||
+                LPAD(itm.risk_band, 10));
+
+            v_cat_units  := v_cat_units  + itm.units_returned;
+            v_cat_refund := v_cat_refund + itm.refund_value;
+            v_cat_lines  := v_cat_lines  + 1;
+            IF    itm.risk_band = 'CRITICAL' THEN v_critical := v_critical + 1;
+            ELSIF itm.risk_band = 'WATCH'    THEN v_watch    := v_watch    + 1;
+            END IF;
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(v_rule);
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Subtotal  (' || v_cat_lines || ' item(s))', 74) ||
+            LPAD(TO_CHAR(v_cat_units,  'FM9,990'),       7) ||
+            LPAD(TO_CHAR(v_cat_refund, 'FM999,990.00'), 21));
+        DBMS_OUTPUT.PUT_LINE(' ');
+
+        v_all_units  := v_all_units  + v_cat_units;
+        v_all_refund := v_all_refund + v_cat_refund;
+        v_all_lines  := v_all_lines  + v_cat_lines;
+    END LOOP;
+
+    IF v_all_lines = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(ctr('No returns recorded for ' ||
+            NVL(p_category, 'any category') || '.'));
+        DBMS_OUTPUT.PUT_LINE(v_double);
+        RETURN;
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(ctr('SUMMARY'));
+    DBMS_OUTPUT.PUT_LINE(v_rule);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Items with returns', 30) || ': ' ||
+        LPAD(v_all_lines, 12));
+    DBMS_OUTPUT.PUT_LINE(RPAD('   CRITICAL band', 30) || ': ' ||
+        LPAD(v_critical, 12) || '   (' ||
+        TO_CHAR(ROUND(v_critical / v_all_lines * 100, 1), 'FM990.0') || '%)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('   WATCH band', 30) || ': ' ||
+        LPAD(v_watch, 12) || '   (' ||
+        TO_CHAR(ROUND(v_watch / v_all_lines * 100, 1), 'FM990.0') || '%)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Total units returned', 30) || ': ' ||
+        LPAD(TO_CHAR(v_all_units, 'FM999,990'), 12));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Total refund exposure', 30) || ': ' ||
+        LPAD('RM ' || TO_CHAR(v_all_refund, 'FM999,999,990.00'), 12));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Average refund per item', 30) || ': ' ||
+        LPAD('RM ' || TO_CHAR(ROUND(v_all_refund / v_all_lines, 2), 'FM999,990.00'), 12));
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(LPAD('End of Report 1', c_width));
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('REPORT FAILED ' || SQLCODE || ' : ' || SQLERRM);
+END rpt_return_risk;
+/
+
+EXEC rpt_return_risk;
+EXEC rpt_return_risk(‘beverages’);
+
+
+-- report 2
+CREATE OR REPLACE PROCEDURE rpt_pending_returns (
+    p_branch_id IN Branch.branch_id%TYPE DEFAULT NULL
+) AS
+    CURSOR c_branch IS
+        SELECT   branch_id,
+                 branch_name,
+                 COUNT(*)              AS cases,
+                 SUM(refund_exposure)  AS exposure
+        FROM     vw_pending_return_queue
+        WHERE   (p_branch_id IS NULL OR branch_id = p_branch_id)
+        GROUP BY branch_id, branch_name
+        ORDER BY SUM(refund_exposure) DESC;
+
+    CURSOR c_case (cp_branch Branch.branch_id%TYPE) IS
+        SELECT return_id, order_no, item_name, return_quantity, reason,
+               customer_name, membership_type, days_waiting,
+               refund_exposure, priority
+        FROM   vw_pending_return_queue
+        WHERE  branch_id = cp_branch
+        ORDER  BY CASE priority WHEN 'P1-URGENT' THEN 1
+                                WHEN 'P2-HIGH'   THEN 2
+                                ELSE 3 END,
+                  days_waiting DESC, refund_exposure DESC;
+
+    c_width  CONSTANT PLS_INTEGER := 155;
+    v_rule   VARCHAR2(200) := RPAD('-', 155, '-');
+    v_double VARCHAR2(200) := RPAD('=', 155, '=');
+
+    v_branch_sum NUMBER(12,2) := 0;   v_branch_cnt NUMBER := 0;
+    v_grand_sum  NUMBER(12,2) := 0;   v_grand_cnt  NUMBER := 0;
+    v_p1 NUMBER := 0;  v_p2 NUMBER := 0;  v_p3 NUMBER := 0;
+    v_oldest NUMBER := 0;
+
+    FUNCTION ctr (p_text IN VARCHAR2) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN LPAD(p_text, FLOOR((c_width + LENGTH(p_text)) / 2));
+    END ctr;
+
     FUNCTION money_line (p_label IN VARCHAR2, p_amount IN NUMBER) RETURN VARCHAR2 IS
     BEGIN
-        RETURN RPAD(p_label, c_money_end - 10) ||
-               LPAD(TO_CHAR(p_amount, 'FM999,990.00'), 10);
+        RETURN RPAD(p_label, 134) || LPAD(TO_CHAR(p_amount, 'FM999,990.00'), 10);
     END money_line;
-
-    PROCEDURE branch_footer IS
-    BEGIN
-        IF v_prev_branch IS NOT NULL THEN
-            DBMS_OUTPUT.PUT_LINE(
-                money_line('Branch subtotal  (' || v_branch_cnt || ' case(s))',
-                           v_branch_sum));
-            DBMS_OUTPUT.PUT_LINE(v_rule);
-        END IF;
-    END branch_footer;
 BEGIN
     DBMS_OUTPUT.PUT_LINE(v_double);
     DBMS_OUTPUT.PUT_LINE(ctr('88 SPEEDMART SDN BHD'));
     DBMS_OUTPUT.PUT_LINE(ctr('VOICE OF CUSTOMER - PENDING RETURN REQUESTS'));
+    DBMS_OUTPUT.PUT_LINE(ctr('Scope : ' || NVL(p_branch_id, 'All branches')));
     DBMS_OUTPUT.PUT_LINE(ctr('As at ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI')));
     DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(' ');
 
-    DBMS_OUTPUT.PUT_LINE(
-        RPAD('Return',   11) ||
-        RPAD('Order',    11) ||
-        RPAD('Item',     26) ||
-        RPAD('Qty',       5) ||
-        RPAD('Reason',   29) ||
-        RPAD('Customer', 18) ||
-        LPAD('Days',      5) ||
-        LPAD('RM',       10) ||
-        '  Priority');
-    DBMS_OUTPUT.PUT_LINE(v_rule);
-
-    FOR r IN (SELECT * FROM vw_pending_return_queue
-              ORDER BY branch_name,
-                       CASE priority WHEN 'P1-URGENT' THEN 1
-                                     WHEN 'P2-HIGH'   THEN 2
-                                     ELSE 3 END,
-                       days_waiting DESC, refund_exposure DESC) LOOP
-
-        IF v_prev_branch IS NULL OR r.branch_name <> v_prev_branch THEN
-            branch_footer;
-            DBMS_OUTPUT.PUT_LINE('BRANCH : ' || UPPER(r.branch_name) ||
-                                 '  (' || r.branch_id || ')');
-            DBMS_OUTPUT.PUT_LINE(v_rule);
-            v_prev_branch := r.branch_name;
-            v_branch_sum  := 0;
-            v_branch_cnt  := 0;
-        END IF;
-
+    FOR br IN c_branch LOOP                              -- OUTER CURSOR
+        DBMS_OUTPUT.PUT_LINE('BRANCH : ' || UPPER(br.branch_name) ||
+                             '  (' || br.branch_id || ')');
         DBMS_OUTPUT.PUT_LINE(
-            RPAD(r.return_id, 11) ||
-            RPAD(r.order_no,  11) ||
-            RPAD(SUBSTR(r.item_name, 1, 24), 26) ||
-            RPAD(r.return_quantity, 5) ||
-            RPAD(SUBSTR(r.reason, 1, 27), 29) ||
-            RPAD(SUBSTR(r.customer_name, 1, 16), 18) ||
-            LPAD(r.days_waiting, 5) ||
-            LPAD(TO_CHAR(r.refund_exposure, 'FM999,990.00'), 10) ||
-            '  ' || r.priority);
+            RPAD('Return',   10) ||
+            RPAD('Order',    10) ||
+            RPAD('Item',     51) ||
+            RPAD('Qty',       5) ||
+            RPAD('Reason',   29) ||
+            RPAD('Customer', 24) ||
+            LPAD('Days',      5) ||
+            LPAD('RM',       10) ||
+            '  Priority');
+        DBMS_OUTPUT.PUT_LINE(v_rule);
 
-        v_branch_sum := v_branch_sum + r.refund_exposure;
-        v_branch_cnt := v_branch_cnt + 1;
-        v_grand_sum  := v_grand_sum  + r.refund_exposure;
-        v_grand_cnt  := v_grand_cnt  + 1;
-        v_oldest     := GREATEST(v_oldest, r.days_waiting);
+        v_branch_sum := 0;  v_branch_cnt := 0;
 
-        CASE r.priority
-            WHEN 'P1-URGENT' THEN v_p1 := v_p1 + 1;
-            WHEN 'P2-HIGH'   THEN v_p2 := v_p2 + 1;
-            ELSE                  v_p3 := v_p3 + 1;
-        END CASE;
+        FOR r IN c_case(br.branch_id) LOOP               -- INNER CURSOR
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(r.return_id, 10) ||
+                RPAD(r.order_no,  10) ||
+                RPAD(SUBSTR(r.item_name, 1, 49), 51) ||
+                RPAD(r.return_quantity, 5) ||
+                RPAD(SUBSTR(r.reason, 1, 27), 29) ||
+                RPAD(SUBSTR(r.customer_name, 1, 22), 24) ||
+                LPAD(r.days_waiting, 5) ||
+                LPAD(TO_CHAR(r.refund_exposure, 'FM999,990.00'), 10) ||
+                '  ' || r.priority);
+
+            v_branch_sum := v_branch_sum + r.refund_exposure;
+            v_branch_cnt := v_branch_cnt + 1;
+            v_oldest     := GREATEST(v_oldest, r.days_waiting);
+
+            CASE r.priority
+                WHEN 'P1-URGENT' THEN v_p1 := v_p1 + 1;
+                WHEN 'P2-HIGH'   THEN v_p2 := v_p2 + 1;
+                ELSE                  v_p3 := v_p3 + 1;
+            END CASE;
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(v_rule);
+        DBMS_OUTPUT.PUT_LINE(
+            money_line('Branch subtotal  (' || v_branch_cnt || ' case(s))',
+                       v_branch_sum));
+        DBMS_OUTPUT.PUT_LINE(' ');
+
+        v_grand_sum := v_grand_sum + v_branch_sum;
+        v_grand_cnt := v_grand_cnt + v_branch_cnt;
     END LOOP;
-
-    branch_footer;
 
     IF v_grand_cnt = 0 THEN
         DBMS_OUTPUT.PUT_LINE(ctr('No return request is waiting for a decision.'));
@@ -2268,47 +2319,16 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE(RPAD('Average value per case', 36) || ': RM ' ||
         TO_CHAR(ROUND(v_grand_sum / v_grand_cnt, 2), 'FM999,990.00'));
     DBMS_OUTPUT.PUT_LINE(v_double);
-    DBMS_OUTPUT.PUT_LINE(LPAD('End of Report 2', c_width)); 
+    DBMS_OUTPUT.PUT_LINE(LPAD('End of Report 2', c_width));
 
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('REPORT FAILED ' || SQLCODE || ' : ' || SQLERRM);
-END;
+END rpt_pending_returns;
 /
 
-
-BTITLE OFF
-TTITLE OFF
-CLEAR BREAKS
-CLEAR COMPUTES
-
--- Summary 
-SET PAGESIZE 20
-SET LINESIZE 100
-
-
-COLUMN branch_name  FORMAT A30       HEADING 'Branch'
-COLUMN cases        FORMAT 999       HEADING 'Cases'
-COLUMN urgent       FORMAT 999       HEADING 'P1|Urgent'
-COLUMN oldest       FORMAT 999       HEADING 'Oldest|Days'
-COLUMN exposure     FORMAT 99,990.00 HEADING 'Exposure|RM'
-COLUMN avg_case     FORMAT 9,990.00  HEADING 'Avg per|Case RM'
-
-TTITLE CENTER '88 SPEEDMART - PENDING RETURNS BY BRANCH' SKIP 1 -
-       CENTER '========================================' SKIP 2
-
-BREAK ON REPORT
-COMPUTE SUM LABEL 'CHAIN TOTAL' OF cases urgent exposure ON REPORT
-
-SELECT branch_name,
-       COUNT(*)                                                   AS cases,
-       SUM(CASE WHEN priority = 'P1-URGENT' THEN 1 ELSE 0 END)    AS urgent,
-       MAX(days_waiting)                                          AS oldest,
-       SUM(refund_exposure)                                       AS exposure,
-       ROUND(AVG(refund_exposure), 2)                             AS avg_case
-FROM   vw_pending_return_queue
-GROUP  BY branch_name
-ORDER  BY exposure DESC;
+EXEC rpt_pending_returns;
+EXEC rpt_pending_returns('BR003');
 
 
 ------------------
