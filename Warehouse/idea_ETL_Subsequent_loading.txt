@@ -1,0 +1,132 @@
+1. create dirty-data reject table to store all reject data and the reason reject
+CREATE TABLE ETL_REJECT_LOG (
+    REJECT_ID      NUMBER PRIMARY KEY,                             
+    BATCH_FROM     DATE NOT NULL,   						        --load from when to when
+    BATCH_TO       DATE NOT NULL, 
+    SOURCE_TABLE   VARCHAR2(30) NOT NULL,						-- source table that reject  	e.g DELIVERY_REQUEST
+    SOURCE_KEY     VARCHAR2(50),							-- what key got error 		e.g. DR5001    
+    REASON         VARCHAR2(250) NOT NULL,						-- what reason reject    	e.g.  Delivered date earlier than order date
+    REJECTED_AT    TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL
+);
+
+================================================================================================================
+
+2. CLEANING 
+
+a. branch clean - branch name remove space
+                                - open time and close time must be time if 'abc reject
+				- branch name, open,close time if null reject
+				- ..................
+also other all blablablabla..................
+
+================================================================================================================
+
+3. SCD type 2 loading
+idea example for branch_dim:
+Source BR001
+       ↓
+
+BR001 not in BRANCH_DIM?
+       ↓ YES
+INSERT
+FLAG = Y
+
+
+BR001 exists?
+       ↓
+Compare cleaned attributes
+       ↓
+
+same
+→ nothing
+
+different
+→ old row END = new row Start -1
+→ old FLAG = N
+→ INSERT new row
+→ new FLAG = Y and END = 31-Dec-9999
+
+same idea for other type2 SCD
+- BRANCH_DIM
+- COURIER_DIM
+- PRODUCT_DIM
+- REWARD_DIM
+- EMPLOYEE_DIM
+- CUSTOMER_DIM
+
+================================================================================================================
+
+4 SALES_FACT incremental load
+
+new order
+not in SALES_FACT
+then INSERT
+
+-- MERGE --(also called update)
+Existing sale gets rating
+already in SALES_FACT
+then UPDATE RATINGSCORE
+
+Existing sale receives refund
+already in SALES_FACT
+then UPDATE REFUND QUANTITY and REFUND TOTAL
+
+================================================================================================================
+
+5. DELIVERY_FACT
+-- MERGE --(also called update)
+example : 
+
+July:
+ORD1001
+Processing
+delivered date = NULL
+rating = NULL
+
+August:
+ORD1001
+Delivered
+2026-08-05
+rating = 5
+
+can check also for clean , e.g. delivered date must < order date
+
+================================================================================================================
+
+6. REWARD_FACT (this also merge--update)
+before RedemptionID = RD001    Status = Active
+
+Later the customer uses the reward:
+after     RedemptionID = RD001    Status = Used  
+
+================================================================================================================
+
+-- OVERALL --
+Task 2(a)
+Historical initial load
+        ↓
+Cutoff around 20-Jul-2026
+        ↓
+────────────────────────────
+Task 2(b)
+        ↓
+Operational August data
+        ↓
+Cleaning views
+        ↓
+Dirty-data rejection
+        ↓
+SCD2 dimension comparison (ALL dim exclude Redemption Status Dimension,
+												Delivery Status Dimension,
+												Order Profile Dimension,
+												Date Dimension)
+        ↓
+new / same / changed
+        ↓
+Order Profile incremental insert
+        ↓
+Sales MERGE
+Delivery MERGE
+Reward MERGE
+        ↓
+COMMIT
