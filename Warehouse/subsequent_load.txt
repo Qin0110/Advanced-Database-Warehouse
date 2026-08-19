@@ -38,7 +38,7 @@ CREATE SEQUENCE ETL_REJECT_SEQ START WITH 1 INCREMENT BY 1;
 /* ---------- 2. Cleaning / staging views ---------- */
 CREATE OR REPLACE VIEW VW_STG_BRANCH_CLEAN AS
 SELECT
-    b.branch_id,
+    UPPER(TRIM(b.branch_id)) AS branch_id,
     REGEXP_REPLACE(TRIM(b.name), '[[:space:]]+', ' ') AS branchname,
     INITCAP(
         REGEXP_SUBSTR(
@@ -52,11 +52,15 @@ SELECT
             '^[[:space:]]*[0-9]{5}[[:space:]]+', ''
         )
     ) AS branchstate,
-    TRIM(b.status) AS status,
+    INITCAP(TRIM(b.status)) AS status,
     TRIM(b.open_time) AS branchopentime,
     TRIM(b.close_time) AS branchclosetime,
     CASE
+        WHEN TRIM(b.branch_id) IS NULL THEN 'N'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(b.branch_id)), '^BR[0-9]{3}$') THEN 'N'
         WHEN TRIM(b.name) IS NULL THEN 'N'
+        WHEN TRIM(b.status) IS NULL THEN 'N'
+        WHEN INITCAP(TRIM(b.status)) NOT IN ('Active', 'Inactive', 'Closed') THEN 'N'
         WHEN TRIM(b.open_time) IS NULL THEN 'N'
         WHEN TRIM(b.close_time) IS NULL THEN 'N'
         WHEN NOT REGEXP_LIKE(TRIM(b.open_time),
@@ -66,54 +70,127 @@ SELECT
         ELSE 'Y'
     END AS valid_flag,
     CASE
+        WHEN TRIM(b.branch_id) IS NULL THEN 'Branch ID is missing'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(b.branch_id)), '^BR[0-9]{3}$')
+             THEN 'Invalid Branch ID format; expected BR followed by 3 digits, e.g. BR001'
         WHEN TRIM(b.name) IS NULL THEN 'Branch name is empty after trimming'
+        WHEN TRIM(b.status) IS NULL THEN 'Branch status is missing'
+        WHEN INITCAP(TRIM(b.status)) NOT IN ('Active', 'Inactive', 'Closed')
+             THEN 'Invalid branch status; expected Active, Inactive or Closed'
         WHEN TRIM(b.open_time) IS NULL THEN 'Branch open time is missing'
         WHEN TRIM(b.close_time) IS NULL THEN 'Branch close time is missing'
         WHEN NOT REGEXP_LIKE(TRIM(b.open_time),
-             '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$') THEN 'Invalid branch open time'
+             '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$') THEN 'Invalid branch open time; expected HH24:MI'
         WHEN NOT REGEXP_LIKE(TRIM(b.close_time),
-             '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$') THEN 'Invalid branch close time'
+             '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$') THEN 'Invalid branch close time; expected HH24:MI'
     END AS reject_reason
 FROM WAREHOUSEDATA.Branch b;
 
 CREATE OR REPLACE VIEW VW_STG_COURIER_CLEAN AS
 SELECT
-    c.courier_id,
-    REGEXP_REPLACE(TRIM(c.name), '[[:space:]]+', ' ') AS couriername,
-    c.delivery_company_id,
-    REGEXP_REPLACE(TRIM(dc.company_name), '[[:space:]]+', ' ') AS deliverycompanyname,
+    UPPER(TRIM(c.courier_id)) AS courier_id,
+    REGEXP_REPLACE(
+        TRIM(c.name),
+        '[[:space:]]+',
+        ' '
+    ) AS couriername,
+    UPPER(TRIM(c.delivery_company_id)) AS delivery_company_id,
+    REGEXP_REPLACE(
+        TRIM(dc.company_name),
+        '[[:space:]]+',
+        ' '
+    ) AS deliverycompanyname,
     CASE
+        WHEN TRIM(c.courier_id) IS NULL THEN 'N'
+        WHEN NOT REGEXP_LIKE(
+            UPPER(TRIM(c.courier_id)),
+            '^CR[0-9]{4}$'
+        ) THEN 'N'
         WHEN TRIM(c.name) IS NULL THEN 'N'
+        WHEN TRIM(c.delivery_company_id) IS NULL THEN 'N'
+        WHEN NOT REGEXP_LIKE(
+            UPPER(TRIM(c.delivery_company_id)),
+            '^DC[0-9]{3}$'
+        ) THEN 'N'
         WHEN TRIM(dc.company_name) IS NULL THEN 'N'
         ELSE 'Y'
     END AS valid_flag,
     CASE
-        WHEN TRIM(c.name) IS NULL THEN 'Courier name is empty after trimming'
-        WHEN TRIM(dc.company_name) IS NULL THEN 'Delivery company name is empty after trimming'
+        WHEN TRIM(c.courier_id) IS NULL
+            THEN 'Courier ID is missing'
+        WHEN NOT REGEXP_LIKE(
+            UPPER(TRIM(c.courier_id)),
+            '^CR[0-9]{4}$'
+        )
+            THEN 'Invalid Courier ID format; expected CR followed by 4 digits, e.g. CR0002'
+        WHEN TRIM(c.name) IS NULL
+            THEN 'Courier name is empty after trimming'
+        WHEN TRIM(c.delivery_company_id) IS NULL
+            THEN 'Delivery company ID is missing'
+        WHEN NOT REGEXP_LIKE(
+            UPPER(TRIM(c.delivery_company_id)),
+            '^DC[0-9]{3}$'
+        )
+            THEN 'Invalid Delivery Company ID format; expected DC followed by 3 digits, e.g. DC001'
+        WHEN TRIM(dc.company_name) IS NULL
+            THEN 'Delivery company name is empty after trimming'
     END AS reject_reason
 FROM WAREHOUSEDATA.Courier c
 JOIN WAREHOUSEDATA.Delivery_Company dc
-  ON dc.delivery_company_id = c.delivery_company_id;
+    ON dc.delivery_company_id = c.delivery_company_id;
 
 CREATE OR REPLACE VIEW VW_STG_PRODUCT_CLEAN AS
 SELECT
-    i.item_id,
-    i.supplier_id,
+    UPPER(TRIM(i.item_id)) AS item_id,
+    UPPER(TRIM(i.supplier_id)) AS supplier_id,
     REGEXP_REPLACE(TRIM(s.company_name), '[[:space:]]+', ' ') AS suppliername,
     REGEXP_REPLACE(TRIM(i.name), '[[:space:]]+', ' ') AS itemname,
     i.unit_price,
     TRIM(i.unit_of_measure) AS unitofmeasure,
     i.unit_weight_kg AS unitweight,
     UPPER(TRIM(i.is_mykasih_eligible)) AS is_mykasih_eligible,
-    TRIM(i.status) AS productstatus,
+    INITCAP(TRIM(i.status)) AS productstatus,
     CASE
+        WHEN TRIM(i.item_id) IS NULL THEN 'N'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(i.item_id)), '^IT[0-9]{3}$') THEN 'N'
+        WHEN TRIM(i.supplier_id) IS NULL THEN 'N'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(i.supplier_id)), '^SUP[0-9]{3}$') THEN 'N'
         WHEN TRIM(i.name) IS NULL THEN 'N'
         WHEN TRIM(s.company_name) IS NULL THEN 'N'
+        WHEN i.unit_price IS NULL THEN 'N'
+        WHEN i.unit_price < 0 THEN 'N'
+        WHEN TRIM(i.unit_of_measure) IS NULL THEN 'N'
+        WHEN TRIM(i.unit_of_measure) NOT IN ('kg', 'g', 'L', 'ml', 'pcs', 'pack') THEN 'N'
+        WHEN i.unit_weight_kg IS NULL THEN 'N'
+        WHEN i.unit_weight_kg < 0 THEN 'N'
+        WHEN TRIM(i.is_mykasih_eligible) IS NULL THEN 'N'
+        WHEN UPPER(TRIM(i.is_mykasih_eligible)) NOT IN ('Y', 'N') THEN 'N'
+        WHEN TRIM(i.status) IS NULL THEN 'N'
+        WHEN INITCAP(TRIM(i.status)) NOT IN ('Active', 'Inactive') THEN 'N'
         ELSE 'Y'
     END AS valid_flag,
     CASE
+        WHEN TRIM(i.item_id) IS NULL THEN 'Item ID is missing'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(i.item_id)), '^IT[0-9]{3}$')
+             THEN 'Invalid Item ID format; expected IT followed by 3 digits, e.g. IT001'
+        WHEN TRIM(i.supplier_id) IS NULL THEN 'Supplier ID is missing'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(i.supplier_id)), '^SUP[0-9]{3}$')
+             THEN 'Invalid Supplier ID format; expected SUP followed by 3 digits, e.g. SUP001'
         WHEN TRIM(i.name) IS NULL THEN 'Product name is empty after trimming'
         WHEN TRIM(s.company_name) IS NULL THEN 'Supplier name is empty after trimming'
+        WHEN i.unit_price IS NULL THEN 'Unit price is missing'
+        WHEN i.unit_price < 0 THEN 'Unit price must be a non-negative number'
+        WHEN TRIM(i.unit_of_measure) IS NULL THEN 'Unit of measure is missing'
+        WHEN TRIM(i.unit_of_measure) NOT IN ('kg', 'g', 'L', 'ml', 'pcs', 'pack')
+             THEN 'Invalid unit of measure'
+        WHEN i.unit_weight_kg IS NULL THEN 'Unit weight is missing'
+        WHEN i.unit_weight_kg < 0 THEN 'Unit weight must be a non-negative number'
+        WHEN TRIM(i.is_mykasih_eligible) IS NULL THEN 'MyKasih eligibility is missing'
+        WHEN UPPER(TRIM(i.is_mykasih_eligible)) NOT IN ('Y', 'N')
+             THEN 'Invalid MyKasih eligibility; expected Y or N'
+        WHEN TRIM(i.status) IS NULL THEN 'Product status is missing'
+        WHEN INITCAP(TRIM(i.status)) NOT IN ('Active', 'Inactive')
+             THEN 'Invalid product status; expected Active or Inactive'
     END AS reject_reason
 FROM WAREHOUSEDATA.Item i
 JOIN WAREHOUSEDATA.Supplier s
@@ -121,27 +198,85 @@ JOIN WAREHOUSEDATA.Supplier s
 
 CREATE OR REPLACE VIEW VW_STG_REWARD_CLEAN AS
 SELECT
-    r.reward_id,
+    UPPER(TRIM(r.reward_id)) AS reward_id,
     REGEXP_REPLACE(TRIM(r.name), '[[:space:]]+', ' ') AS rewardname,
-    TRIM(r.reward_type) AS rewardtype,
+    INITCAP(TRIM(r.reward_type)) AS rewardtype,
     r.points_required,
     r.value AS rewardvalue,
-    TRIM(r.status) AS rewardstatus,
-    CASE WHEN TRIM(r.name) IS NULL THEN 'N' ELSE 'Y' END AS valid_flag,
-    CASE WHEN TRIM(r.name) IS NULL THEN 'Reward name is empty after trimming' END AS reject_reason
+    INITCAP(TRIM(r.status)) AS rewardstatus,
+    CASE
+        WHEN TRIM(r.reward_id) IS NULL THEN 'N'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(r.reward_id)), '^RW[0-9]{3}$') THEN 'N'
+        WHEN TRIM(r.name) IS NULL THEN 'N'
+        WHEN TRIM(r.reward_type) IS NULL THEN 'N'
+        WHEN INITCAP(TRIM(r.reward_type)) NOT IN ('Discount', 'Free Delivery', 'Gift') THEN 'N'
+        WHEN r.points_required IS NULL THEN 'N'
+        WHEN r.points_required <= 0 THEN 'N'
+        WHEN r.value IS NULL THEN 'N'
+        WHEN r.value < 0 THEN 'N'
+        WHEN TRIM(r.status) IS NULL THEN 'N'
+        WHEN INITCAP(TRIM(r.status)) NOT IN ('Active', 'Inactive') THEN 'N'
+        ELSE 'Y'
+    END AS valid_flag,
+    CASE
+        WHEN TRIM(r.reward_id) IS NULL THEN 'Reward ID is missing'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(r.reward_id)), '^RW[0-9]{3}$')
+             THEN 'Invalid Reward ID format; expected RW followed by 3 digits, e.g. RW001'
+        WHEN TRIM(r.name) IS NULL THEN 'Reward name is empty after trimming'
+        WHEN TRIM(r.reward_type) IS NULL THEN 'Reward type is missing'
+        WHEN INITCAP(TRIM(r.reward_type)) NOT IN ('Discount', 'Free Delivery', 'Gift')
+             THEN 'Invalid reward type; expected Discount, Free Delivery or Gift'
+        WHEN r.points_required IS NULL THEN 'Points required is missing'
+        WHEN r.points_required <= 0 THEN 'Points required must be a positive number'
+        WHEN r.value IS NULL THEN 'Reward value is missing'
+        WHEN r.value < 0 THEN 'Reward value must be a non-negative number'
+        WHEN TRIM(r.status) IS NULL THEN 'Reward status is missing'
+        WHEN INITCAP(TRIM(r.status)) NOT IN ('Active', 'Inactive')
+             THEN 'Invalid reward status; expected Active or Inactive'
+    END AS reject_reason
 FROM WAREHOUSEDATA.Reward r;
 
 CREATE OR REPLACE VIEW VW_STG_EMPLOYEE_CLEAN AS
 SELECT
-    e.employee_id,
+    UPPER(TRIM(e.employee_id)) AS employee_id,
     REGEXP_REPLACE(TRIM(e.name), '[[:space:]]+', ' ') AS employeename,
-    TRIM(e.position) AS position,
+    INITCAP(TRIM(e.position)) AS position,
     e.salary,
     e.hire_date,
-    TRIM(e.status) AS employee_status,
-    CASE WHEN TRIM(e.name) IS NULL THEN 'N' ELSE 'Y' END AS valid_flag,
-    CASE WHEN TRIM(e.name) IS NULL THEN 'Employee name is empty after trimming' END AS reject_reason
+    INITCAP(TRIM(e.status)) AS employee_status,
+    CASE
+        WHEN TRIM(e.employee_id) IS NULL THEN 'N'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(e.employee_id)), '^EMP[0-9]{3}$') THEN 'N'
+        WHEN TRIM(e.name) IS NULL THEN 'N'
+        WHEN TRIM(e.position) IS NULL THEN 'N'
+        WHEN INITCAP(TRIM(e.position)) NOT IN ('Cashier', 'Manager', 'Supervisor', 'Stock Clerk') THEN 'N'
+        WHEN e.salary IS NULL THEN 'N'
+        WHEN e.salary <= 0 THEN 'N'
+        WHEN e.hire_date IS NULL THEN 'N'
+        WHEN TRUNC(e.hire_date) > TRUNC(SYSDATE) THEN 'N'
+        WHEN TRIM(e.status) IS NULL THEN 'N'
+        WHEN INITCAP(TRIM(e.status)) NOT IN ('Active', 'Inactive') THEN 'N'
+        ELSE 'Y'
+    END AS valid_flag,
+    CASE
+        WHEN TRIM(e.employee_id) IS NULL THEN 'Employee ID is missing'
+        WHEN NOT REGEXP_LIKE(UPPER(TRIM(e.employee_id)), '^EMP[0-9]{3}$')
+             THEN 'Invalid Employee ID format; expected EMP followed by 3 digits, e.g. EMP001'
+        WHEN TRIM(e.name) IS NULL THEN 'Employee name is empty after trimming'
+        WHEN TRIM(e.position) IS NULL THEN 'Employee position is missing'
+        WHEN INITCAP(TRIM(e.position)) NOT IN ('Cashier', 'Manager', 'Supervisor', 'Stock Clerk')
+             THEN 'Invalid employee position'
+        WHEN e.salary IS NULL THEN 'Employee salary is missing'
+        WHEN e.salary <= 0 THEN 'Employee salary must be a positive number'
+        WHEN e.hire_date IS NULL THEN 'Employee hire date is missing'
+        WHEN TRUNC(e.hire_date) > TRUNC(SYSDATE)
+             THEN 'Employee hire date cannot be after today'
+        WHEN TRIM(e.status) IS NULL THEN 'Employee status is missing'
+        WHEN INITCAP(TRIM(e.status)) NOT IN ('Active', 'Inactive')
+             THEN 'Invalid employee status; expected Active or Inactive'
+    END AS reject_reason
 FROM WAREHOUSEDATA.Employee e;
+
 
 /* ============================================================
    3. SCD TYPE 2 DIMENSION LOADERS
