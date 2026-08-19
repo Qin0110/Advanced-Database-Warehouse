@@ -172804,6 +172804,1566 @@ VALUES('RT' || TO_CHAR(rating_seq.nextval, 'FM00000'), 5, 'Exactly what I expect
 INSERT INTO Rating
 VALUES('RT' || TO_CHAR(rating_seq.nextval, 'FM00000'), 5, 'Exactly what I expected, I will buy it again.', DATE '2026-07-20', 'ORD012451', 'IT006');
 
+-- Add Employee
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Arun Selvam', 26, '015-631 1094', 'Stock Clerk', 2130.00, 'Active', DATE '2022-01-25', 'BR004');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Muhammad Haziq', 20, '013-623 1072', 'Stock Clerk', 2290.00, 'Active', DATE '2022-06-09', 'BR002');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Siti Nurhaliza', 33, '017-654 1077', 'Supervisor', 3220.00, 'Active', DATE '2022-08-11', 'BR006');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Tan Kok Wai', 20, '018-655 1074', 'Supervisor', 3570.00, 'Active', DATE '2022-09-20', 'BR010');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Vikneswaran Raj', 31, '014-612 1080', 'Cashier', 1950.00, 'Active', DATE '2022-10-14', 'BR008');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Kavitha Menon', 39, '013-635 1084', 'Stock Clerk', 2340.00, 'Active', DATE '2023-01-22', 'BR010');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Chong Mei Ling', 54, '011-649 1079', 'Stock Clerk', 2150.00, 'Active', DATE '2023-02-11', 'BR006');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Ahmad Zulkifli', 51, '018-699 1078', 'Cashier', 2070.00, 'Active', DATE '2023-05-04', 'BR005');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Yap Jia Hui', 21, '015-656 1086', 'Cashier', 2150.00, 'Active', DATE '2023-05-07', 'BR007');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Danial Haikal', 52, '014-627 1097', 'Cashier', 2150.00, 'Active', DATE '2023-06-08', 'BR007');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Puteri Sarah', 45, '018-696 1099', 'Cashier', 1950.00, 'Active', DATE '2023-06-13', 'BR007');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Nadia Iskandar', 55, '019-689 1095', 'Cashier', 2040.00, 'Active', DATE '2023-06-22', 'BR005');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Lee Xin Yi', 30, '012-697 1091', 'Stock Clerk', 2260.00, 'Active', DATE '2024-01-09', 'BR005');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Wong Kah Meng', 23, '013-650 1098', 'Cashier', 1820.00, 'Active', DATE '2024-01-28', 'BR009');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Farah Adlina', 43, '011-675 1081', 'Cashier', 2040.00, 'Active', DATE '2024-03-10', 'BR003');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Sharmila Devi', 38, '018-651 1089', 'Cashier', 1940.00, 'Active', DATE '2024-04-04', 'BR009');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Anis Sofea', 42, '018-660 1087', 'Stock Clerk', 2340.00, 'Active', DATE '2024-07-03', 'BR007');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Rajesh Kumar', 55, '016-662 1076', 'Supervisor', 3510.00, 'Active', DATE '2024-09-22', 'BR005');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Nur Amirah', 55, '018-634 1083', 'Manager', 4700.00, 'Active', DATE '2024-09-27', 'BR001');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Lim Shu Ting', 43, '013-654 1075', 'Cashier', 1910.00, 'Active', DATE '2024-11-15', 'BR007');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Suresh Nair', 33, '012-663 1100', 'Cashier', 1910.00, 'Active', DATE '2025-03-03', 'BR004');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Mohd Faizal', 49, '019-661 1085', 'Cashier', 2000.00, 'Active', DATE '2025-04-03', 'BR007');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Teoh Boon Siew', 29, '015-630 1093', 'Supervisor', 3680.00, 'Active', DATE '2025-04-15', 'BR009');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Zulaikha Hanim', 39, '018-626 1092', 'Manager', 4860.00, 'Active', DATE '2025-04-16', 'BR004');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Cheah Li Wen', 32, '017-659 1096', 'Supervisor', 3720.00, 'Active', DATE '2025-06-04', 'BR001');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Nurul Syafiqah', 37, '016-637 1073', 'Manager', 5230.00, 'Active', DATE '2025-07-17', 'BR006');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Ong Chee Keong', 38, '015-621 1082', 'Supervisor', 3780.00, 'Active', DATE '2025-09-05', 'BR005');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Gan Wei Jie', 40, '017-630 1088', 'Cashier', 1910.00, 'Active', DATE '2025-10-07', 'BR006');
+INSERT INTO Employee
+VALUES('EMP' || TO_CHAR(employee_seq.nextval, 'FM000'), 'Hafiz Rahman', 45, '014-612 1090', 'Cashier', 2090.00, 'Active', DATE '2025-12-16', 'BR003');
+ 
+-- ---------- 2. ORDERS (134 rows, inserted as Processing with 0.00 amounts) ----------
+-- trg_order_amounts fills subtotal_amount and total_amount from the lines below.
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-05-08 13:55:20','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03041', 'BR006', 'EMP074');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-25 20:39:11','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03143', 'BR006', 'EMP074');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-05 13:42:18','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03039', 'BR006', 'EMP074');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-09-22 14:19:38','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02400', 'BR006', 'EMP074');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-05-17 19:13:17','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02462', 'BR006', 'EMP074');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-01-14 14:55:10','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02059', 'BR006', 'EMP074');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-02-04 13:22:16','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00691', 'BR006', 'EMP074');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-01-29 10:32:04','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01916', 'BR010', 'EMP075');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-07-09 09:56:07','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03507', 'BR010', 'EMP075');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2023-04-13 13:12:52','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01353', 'BR010', 'EMP075');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-03-17 16:31:58','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03164', 'BR010', 'EMP075');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-04-14 15:20:01','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02216', 'BR010', 'EMP075');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-08-19 18:08:39','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03612', 'BR010', 'EMP075');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-01-16 09:19:24','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02015', 'BR008', 'EMP076');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-04-24 09:49:39','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04120', 'BR008', 'EMP076');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-09-26 11:56:14','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01164', 'BR008', 'EMP076');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-03-09 18:50:37','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02493', 'BR008', 'EMP076');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2023-04-11 16:01:57','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03796', 'BR008', 'EMP076');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-02 11:21:45','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04494', 'BR005', 'EMP079');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-10-22 15:46:09','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03810', 'BR005', 'EMP079');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2023-08-14 17:14:34','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04202', 'BR005', 'EMP079');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-02-04 09:13:50','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04224', 'BR005', 'EMP079');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-10-12 12:23:19','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02469', 'BR005', 'EMP079');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-08 18:06:30','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02800', 'BR005', 'EMP079');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-24 14:49:26','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02317', 'BR007', 'EMP080');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-02-05 19:04:13','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03432', 'BR007', 'EMP080');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-25 17:32:16','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03474', 'BR007', 'EMP080');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-26 16:39:52','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02945', 'BR007', 'EMP080');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-06-29 18:14:00','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03047', 'BR007', 'EMP080');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-10-25 18:46:02','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01302', 'BR007', 'EMP080');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-12-14 11:45:17','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03524', 'BR007', 'EMP080');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2023-06-28 18:58:45','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03420', 'BR007', 'EMP081');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-20 16:40:35','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02816', 'BR007', 'EMP081');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2023-11-01 18:03:47','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00663', 'BR007', 'EMP081');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-07-13 17:41:42','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03286', 'BR007', 'EMP081');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-19 11:51:04','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03322', 'BR007', 'EMP082');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-03-23 16:37:45','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02523', 'BR007', 'EMP082');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-30 11:16:11','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00931', 'BR007', 'EMP082');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-04 16:42:19','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03347', 'BR007', 'EMP082');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-10-08 19:44:19','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03644', 'BR007', 'EMP082');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-05-05 09:24:22','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03791', 'BR007', 'EMP082');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-07-10 14:06:36','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03201', 'BR005', 'EMP083');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-01-03 09:18:19','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00208', 'BR005', 'EMP083');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-12 10:54:39','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00280', 'BR005', 'EMP083');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-06-21 10:55:38','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03391', 'BR005', 'EMP083');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-03-07 18:26:09','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00800', 'BR005', 'EMP083');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-07-03 11:09:26','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04194', 'BR005', 'EMP083');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-10-18 16:38:44','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01969', 'BR009', 'EMP085');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-11 10:44:32','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02737', 'BR009', 'EMP085');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-02-20 10:27:27','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00841', 'BR009', 'EMP085');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-01-15 18:49:12','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04327', 'BR009', 'EMP085');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-04-19 11:51:57','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01181', 'BR009', 'EMP085');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-09-09 18:57:39','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03988', 'BR009', 'EMP085');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-05-06 11:12:41','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00543', 'BR003', 'EMP086');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-09-06 19:45:15','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00722', 'BR003', 'EMP086');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-01-21 18:16:11','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03442', 'BR003', 'EMP086');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-06-29 11:30:44','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02891', 'BR003', 'EMP086');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-06-23 14:48:13','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00630', 'BR003', 'EMP086');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-20 19:34:54','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00332', 'BR003', 'EMP086');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-04-15 11:36:20','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03763', 'BR009', 'EMP087');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-10 11:16:06','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01512', 'BR009', 'EMP087');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-29 20:59:12','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00839', 'BR009', 'EMP087');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-13 11:24:24','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01351', 'BR009', 'EMP087');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-09-13 14:41:51','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03918', 'BR009', 'EMP087');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2024-11-01 18:21:09','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02444', 'BR009', 'EMP087');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-05-19 14:52:37','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02363', 'BR005', 'EMP089');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-02-11 18:18:59','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02815', 'BR005', 'EMP089');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-02 09:47:36','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01365', 'BR005', 'EMP089');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-09 19:46:45','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02030', 'BR005', 'EMP089');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-24 16:55:27','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01387', 'BR001', 'EMP090');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-15 13:41:01','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00313', 'BR001', 'EMP090');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-11-28 19:32:33','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01676', 'BR001', 'EMP090');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-10-31 18:03:47','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00050', 'BR001', 'EMP090');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-10-24 16:56:42','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03444', 'BR001', 'EMP090');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-20 10:30:17','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00505', 'BR001', 'EMP090');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-27 16:11:24','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02276', 'BR001', 'EMP090');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-11-30 11:45:07','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03160', 'BR007', 'EMP091');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-11-11 20:24:41','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00749', 'BR007', 'EMP091');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-05-12 12:35:53','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02893', 'BR007', 'EMP091');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-23 11:11:20','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02811', 'BR007', 'EMP091');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-07 19:00:24','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03736', 'BR007', 'EMP091');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-22 17:45:30','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01933', 'BR007', 'EMP091');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-19 10:34:47','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00101', 'BR004', 'EMP092');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-21 13:05:31','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02471', 'BR004', 'EMP092');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-04-28 13:51:40','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01924', 'BR004', 'EMP092');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-10-08 09:22:52','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04198', 'BR004', 'EMP092');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-06-21 16:19:46','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02214', 'BR004', 'EMP092');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-09 19:49:33','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02599', 'BR007', 'EMP093');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-02-09 20:22:15','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03587', 'BR007', 'EMP093');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-10-31 09:02:22','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01787', 'BR007', 'EMP093');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-26 15:42:03','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04425', 'BR007', 'EMP093');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-05-30 14:18:11','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00665', 'BR007', 'EMP093');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-12-20 15:43:55','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00069', 'BR007', 'EMP093');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-11-08 15:52:42','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02098', 'BR007', 'EMP093');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-24 15:56:08','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02777', 'BR009', 'EMP094');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-05-04 10:08:57','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02692', 'BR009', 'EMP094');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-07-28 20:23:59','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01968', 'BR009', 'EMP094');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-31 12:34:02','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01623', 'BR009', 'EMP094');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-01-26 13:59:13','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02422', 'BR009', 'EMP094');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-17 19:50:05','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02472', 'BR009', 'EMP094');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-06-02 16:45:22','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03568', 'BR009', 'EMP094');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-05-06 16:40:13','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02440', 'BR004', 'EMP095');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-05 19:07:01','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00484', 'BR004', 'EMP095');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-07-20 11:03:30','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01376', 'BR004', 'EMP095');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-01-22 15:40:54','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03814', 'BR004', 'EMP095');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-05-23 17:20:00','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02293', 'BR004', 'EMP095');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-02-22 14:19:51','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00044', 'BR001', 'EMP096');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-08-01 11:45:53','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02124', 'BR001', 'EMP096');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-10-29 17:38:09','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02530', 'BR001', 'EMP096');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-01-21 17:40:25','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04309', 'BR001', 'EMP096');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-05-07 13:42:50','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01524', 'BR006', 'EMP097');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-09-05 11:16:50','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01636', 'BR006', 'EMP097');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-05 09:24:07','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00691', 'BR006', 'EMP097');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-04-29 12:45:19','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01121', 'BR006', 'EMP097');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-02-09 18:04:35','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00483', 'BR006', 'EMP097');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-27 13:39:43','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02687', 'BR006', 'EMP097');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-22 12:42:16','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00332', 'BR006', 'EMP097');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-04-03 16:47:25','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03134', 'BR005', 'EMP098');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2025-10-21 11:17:23','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02519', 'BR005', 'EMP098');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-28 13:44:10','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01127', 'BR005', 'EMP098');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-22 16:45:06','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04268', 'BR005', 'EMP098');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-19 15:24:35','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00417', 'BR006', 'EMP099');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-02-09 14:23:41','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03263', 'BR006', 'EMP099');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-08 17:20:52','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00673', 'BR006', 'EMP099');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-04 17:53:48','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03871', 'BR006', 'EMP099');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-02-22 09:05:36','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS04431', 'BR006', 'EMP099');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-18 15:27:09','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00864', 'BR006', 'EMP099');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-10 17:17:36','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00762', 'BR003', 'EMP100');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-07-22 12:34:23','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02882', 'BR003', 'EMP100');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-06-27 12:56:35','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00544', 'BR003', 'EMP100');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-07 12:38:25','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS03848', 'BR003', 'EMP100');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-03-04 20:14:18','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS02185', 'BR003', 'EMP100');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-04-22 13:51:18','YYYY-MM-DD HH24:MI:SS'), 'Online', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS01771', 'BR003', 'EMP100');
+INSERT INTO Orders
+VALUES('ORD' || TO_CHAR(order_seq.nextval, 'FM000000'), TO_TIMESTAMP('2026-01-12 09:43:53','YYYY-MM-DD HH24:MI:SS'), 'Walk-In', 'Pickup', 0.00, 0.00, 0, 0.00, 'Processing', 'N', NULL, 'CUS00159', 'BR003', 'EMP100');
+ 
+-- ---------- 3. ORDER_DETAIL (410 rows) ----------
+INSERT INTO Order_Detail
+VALUES('ORD012615', 'IT031', 13.80, 2, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012615', 'IT042', 39.80, 2, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012615', 'IT015', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012615', 'IT041', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012616', 'IT029', 2.40, 2, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012616', 'IT009', 3.20, 1, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012617', 'IT047', 7.50, 1, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012617', 'IT034', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012618', 'IT023', 10.60, 2, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012618', 'IT025', 13.60, 2, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012619', 'IT031', 6.90, 1, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012619', 'IT003', 7.90, 1, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012619', 'IT026', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012619', 'IT038', 38.70, 3, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012620', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012620', 'IT034', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012620', 'IT043', 4.90, 1, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012621', 'IT023', 10.60, 2, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012621', 'IT046', 24.60, 3, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012622', 'IT034', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012622', 'IT039', 10.50, 3, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012622', 'IT046', 16.40, 2, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012623', 'IT045', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012623', 'IT027', 16.50, 3, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012624', 'IT028', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012624', 'IT025', 20.40, 3, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012624', 'IT050', 21.80, 2, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012624', 'IT033', 3.20, 1, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012625', 'IT049', 6.50, 1, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012625', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012625', 'IT001', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012626', 'IT038', 25.80, 2, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012626', 'IT049', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012626', 'IT048', 37.80, 2, 18.90);
+INSERT INTO Order_Detail
+VALUES('ORD012627', 'IT042', 19.90, 1, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012627', 'IT039', 10.50, 3, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012627', 'IT027', 16.50, 3, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012627', 'IT018', 18.40, 2, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012628', 'IT020', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012628', 'IT025', 6.80, 1, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012629', 'IT012', 5.20, 1, 5.20);
+INSERT INTO Order_Detail
+VALUES('ORD012629', 'IT013', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012629', 'IT017', 8.90, 1, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012630', 'IT027', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012630', 'IT035', 4.50, 3, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012631', 'IT013', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012631', 'IT033', 9.60, 3, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012631', 'IT002', 1.50, 1, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012631', 'IT031', 6.90, 1, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012632', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012632', 'IT047', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012633', 'IT038', 25.80, 2, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012633', 'IT050', 10.90, 1, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012633', 'IT006', 13.50, 3, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012634', 'IT028', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012634', 'IT048', 37.80, 2, 18.90);
+INSERT INTO Order_Detail
+VALUES('ORD012634', 'IT005', 8.40, 2, 4.20);
+INSERT INTO Order_Detail
+VALUES('ORD012634', 'IT036', 26.70, 3, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012635', 'IT035', 4.50, 3, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012635', 'IT022', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012636', 'IT036', 26.70, 3, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012636', 'IT009', 9.60, 3, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012636', 'IT011', 9.50, 1, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012637', 'IT041', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012637', 'IT006', 9.00, 2, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012637', 'IT038', 12.90, 1, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012637', 'IT030', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012638', 'IT030', 25.50, 3, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012638', 'IT006', 13.50, 3, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012638', 'IT049', 6.50, 1, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012638', 'IT039', 7.00, 2, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012639', 'IT037', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012639', 'IT038', 38.70, 3, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012639', 'IT018', 9.20, 1, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012640', 'IT038', 38.70, 3, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012640', 'IT045', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012640', 'IT022', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012640', 'IT049', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012641', 'IT048', 37.80, 2, 18.90);
+INSERT INTO Order_Detail
+VALUES('ORD012641', 'IT026', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012641', 'IT002', 4.50, 3, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012641', 'IT041', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012642', 'IT024', 23.70, 3, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012642', 'IT004', 7.50, 1, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012642', 'IT037', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012642', 'IT049', 6.50, 1, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012643', 'IT001', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012643', 'IT018', 9.20, 1, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012643', 'IT035', 1.50, 1, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012644', 'IT019', 14.70, 3, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012644', 'IT039', 10.50, 3, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012644', 'IT024', 15.80, 2, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012644', 'IT040', 35.70, 3, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012645', 'IT027', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012645', 'IT045', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012645', 'IT009', 6.40, 2, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012646', 'IT012', 5.20, 1, 5.20);
+INSERT INTO Order_Detail
+VALUES('ORD012646', 'IT037', 8.50, 1, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012646', 'IT020', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012646', 'IT025', 6.80, 1, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012647', 'IT001', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012647', 'IT004', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012647', 'IT047', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012648', 'IT030', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012648', 'IT044', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012649', 'IT038', 25.80, 2, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012649', 'IT023', 5.30, 1, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012650', 'IT017', 26.70, 3, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012650', 'IT049', 6.50, 1, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012650', 'IT042', 59.70, 3, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012650', 'IT011', 9.50, 1, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012651', 'IT029', 2.40, 2, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012651', 'IT011', 28.50, 3, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012651', 'IT025', 20.40, 3, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012652', 'IT005', 8.40, 2, 4.20);
+INSERT INTO Order_Detail
+VALUES('ORD012652', 'IT011', 28.50, 3, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012652', 'IT036', 8.90, 1, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012652', 'IT050', 21.80, 2, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012653', 'IT026', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012653', 'IT040', 11.90, 1, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012654', 'IT003', 15.80, 2, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012654', 'IT042', 19.90, 1, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012654', 'IT006', 9.00, 2, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012654', 'IT045', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012655', 'IT003', 23.70, 3, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012655', 'IT031', 6.90, 1, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012655', 'IT023', 5.30, 1, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012655', 'IT033', 6.40, 2, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012656', 'IT031', 13.80, 2, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012656', 'IT020', 4.90, 1, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012657', 'IT004', 7.50, 1, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012657', 'IT041', 8.90, 1, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012658', 'IT046', 16.40, 2, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012658', 'IT034', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012658', 'IT027', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012659', 'IT022', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012659', 'IT048', 37.80, 2, 18.90);
+INSERT INTO Order_Detail
+VALUES('ORD012660', 'IT023', 10.60, 2, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012660', 'IT021', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012660', 'IT049', 6.50, 1, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012661', 'IT045', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012661', 'IT001', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012661', 'IT009', 9.60, 3, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012661', 'IT049', 6.50, 1, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012662', 'IT001', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012662', 'IT021', 19.50, 3, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012662', 'IT031', 20.70, 3, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012663', 'IT039', 7.00, 2, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012663', 'IT017', 8.90, 1, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012664', 'IT025', 13.60, 2, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012664', 'IT038', 25.80, 2, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012664', 'IT013', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012664', 'IT049', 19.50, 3, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012665', 'IT045', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012665', 'IT046', 8.20, 1, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012665', 'IT038', 12.90, 1, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012666', 'IT049', 6.50, 1, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012666', 'IT022', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012666', 'IT043', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012667', 'IT026', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012667', 'IT028', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012668', 'IT010', 9.40, 2, 4.70);
+INSERT INTO Order_Detail
+VALUES('ORD012668', 'IT030', 25.50, 3, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012668', 'IT043', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012668', 'IT029', 1.20, 1, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012669', 'IT016', 5.90, 1, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012669', 'IT040', 11.90, 1, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012670', 'IT031', 20.70, 3, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012670', 'IT030', 25.50, 3, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012671', 'IT031', 13.80, 2, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012671', 'IT024', 7.90, 1, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012671', 'IT005', 12.60, 3, 4.20);
+INSERT INTO Order_Detail
+VALUES('ORD012672', 'IT029', 2.40, 2, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012672', 'IT016', 11.80, 2, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012673', 'IT033', 9.60, 3, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012673', 'IT013', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012673', 'IT024', 15.80, 2, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012673', 'IT029', 3.60, 3, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012674', 'IT020', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012674', 'IT006', 13.50, 3, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012674', 'IT009', 6.40, 2, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012675', 'IT004', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012675', 'IT002', 4.50, 3, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012676', 'IT008', 9.60, 2, 4.80);
+INSERT INTO Order_Detail
+VALUES('ORD012676', 'IT001', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012676', 'IT034', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012676', 'IT003', 15.80, 2, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012677', 'IT006', 13.50, 3, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012677', 'IT030', 8.50, 1, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012677', 'IT048', 56.70, 3, 18.90);
+INSERT INTO Order_Detail
+VALUES('ORD012677', 'IT044', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012678', 'IT015', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012678', 'IT028', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012678', 'IT018', 18.40, 2, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012679', 'IT050', 32.70, 3, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012679', 'IT020', 4.90, 1, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012679', 'IT028', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012679', 'IT047', 15.00, 2, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012680', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012680', 'IT027', 16.50, 3, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012680', 'IT030', 8.50, 1, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012681', 'IT029', 1.20, 1, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012681', 'IT009', 6.40, 2, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012681', 'IT028', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012681', 'IT011', 9.50, 1, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012682', 'IT031', 6.90, 1, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012682', 'IT025', 6.80, 1, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012683', 'IT046', 16.40, 2, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012683', 'IT014', 5.80, 1, 5.80);
+INSERT INTO Order_Detail
+VALUES('ORD012684', 'IT023', 15.90, 3, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012684', 'IT012', 15.60, 3, 5.20);
+INSERT INTO Order_Detail
+VALUES('ORD012684', 'IT025', 13.60, 2, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012685', 'IT019', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012685', 'IT003', 15.80, 2, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012685', 'IT039', 7.00, 2, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012685', 'IT030', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012686', 'IT046', 16.40, 2, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012686', 'IT006', 4.50, 1, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012686', 'IT044', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012686', 'IT050', 21.80, 2, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012687', 'IT031', 20.70, 3, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012687', 'IT023', 5.30, 1, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012687', 'IT020', 14.70, 3, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012687', 'IT021', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012688', 'IT050', 10.90, 1, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012688', 'IT044', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012689', 'IT036', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012689', 'IT022', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012689', 'IT002', 1.50, 1, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012689', 'IT023', 5.30, 1, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012690', 'IT036', 8.90, 1, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012690', 'IT045', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012690', 'IT043', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012690', 'IT038', 25.80, 2, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012691', 'IT050', 21.80, 2, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012691', 'IT017', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012692', 'IT049', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012692', 'IT027', 16.50, 3, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012692', 'IT037', 25.50, 3, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012693', 'IT040', 23.80, 2, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012693', 'IT024', 15.80, 2, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012693', 'IT049', 19.50, 3, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012693', 'IT005', 12.60, 3, 4.20);
+INSERT INTO Order_Detail
+VALUES('ORD012694', 'IT013', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012694', 'IT010', 9.40, 2, 4.70);
+INSERT INTO Order_Detail
+VALUES('ORD012694', 'IT043', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012694', 'IT001', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012695', 'IT040', 35.70, 3, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012695', 'IT004', 15.00, 2, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012695', 'IT045', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012696', 'IT042', 39.80, 2, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012696', 'IT011', 28.50, 3, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012696', 'IT040', 23.80, 2, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012697', 'IT035', 4.50, 3, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012697', 'IT036', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012697', 'IT044', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012697', 'IT040', 11.90, 1, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012698', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012698', 'IT028', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012699', 'IT039', 10.50, 3, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012699', 'IT050', 32.70, 3, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012699', 'IT037', 8.50, 1, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012700', 'IT025', 20.40, 3, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012700', 'IT044', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012700', 'IT035', 4.50, 3, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012700', 'IT017', 26.70, 3, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012701', 'IT026', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012701', 'IT020', 14.70, 3, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012701', 'IT048', 56.70, 3, 18.90);
+INSERT INTO Order_Detail
+VALUES('ORD012701', 'IT035', 1.50, 1, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012702', 'IT009', 6.40, 2, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012702', 'IT018', 27.60, 3, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012703', 'IT047', 7.50, 1, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012703', 'IT045', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012703', 'IT001', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012703', 'IT021', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012704', 'IT013', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012704', 'IT034', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012705', 'IT027', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012705', 'IT049', 19.50, 3, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012706', 'IT012', 5.20, 1, 5.20);
+INSERT INTO Order_Detail
+VALUES('ORD012706', 'IT001', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012707', 'IT046', 24.60, 3, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012707', 'IT017', 26.70, 3, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012707', 'IT016', 11.80, 2, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012708', 'IT015', 16.50, 3, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012708', 'IT035', 3.00, 2, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012709', 'IT009', 6.40, 2, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012709', 'IT018', 27.60, 3, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012709', 'IT040', 35.70, 3, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012710', 'IT042', 59.70, 3, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012710', 'IT033', 9.60, 3, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012711', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012711', 'IT035', 1.50, 1, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012711', 'IT001', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012712', 'IT034', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012712', 'IT037', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012712', 'IT047', 7.50, 1, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012713', 'IT001', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012713', 'IT033', 3.20, 1, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012713', 'IT047', 15.00, 2, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012714', 'IT037', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012714', 'IT039', 7.00, 2, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012714', 'IT022', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012715', 'IT049', 19.50, 3, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012715', 'IT015', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012715', 'IT001', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012716', 'IT011', 19.00, 2, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012716', 'IT041', 26.70, 3, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012716', 'IT006', 9.00, 2, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012717', 'IT019', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012717', 'IT018', 9.20, 1, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012717', 'IT011', 9.50, 1, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012717', 'IT038', 38.70, 3, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012718', 'IT043', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012718', 'IT039', 7.00, 2, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012718', 'IT030', 17.00, 2, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012718', 'IT038', 12.90, 1, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012719', 'IT003', 7.90, 1, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012719', 'IT018', 27.60, 3, 9.20);
+INSERT INTO Order_Detail
+VALUES('ORD012720', 'IT028', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012720', 'IT002', 1.50, 1, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012720', 'IT025', 6.80, 1, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012720', 'IT015', 16.50, 3, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012721', 'IT029', 1.20, 1, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012721', 'IT022', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012721', 'IT049', 19.50, 3, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012722', 'IT013', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012722', 'IT031', 6.90, 1, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012722', 'IT027', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012723', 'IT002', 1.50, 1, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012723', 'IT023', 15.90, 3, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012723', 'IT015', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012724', 'IT005', 4.20, 1, 4.20);
+INSERT INTO Order_Detail
+VALUES('ORD012724', 'IT026', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012724', 'IT040', 23.80, 2, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012724', 'IT041', 8.90, 1, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012725', 'IT015', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012725', 'IT036', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012725', 'IT004', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012725', 'IT022', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012726', 'IT010', 4.70, 1, 4.70);
+INSERT INTO Order_Detail
+VALUES('ORD012726', 'IT029', 1.20, 1, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012726', 'IT019', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012726', 'IT023', 5.30, 1, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012727', 'IT004', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012727', 'IT011', 19.00, 2, 9.50);
+INSERT INTO Order_Detail
+VALUES('ORD012727', 'IT047', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012727', 'IT019', 4.90, 1, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012728', 'IT030', 25.50, 3, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012728', 'IT029', 3.60, 3, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012728', 'IT024', 23.70, 3, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012729', 'IT006', 9.00, 2, 4.50);
+INSERT INTO Order_Detail
+VALUES('ORD012729', 'IT022', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012729', 'IT050', 10.90, 1, 10.90);
+INSERT INTO Order_Detail
+VALUES('ORD012729', 'IT038', 25.80, 2, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012730', 'IT015', 11.00, 2, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012730', 'IT034', 5.60, 2, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012731', 'IT044', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012731', 'IT035', 4.50, 3, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012731', 'IT030', 25.50, 3, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012731', 'IT012', 10.40, 2, 5.20);
+INSERT INTO Order_Detail
+VALUES('ORD012732', 'IT033', 6.40, 2, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012732', 'IT039', 7.00, 2, 3.50);
+INSERT INTO Order_Detail
+VALUES('ORD012733', 'IT016', 11.80, 2, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012733', 'IT049', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012733', 'IT041', 17.80, 2, 8.90);
+INSERT INTO Order_Detail
+VALUES('ORD012734', 'IT049', 13.00, 2, 6.50);
+INSERT INTO Order_Detail
+VALUES('ORD012734', 'IT043', 14.70, 3, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012734', 'IT009', 3.20, 1, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012735', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012735', 'IT003', 7.90, 1, 7.90);
+INSERT INTO Order_Detail
+VALUES('ORD012735', 'IT042', 19.90, 1, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012736', 'IT030', 8.50, 1, 8.50);
+INSERT INTO Order_Detail
+VALUES('ORD012736', 'IT004', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012737', 'IT028', 2.80, 1, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012737', 'IT008', 4.80, 1, 4.80);
+INSERT INTO Order_Detail
+VALUES('ORD012737', 'IT038', 12.90, 1, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012738', 'IT016', 17.70, 3, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012738', 'IT046', 16.40, 2, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012738', 'IT044', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012739', 'IT022', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012739', 'IT013', 21.60, 3, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012740', 'IT029', 2.40, 2, 1.20);
+INSERT INTO Order_Detail
+VALUES('ORD012740', 'IT023', 10.60, 2, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012740', 'IT044', 14.40, 2, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012740', 'IT031', 20.70, 3, 6.90);
+INSERT INTO Order_Detail
+VALUES('ORD012741', 'IT009', 3.20, 1, 3.20);
+INSERT INTO Order_Detail
+VALUES('ORD012741', 'IT010', 14.10, 3, 4.70);
+INSERT INTO Order_Detail
+VALUES('ORD012741', 'IT004', 22.50, 3, 7.50);
+INSERT INTO Order_Detail
+VALUES('ORD012741', 'IT025', 20.40, 3, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012742', 'IT020', 4.90, 1, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012742', 'IT010', 4.70, 1, 4.70);
+INSERT INTO Order_Detail
+VALUES('ORD012742', 'IT016', 5.90, 1, 5.90);
+INSERT INTO Order_Detail
+VALUES('ORD012743', 'IT010', 14.10, 3, 4.70);
+INSERT INTO Order_Detail
+VALUES('ORD012743', 'IT044', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012744', 'IT046', 8.20, 1, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012744', 'IT040', 35.70, 3, 11.90);
+INSERT INTO Order_Detail
+VALUES('ORD012744', 'IT023', 15.90, 3, 5.30);
+INSERT INTO Order_Detail
+VALUES('ORD012744', 'IT035', 3.00, 2, 1.50);
+INSERT INTO Order_Detail
+VALUES('ORD012745', 'IT015', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012745', 'IT001', 8.40, 3, 2.80);
+INSERT INTO Order_Detail
+VALUES('ORD012746', 'IT038', 12.90, 1, 12.90);
+INSERT INTO Order_Detail
+VALUES('ORD012746', 'IT015', 5.50, 1, 5.50);
+INSERT INTO Order_Detail
+VALUES('ORD012746', 'IT046', 16.40, 2, 8.20);
+INSERT INTO Order_Detail
+VALUES('ORD012747', 'IT043', 9.80, 2, 4.90);
+INSERT INTO Order_Detail
+VALUES('ORD012747', 'IT042', 59.70, 3, 19.90);
+INSERT INTO Order_Detail
+VALUES('ORD012747', 'IT025', 13.60, 2, 6.80);
+INSERT INTO Order_Detail
+VALUES('ORD012748', 'IT013', 7.20, 1, 7.20);
+INSERT INTO Order_Detail
+VALUES('ORD012748', 'IT037', 8.50, 1, 8.50);
+ 
+-- ---------- 4. PAYMENT (134 rows) ----------
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-05-08 13:57:20','YYYY-MM-DD HH24:MI:SS'), 'REFN012615', 'Pending', 'ORD012615');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-08-25 20:46:11','YYYY-MM-DD HH24:MI:SS'), 'REFN012616', 'Pending', 'ORD012616');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-12-05 13:51:18','YYYY-MM-DD HH24:MI:SS'), 'REFN012617', 'Pending', 'ORD012617');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-09-22 14:27:38','YYYY-MM-DD HH24:MI:SS'), 'REFN012618', 'Pending', 'ORD012618');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-05-17 19:14:17','YYYY-MM-DD HH24:MI:SS'), 'REFN012619', 'Pending', 'ORD012619');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-01-14 15:03:10','YYYY-MM-DD HH24:MI:SS'), 'REFN012620', 'Pending', 'ORD012620');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2024-02-04 13:24:16','YYYY-MM-DD HH24:MI:SS'), 'REFN012621', 'Pending', 'ORD012621');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-01-29 10:36:04','YYYY-MM-DD HH24:MI:SS'), 'REFN012622', 'Pending', 'ORD012622');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-07-09 09:57:07','YYYY-MM-DD HH24:MI:SS'), 'REFN012623', 'Pending', 'ORD012623');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2023-04-13 13:21:52','YYYY-MM-DD HH24:MI:SS'), 'REFN012624', 'Pending', 'ORD012624');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-03-17 16:40:58','YYYY-MM-DD HH24:MI:SS'), 'REFN012625', 'Pending', 'ORD012625');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2024-04-14 15:28:01','YYYY-MM-DD HH24:MI:SS'), 'REFN012626', 'Pending', 'ORD012626');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2024-08-19 18:15:39','YYYY-MM-DD HH24:MI:SS'), 'REFN012627', 'Pending', 'ORD012627');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-01-16 09:22:24','YYYY-MM-DD HH24:MI:SS'), 'REFN012628', 'Pending', 'ORD012628');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-04-24 09:53:39','YYYY-MM-DD HH24:MI:SS'), 'REFN012629', 'Pending', 'ORD012629');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2024-09-26 11:57:14','YYYY-MM-DD HH24:MI:SS'), 'REFN012630', 'Pending', 'ORD012630');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-03-09 18:51:37','YYYY-MM-DD HH24:MI:SS'), 'REFN012631', 'Pending', 'ORD012631');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2023-04-11 16:06:57','YYYY-MM-DD HH24:MI:SS'), 'REFN012632', 'Pending', 'ORD012632');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-07-02 11:29:45','YYYY-MM-DD HH24:MI:SS'), 'REFN012633', 'Pending', 'ORD012633');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-10-22 15:48:09','YYYY-MM-DD HH24:MI:SS'), 'REFN012634', 'Pending', 'ORD012634');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2023-08-14 17:16:34','YYYY-MM-DD HH24:MI:SS'), 'REFN012635', 'Pending', 'ORD012635');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-02-04 09:15:50','YYYY-MM-DD HH24:MI:SS'), 'REFN012636', 'Pending', 'ORD012636');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-10-12 12:31:19','YYYY-MM-DD HH24:MI:SS'), 'REFN012637', 'Pending', 'ORD012637');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-12-08 18:12:30','YYYY-MM-DD HH24:MI:SS'), 'REFN012638', 'Pending', 'ORD012638');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-03-24 14:58:26','YYYY-MM-DD HH24:MI:SS'), 'REFN012639', 'Pending', 'ORD012639');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2024-02-05 19:10:13','YYYY-MM-DD HH24:MI:SS'), 'REFN012640', 'Pending', 'ORD012640');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-12-25 17:37:16','YYYY-MM-DD HH24:MI:SS'), 'REFN012641', 'Pending', 'ORD012641');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-03-26 16:41:52','YYYY-MM-DD HH24:MI:SS'), 'REFN012642', 'Pending', 'ORD012642');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-06-29 18:17:00','YYYY-MM-DD HH24:MI:SS'), 'REFN012643', 'Pending', 'ORD012643');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2024-10-25 18:55:02','YYYY-MM-DD HH24:MI:SS'), 'REFN012644', 'Pending', 'ORD012644');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2024-12-14 11:52:17','YYYY-MM-DD HH24:MI:SS'), 'REFN012645', 'Pending', 'ORD012645');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2023-06-28 19:02:45','YYYY-MM-DD HH24:MI:SS'), 'REFN012646', 'Pending', 'ORD012646');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-08-20 16:47:35','YYYY-MM-DD HH24:MI:SS'), 'REFN012647', 'Pending', 'ORD012647');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2023-11-01 18:05:47','YYYY-MM-DD HH24:MI:SS'), 'REFN012648', 'Pending', 'ORD012648');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-07-13 17:48:42','YYYY-MM-DD HH24:MI:SS'), 'REFN012649', 'Pending', 'ORD012649');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-08-19 11:57:04','YYYY-MM-DD HH24:MI:SS'), 'REFN012650', 'Pending', 'ORD012650');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-03-23 16:41:45','YYYY-MM-DD HH24:MI:SS'), 'REFN012651', 'Pending', 'ORD012651');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-08-30 11:23:11','YYYY-MM-DD HH24:MI:SS'), 'REFN012652', 'Pending', 'ORD012652');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-06-04 16:51:19','YYYY-MM-DD HH24:MI:SS'), 'REFN012653', 'Pending', 'ORD012653');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2024-10-08 19:50:19','YYYY-MM-DD HH24:MI:SS'), 'REFN012654', 'Pending', 'ORD012654');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-05-05 09:30:22','YYYY-MM-DD HH24:MI:SS'), 'REFN012655', 'Pending', 'ORD012655');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2024-07-10 14:15:36','YYYY-MM-DD HH24:MI:SS'), 'REFN012656', 'Pending', 'ORD012656');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-01-03 09:23:19','YYYY-MM-DD HH24:MI:SS'), 'REFN012657', 'Pending', 'ORD012657');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-03-12 11:00:39','YYYY-MM-DD HH24:MI:SS'), 'REFN012658', 'Pending', 'ORD012658');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2024-06-21 10:59:38','YYYY-MM-DD HH24:MI:SS'), 'REFN012659', 'Pending', 'ORD012659');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-03-07 18:28:09','YYYY-MM-DD HH24:MI:SS'), 'REFN012660', 'Pending', 'ORD012660');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2024-07-03 11:12:26','YYYY-MM-DD HH24:MI:SS'), 'REFN012661', 'Pending', 'ORD012661');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2024-10-18 16:46:44','YYYY-MM-DD HH24:MI:SS'), 'REFN012662', 'Pending', 'ORD012662');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-08-11 10:52:32','YYYY-MM-DD HH24:MI:SS'), 'REFN012663', 'Pending', 'ORD012663');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2024-02-20 10:36:27','YYYY-MM-DD HH24:MI:SS'), 'REFN012664', 'Pending', 'ORD012664');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-01-15 18:57:12','YYYY-MM-DD HH24:MI:SS'), 'REFN012665', 'Pending', 'ORD012665');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-04-19 11:58:57','YYYY-MM-DD HH24:MI:SS'), 'REFN012666', 'Pending', 'ORD012666');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-09-09 18:58:39','YYYY-MM-DD HH24:MI:SS'), 'REFN012667', 'Pending', 'ORD012667');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-05-06 11:14:41','YYYY-MM-DD HH24:MI:SS'), 'REFN012668', 'Pending', 'ORD012668');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2024-09-06 19:51:15','YYYY-MM-DD HH24:MI:SS'), 'REFN012669', 'Pending', 'ORD012669');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-01-21 18:22:11','YYYY-MM-DD HH24:MI:SS'), 'REFN012670', 'Pending', 'ORD012670');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-06-29 11:37:44','YYYY-MM-DD HH24:MI:SS'), 'REFN012671', 'Pending', 'ORD012671');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-06-23 14:52:13','YYYY-MM-DD HH24:MI:SS'), 'REFN012672', 'Pending', 'ORD012672');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-08-20 19:39:54','YYYY-MM-DD HH24:MI:SS'), 'REFN012673', 'Pending', 'ORD012673');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-04-15 11:41:20','YYYY-MM-DD HH24:MI:SS'), 'REFN012674', 'Pending', 'ORD012674');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-08-10 11:23:06','YYYY-MM-DD HH24:MI:SS'), 'REFN012675', 'Pending', 'ORD012675');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-12-29 21:04:12','YYYY-MM-DD HH24:MI:SS'), 'REFN012676', 'Pending', 'ORD012676');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-03-13 11:28:24','YYYY-MM-DD HH24:MI:SS'), 'REFN012677', 'Pending', 'ORD012677');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-09-13 14:46:51','YYYY-MM-DD HH24:MI:SS'), 'REFN012678', 'Pending', 'ORD012678');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2024-11-01 18:28:09','YYYY-MM-DD HH24:MI:SS'), 'REFN012679', 'Pending', 'ORD012679');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-05-19 14:57:37','YYYY-MM-DD HH24:MI:SS'), 'REFN012680', 'Pending', 'ORD012680');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-02-11 18:22:59','YYYY-MM-DD HH24:MI:SS'), 'REFN012681', 'Pending', 'ORD012681');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-07-02 09:50:36','YYYY-MM-DD HH24:MI:SS'), 'REFN012682', 'Pending', 'ORD012682');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-12-09 19:51:45','YYYY-MM-DD HH24:MI:SS'), 'REFN012683', 'Pending', 'ORD012683');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-08-24 16:58:27','YYYY-MM-DD HH24:MI:SS'), 'REFN012684', 'Pending', 'ORD012684');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-06-15 13:46:01','YYYY-MM-DD HH24:MI:SS'), 'REFN012685', 'Pending', 'ORD012685');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-11-28 19:41:33','YYYY-MM-DD HH24:MI:SS'), 'REFN012686', 'Pending', 'ORD012686');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-10-31 18:07:47','YYYY-MM-DD HH24:MI:SS'), 'REFN012687', 'Pending', 'ORD012687');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-10-24 17:04:42','YYYY-MM-DD HH24:MI:SS'), 'REFN012688', 'Pending', 'ORD012688');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-07-20 10:37:17','YYYY-MM-DD HH24:MI:SS'), 'REFN012689', 'Pending', 'ORD012689');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-08-27 16:19:24','YYYY-MM-DD HH24:MI:SS'), 'REFN012690', 'Pending', 'ORD012690');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-11-30 11:54:07','YYYY-MM-DD HH24:MI:SS'), 'REFN012691', 'Pending', 'ORD012691');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-11-11 20:32:41','YYYY-MM-DD HH24:MI:SS'), 'REFN012692', 'Pending', 'ORD012692');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-05-12 12:39:53','YYYY-MM-DD HH24:MI:SS'), 'REFN012693', 'Pending', 'ORD012693');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-12-23 11:19:20','YYYY-MM-DD HH24:MI:SS'), 'REFN012694', 'Pending', 'ORD012694');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-08-07 19:03:24','YYYY-MM-DD HH24:MI:SS'), 'REFN012695', 'Pending', 'ORD012695');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-06-22 17:49:30','YYYY-MM-DD HH24:MI:SS'), 'REFN012696', 'Pending', 'ORD012696');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-08-19 10:43:47','YYYY-MM-DD HH24:MI:SS'), 'REFN012697', 'Pending', 'ORD012697');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-08-21 13:12:31','YYYY-MM-DD HH24:MI:SS'), 'REFN012698', 'Pending', 'ORD012698');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-04-28 14:00:40','YYYY-MM-DD HH24:MI:SS'), 'REFN012699', 'Pending', 'ORD012699');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-10-08 09:30:52','YYYY-MM-DD HH24:MI:SS'), 'REFN012700', 'Pending', 'ORD012700');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-06-21 16:23:46','YYYY-MM-DD HH24:MI:SS'), 'REFN012701', 'Pending', 'ORD012701');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-06-09 19:50:33','YYYY-MM-DD HH24:MI:SS'), 'REFN012702', 'Pending', 'ORD012702');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-02-09 20:30:15','YYYY-MM-DD HH24:MI:SS'), 'REFN012703', 'Pending', 'ORD012703');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2025-10-31 09:10:22','YYYY-MM-DD HH24:MI:SS'), 'REFN012704', 'Pending', 'ORD012704');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-12-26 15:48:03','YYYY-MM-DD HH24:MI:SS'), 'REFN012705', 'Pending', 'ORD012705');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-05-30 14:21:11','YYYY-MM-DD HH24:MI:SS'), 'REFN012706', 'Pending', 'ORD012706');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-12-20 15:52:55','YYYY-MM-DD HH24:MI:SS'), 'REFN012707', 'Pending', 'ORD012707');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-11-08 15:58:42','YYYY-MM-DD HH24:MI:SS'), 'REFN012708', 'Pending', 'ORD012708');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-07-24 16:03:08','YYYY-MM-DD HH24:MI:SS'), 'REFN012709', 'Pending', 'ORD012709');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-05-04 10:16:57','YYYY-MM-DD HH24:MI:SS'), 'REFN012710', 'Pending', 'ORD012710');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-07-28 20:24:59','YYYY-MM-DD HH24:MI:SS'), 'REFN012711', 'Pending', 'ORD012711');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-03-31 12:43:02','YYYY-MM-DD HH24:MI:SS'), 'REFN012712', 'Pending', 'ORD012712');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-01-26 14:04:13','YYYY-MM-DD HH24:MI:SS'), 'REFN012713', 'Pending', 'ORD012713');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-03-17 19:54:05','YYYY-MM-DD HH24:MI:SS'), 'REFN012714', 'Pending', 'ORD012714');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-06-02 16:46:22','YYYY-MM-DD HH24:MI:SS'), 'REFN012715', 'Pending', 'ORD012715');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-05-06 16:43:13','YYYY-MM-DD HH24:MI:SS'), 'REFN012716', 'Pending', 'ORD012716');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-07-05 19:10:01','YYYY-MM-DD HH24:MI:SS'), 'REFN012717', 'Pending', 'ORD012717');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2025-07-20 11:05:30','YYYY-MM-DD HH24:MI:SS'), 'REFN012718', 'Pending', 'ORD012718');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-01-22 15:43:54','YYYY-MM-DD HH24:MI:SS'), 'REFN012719', 'Pending', 'ORD012719');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-05-23 17:23:00','YYYY-MM-DD HH24:MI:SS'), 'REFN012720', 'Pending', 'ORD012720');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-02-22 14:20:51','YYYY-MM-DD HH24:MI:SS'), 'REFN012721', 'Pending', 'ORD012721');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2025-08-01 11:52:53','YYYY-MM-DD HH24:MI:SS'), 'REFN012722', 'Pending', 'ORD012722');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-10-29 17:47:09','YYYY-MM-DD HH24:MI:SS'), 'REFN012723', 'Pending', 'ORD012723');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-01-21 17:47:25','YYYY-MM-DD HH24:MI:SS'), 'REFN012724', 'Pending', 'ORD012724');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-05-07 13:46:50','YYYY-MM-DD HH24:MI:SS'), 'REFN012725', 'Pending', 'ORD012725');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-09-05 11:25:50','YYYY-MM-DD HH24:MI:SS'), 'REFN012726', 'Pending', 'ORD012726');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-03-05 09:26:07','YYYY-MM-DD HH24:MI:SS'), 'REFN012727', 'Pending', 'ORD012727');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-04-29 12:54:19','YYYY-MM-DD HH24:MI:SS'), 'REFN012728', 'Pending', 'ORD012728');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-02-09 18:07:35','YYYY-MM-DD HH24:MI:SS'), 'REFN012729', 'Pending', 'ORD012729');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-07-27 13:47:43','YYYY-MM-DD HH24:MI:SS'), 'REFN012730', 'Pending', 'ORD012730');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-06-22 12:43:16','YYYY-MM-DD HH24:MI:SS'), 'REFN012731', 'Pending', 'ORD012731');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-04-03 16:50:25','YYYY-MM-DD HH24:MI:SS'), 'REFN012732', 'Pending', 'ORD012732');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2025-10-21 11:18:23','YYYY-MM-DD HH24:MI:SS'), 'REFN012733', 'Pending', 'ORD012733');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-06-28 13:45:10','YYYY-MM-DD HH24:MI:SS'), 'REFN012734', 'Pending', 'ORD012734');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-07-22 16:54:06','YYYY-MM-DD HH24:MI:SS'), 'REFN012735', 'Pending', 'ORD012735');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-06-19 15:31:35','YYYY-MM-DD HH24:MI:SS'), 'REFN012736', 'Pending', 'ORD012736');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-02-09 14:31:41','YYYY-MM-DD HH24:MI:SS'), 'REFN012737', 'Pending', 'ORD012737');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-06-08 17:24:52','YYYY-MM-DD HH24:MI:SS'), 'REFN012738', 'Pending', 'ORD012738');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-06-04 18:01:48','YYYY-MM-DD HH24:MI:SS'), 'REFN012739', 'Pending', 'ORD012739');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-02-22 09:13:36','YYYY-MM-DD HH24:MI:SS'), 'REFN012740', 'Pending', 'ORD012740');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-03-18 15:29:09','YYYY-MM-DD HH24:MI:SS'), 'REFN012741', 'Pending', 'ORD012741');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-07-10 17:18:36','YYYY-MM-DD HH24:MI:SS'), 'REFN012742', 'Pending', 'ORD012742');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-07-22 12:38:23','YYYY-MM-DD HH24:MI:SS'), 'REFN012743', 'Pending', 'ORD012743');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Card', TO_TIMESTAMP('2026-06-27 13:05:35','YYYY-MM-DD HH24:MI:SS'), 'REFN012744', 'Pending', 'ORD012744');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'E-Wallet', TO_TIMESTAMP('2026-03-07 12:40:25','YYYY-MM-DD HH24:MI:SS'), 'REFN012745', 'Pending', 'ORD012745');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Online Banking', TO_TIMESTAMP('2026-03-04 20:20:18','YYYY-MM-DD HH24:MI:SS'), 'REFN012746', 'Pending', 'ORD012746');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-04-22 13:57:18','YYYY-MM-DD HH24:MI:SS'), 'REFN012747', 'Pending', 'ORD012747');
+INSERT INTO Payment
+VALUES('PAY' || TO_CHAR(payment_seq.nextval, 'FM000000'), 'Cash', TO_TIMESTAMP('2026-01-12 09:49:53','YYYY-MM-DD HH24:MI:SS'), 'REFN012748', 'Pending', 'ORD012748');
+ 
+-- ---------- 5. SETTLE THE PAYMENTS ----------
+-- trg_payment_completes_order completes each order; trg_award_points banks the points.
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012615';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012616';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012617';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012618';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012619';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012620';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012621';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012622';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012623';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012624';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012625';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012626';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012627';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012628';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012629';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012630';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012631';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012632';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012633';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012634';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012635';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012636';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012637';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012638';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012639';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012640';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012641';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012642';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012643';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012644';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012645';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012646';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012647';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012648';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012649';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012650';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012651';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012652';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012653';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012654';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012655';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012656';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012657';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012658';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012659';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012660';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012661';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012662';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012663';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012664';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012665';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012666';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012667';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012668';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012669';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012670';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012671';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012672';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012673';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012674';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012675';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012676';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012677';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012678';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012679';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012680';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012681';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012682';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012683';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012684';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012685';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012686';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012687';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012688';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012689';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012690';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012691';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012692';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012693';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012694';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012695';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012696';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012697';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012698';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012699';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012700';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012701';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012702';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012703';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012704';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012705';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012706';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012707';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012708';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012709';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012710';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012711';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012712';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012713';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012714';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012715';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012716';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012717';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012718';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012719';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012720';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012721';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012722';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012723';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012724';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012725';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012726';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012727';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012728';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012729';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012730';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012731';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012732';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012733';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012734';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012735';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012736';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012737';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012738';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012739';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012740';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012741';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012742';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012743';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012744';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012745';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012746';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012747';
+UPDATE Payment SET payment_status = 'Paid' WHERE order_no = 'ORD012748';
+
 COMMIT;
 
 -- ROW COUNT PER TABLE
