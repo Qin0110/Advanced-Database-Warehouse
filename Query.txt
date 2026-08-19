@@ -3,9 +3,11 @@
 ------------------
 
 -- Index 1
-CREATE INDEX idx_courier_rating ON Courier (delivery_company_id, average_rating);
+DROP INDEX idx_dr_courier_status;
+DROP INDEX idx_dr_courier_status; CREATE INDEX idx_dr_courier_status ON Delivery_Request (courier_id, status); 
 
 -- Index 2
+DROP INDEX idx_item_mykasih ;
 CREATE INDEX idx_item_mykasih ON Item (supplier_id, is_mykasih_eligible, status);
 
 -- View Table 1
@@ -183,70 +185,79 @@ CREATE OR REPLACE PROCEDURE prc_restock_item (
     p_item_id   IN Item.item_id%TYPE,
     p_quantity  IN NUMBER
 ) AS
+    e_invalid_quantity EXCEPTION;
+    e_branch_closed    EXCEPTION;
+ 
     v_branch_name   Branch.name%TYPE;
-    v_branch_status Branch.status%TYPE; 
+    v_branch_status Branch.status%TYPE;
     v_item_name     Item.name%TYPE;
-    v_item_status   Item.status%TYPE;
     v_supplier      Supplier.company_name%TYPE;
-    v_sup_status    Supplier.status%TYPE;
     v_lead          Supplier.lead_time_days%TYPE;
     v_before        Inventory.quantity%TYPE;
+    v_grn           VARCHAR2(20);
 BEGIN
-    SELECT b.name, b.status 
+    SELECT b.name, b.status
     INTO   v_branch_name, v_branch_status
-    FROM   Branch b 
+    FROM   Branch b
     WHERE  b.branch_id = p_branch_id;
-
-    SELECT i.name, i.status, s.company_name, s.status, s.lead_time_days
-    INTO   v_item_name, v_item_status, v_supplier, v_sup_status, v_lead
-    FROM   Item i 
+ 
+    SELECT i.name, s.company_name, s.lead_time_days
+    INTO   v_item_name, v_supplier, v_lead
+    FROM   Item i
            JOIN Supplier s ON s.supplier_id = i.supplier_id
     WHERE  i.item_id = p_item_id;
-
-    IF p_quantity IS NULL OR p_quantity <= 0 THEN
-        RAISE_APPLICATION_ERROR(-20301, 'The quantity received must be a positive number.');
-    ELSIF p_quantity > 1000000 THEN
-        RAISE_APPLICATION_ERROR(-20302, 'Quantity exceeds the maximum single-delivery limit (1,000,000 units).');
-    ELSIF v_branch_status <> 'Active' THEN
-        RAISE_APPLICATION_ERROR(-20303, v_branch_name || ' is inactive and cannot receive stock.');
-    ELSIF v_item_status <> 'Active' THEN
-        RAISE_APPLICATION_ERROR(-20304, v_item_name || ' has been discontinued and cannot be restocked.');
-    ELSIF v_sup_status <> 'Active' THEN
-        RAISE_APPLICATION_ERROR(-20305, 'Supplier ' || v_supplier || ' is inactive.');
+ 
+    IF p_quantity IS NULL OR p_quantity <= 0 OR p_quantity > 1000000 THEN
+        RAISE e_invalid_quantity;
     END IF;
-
+ 
+    IF v_branch_status <> 'Active' THEN
+        RAISE e_branch_closed;
+    END IF;
+ 
+    v_grn := 'GRN' || TO_CHAR(stock_movement_seq.NEXTVAL, 'FM000000');
+ 
     BEGIN
         SELECT quantity INTO v_before
         FROM   Inventory
         WHERE  branch_id = p_branch_id AND item_id = p_item_id
         FOR UPDATE;
-
+ 
         UPDATE Inventory
-        SET    quantity = quantity + p_quantity, 
+        SET    quantity = quantity + p_quantity,
                last_restock_date = SYSDATE
         WHERE  branch_id = p_branch_id AND item_id = p_item_id;
     EXCEPTION
-        WHEN NO_DATA_FOUND THEN
+        WHEN NO_DATA_FOUND THEN          -- the branch has never carried this line
             v_before := 0;
             INSERT INTO Inventory (branch_id, item_id, quantity, last_restock_date)
             VALUES (p_branch_id, p_item_id, p_quantity, SYSDATE);
             DBMS_OUTPUT.PUT_LINE('New product line opened at ' || v_branch_name || '.');
     END;
-
+ 
     COMMIT;
-
+ 
     DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------');
-    DBMS_OUTPUT.PUT_LINE('RESTock CONFIRMATION REPORT');
+    DBMS_OUTPUT.PUT_LINE('GOODS RECEIVED NOTE ' || v_grn);
     DBMS_OUTPUT.PUT_LINE('  Branch   : ' || p_branch_id || ' - ' || v_branch_name);
     DBMS_OUTPUT.PUT_LINE('  Product  : ' || p_item_id || ' - ' || v_item_name);
     DBMS_OUTPUT.PUT_LINE('  Supplier : ' || v_supplier || ' (lead time ' || v_lead || ' day(s))');
     DBMS_OUTPUT.PUT_LINE('  Received : ' || p_quantity || ' unit(s)');
     DBMS_OUTPUT.PUT_LINE('  On hand  : ' || v_before || ' -> ' || (v_before + p_quantity));
+    DBMS_OUTPUT.PUT_LINE('  Next suggested order : ' ||
+                         fn_reorder_quantity(p_branch_id, p_item_id) || ' unit(s)');
     DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------');
-
 EXCEPTION
+    WHEN e_invalid_quantity THEN
+        RAISE_APPLICATION_ERROR(-20000,
+            'The quantity received must be a positive number no greater than ' ||
+            '1,000,000 units. ' || NVL(TO_CHAR(p_quantity), 'NULL') || ' was given.');
+    WHEN e_branch_closed THEN
+        RAISE_APPLICATION_ERROR(-20001,
+            v_branch_name || ' is ' || v_branch_status || ' and cannot receive stock.');
     WHEN NO_DATA_FOUND THEN
-        RAISE_APPLICATION_ERROR(-20306, 'Branch ' || p_branch_id || ' or item ' || p_item_id || ' does not exist.');
+        RAISE_APPLICATION_ERROR(-20002,
+            'Branch ' || p_branch_id || ' or item ' || p_item_id || ' does not exist.');
 END prc_restock_item;
 /
 
@@ -285,12 +296,9 @@ BEGIN
     	SELECT o.order_type, o.service_type, o.order_status
     	INTO v_order_type, v_service, v_status
     	FROM Orders o WHERE o.order_no = p_order_no;
- 
-    	IF v_service <> 'Delivery' 
-		THEN RAISE_APPLICATION_ERROR(-20321, 'Order ' || p_order_no || ' was placed for ' || v_service || ' and must not be sent out with a courier.');
-    	END IF;
+
     	IF v_status <> 'Processing' 
-		THEN RAISE_APPLICATION_ERROR(-20322, 'Order ' || p_order_no || ' is ' || v_status || '. Only an order still being processed can be dispatched.'); 
+		THEN RAISE_APPLICATION_ERROR(-20003, 'Order ' || p_order_no || ' is ' || v_status || '. Only an order still being processed can be dispatched.'); 
 	END IF;
  
     	SELECT dc.company_name, dc.status, dc.base_delivery_fee
@@ -298,7 +306,7 @@ BEGIN
     	FROM   Delivery_Company dc WHERE dc.delivery_company_id = p_company_id;
  
     	IF v_partner_stat <> 'Active' 
-		THEN RAISE_APPLICATION_ERROR(-20323, v_partner || ' is no longer under contract. Choose another partner.');
+		THEN RAISE_APPLICATION_ERROR(-20004, v_partner || ' is no longer under contract. Choose another partner.');
     	END IF;
  
     	OPEN c_best_rider;
@@ -326,7 +334,7 @@ BEGIN
     	DBMS_OUTPUT.PUT_LINE('Rider     : ' || v_courier || '  ' || v_rider_name || '(rating: ' || NVL(TO_CHAR(v_rating, '0.00'), ' n/a') || ')' );
     	DBMS_OUTPUT.PUT_LINE('Deliver to: ' || p_recipient_name || '  ' || p_recipient_phone);
     	DBMS_OUTPUT.PUT_LINE('Address   : ' || p_address);
-    	DBMS_OUTPUT.PUT_LINE('Fee       : RM ' || TO_CHAR(v_fee, '990.00') || ' (base RM ' || TO_CHAR(v_base_fee, '990.00') || ' plus the weight of the basket');
+    	DBMS_OUTPUT.PUT_LINE('Fee       : RM ' || TO_CHAR(v_fee, '990.00') || ' (base RM ' || TO_CHAR(v_base_fee, '990.00') || ' plus the weight of the basket)');
     	DBMS_OUTPUT.PUT_LINE('Promise   : delivered within 2 hours, by ' || TO_CHAR(SYSDATE + 2/24, 'HH24:MI'));
     	DBMS_OUTPUT.PUT_LINE('-----------------------------------------------------------------------');
 	EXCEPTION
@@ -1795,47 +1803,47 @@ WHERE  rr.status = 'Requested';
 -- Query 1
 
 SET LINESIZE 135
-SET PAGESIZE 60
+SET PAGESIZE 90
 
-COLUMN reason FORMAT A28 HEADING 'Reason Given by the Customer'
-COLUMN fault_type FORMAT A17 HEADING 'Fault Type'
-COLUMN cases FORMAT 9,999 HEADING 'Cases'
-COLUMN units FORMAT 9,999 HEADING 'Units'
+COLUMN category     FORMAT A26       HEADING 'Product Category'
+COLUMN reason       FORMAT A28       HEADING 'Reason Given by the Customer'
+COLUMN fault_type   FORMAT A17       HEADING 'Fault Type'
+COLUMN branches_hit FORMAT 999       HEADING 'Branches|Affected'
+COLUMN cases        FORMAT 9,999     HEADING 'Cases'
+COLUMN units        FORMAT 9,999     HEADING 'Units'
 COLUMN refund_value FORMAT 99,990.00 HEADING 'Refunded|RM'
-COLUMN avg_refund FORMAT 990.00 HEADING 'Avg per|Case RM'
-COLUMN pct_cases FORMAT 990.9 HEADING '% of Returns'
-COLUMN refunded FORMAT 999 HEADING 'Refunded'
-COLUMN approved FORMAT 999 HEADING 'Approved'
-COLUMN rejected FORMAT 999 HEADING 'Rejected'
-COLUMN pending FORMAT 999 HEADING 'Pending'
+COLUMN avg_refund   FORMAT 990.00    HEADING 'Avg per|Case RM'
+COLUMN pct_cases    FORMAT 990.9     HEADING '% of|Returns'
+COLUMN pending      FORMAT 999       HEADING 'Still|Pending'
 
-TTITLE CENTER '88 SPEEDMART SDN BHD - RETURN REASON AND REFUND COST ANALYSIS' SKIP 1 -
-       CENTER '=============================================================' SKIP 2
+TTITLE CENTER '88 SPEEDMART SDN BHD - RETURN REASON BY PRODUCT CATEGORY' SKIP 1 -
+       CENTER '========================================================' SKIP 2
 
-BREAK ON REPORT
-COMPUTE SUM LABEL 'ALL REASONS' OF cases units refund_value ON REPORT
+BREAK ON category SKIP 1 ON REPORT
+COMPUTE SUM LABEL 'Category total' OF cases units refund_value ON category
+COMPUTE SUM LABEL 'ALL CATEGORIES' OF cases units refund_value ON REPORT
 
-SELECT rr.reason,
-       CASE WHEN rr.reason IN ('Changed mind after purchase')
+SELECT i.category,
+       rr.reason,
+       CASE WHEN rr.reason = 'Changed mind after purchase'
             THEN 'Customer choice'
             ELSE 'Shop or supplier'
        END AS fault_type,
+       COUNT(DISTINCT o.branch_id) AS branches_hit,
        COUNT(*) AS cases,
        SUM(rr.return_quantity) AS units,
-       SUM(CASE WHEN rr.status = 'Refunded'
-                THEN rr.refund_amount ELSE 0 END) AS refund_value,
-       ROUND(SUM(CASE WHEN rr.status = 'Refunded'
-                      THEN rr.refund_amount ELSE 0 END) / COUNT(*), 2) AS avg_refund,
-       ROUND(COUNT(*) * 100 /
-             (SELECT COUNT(*) FROM Return_Request), 1) AS pct_cases,
-       SUM(CASE WHEN rr.status = 'Refunded'  THEN 1 ELSE 0 END) AS refunded,
-       SUM(CASE WHEN rr.status = 'Approved'  THEN 1 ELSE 0 END) AS approved,
-       SUM(CASE WHEN rr.status = 'Rejected'  THEN 1 ELSE 0 END) AS rejected,
+       SUM(CASE WHEN rr.status = 'Refunded' THEN rr.refund_amount ELSE 0 END) AS refund_value,
+       ROUND(SUM(CASE WHEN rr.status = 'Refunded' THEN rr.refund_amount ELSE 0 END)
+             / COUNT(*), 2) AS avg_refund,
+       ROUND(COUNT(*) * 100 / (SELECT COUNT(*) FROM Return_Request), 1) AS pct_cases,
        SUM(CASE WHEN rr.status = 'Requested' THEN 1 ELSE 0 END) AS pending
 FROM   Return_Request rr
-GROUP  BY rr.reason
-ORDER  BY refund_value DESC,
-          cases DESC;
+JOIN   Item   i ON i.item_id   = rr.item_id
+JOIN   Orders o ON o.order_no  = rr.order_no
+JOIN   Branch b ON b.branch_id = o.branch_id
+GROUP  BY i.category, rr.reason
+ORDER  BY i.category, refund_value DESC;
+
 
 
 -- Query 2
@@ -1867,7 +1875,7 @@ SELECT b.name AS branch_name,
        r.score,
        SUBSTR(NVL(r.comments, '(no comment)'), 1, 50) AS comments,
        NVL(m.name, 'Walk-in customer') AS customer_name,
-       COALESCE(m.phone_no, dr.recipient_phone_no,'No Number') AS contact,
+       COALESCE(m.phone_no, dr.recipient_phone_no,'No Number')  	AS contact,
        NVL(m.membership_type, 'Non-member') AS membership_type,
        CASE WHEN rr.return_id IS NULL THEN 'No return'
             ELSE rr.status
@@ -1875,7 +1883,7 @@ SELECT b.name AS branch_name,
        CASE WHEN m.phone_no IS NULL AND dr.recipient_phone_no          
                  IS NULL THEN 'P5 - No Contact' 
             WHEN r.score = 1
-             AND NVL(m.membership_type, 'Non-member') = 'VIP' THEN 'P1 - Manager Call'
+             AND NVL(m.membership_type, 'Non-member') = 'VIP'  THEN 'P1 - Manager Call'
             WHEN TRUNC(SYSDATE) - TRUNC(r.rating_date) > 14
              AND rr.return_id IS NULL THEN 'P2 - Phone Call'
             WHEN r.score = 1 THEN 'P3 - Phone Call' 
@@ -1888,12 +1896,14 @@ JOIN   Branch b ON b.branch_id = o.branch_id
 JOIN   Customer c ON c.customer_id = o.customer_id
 LEFT   JOIN Member m ON m.member_id = c.member_id
 LEFT   JOIN Delivery_Request dr ON dr.order_no = r.order_no
-LEFT   JOIN Return_Request rr ON rr.order_no = r.order_no AND rr.item_id  = r.item_id
+LEFT   JOIN Return_Request rr ON rr.order_no = r.order_no
+                             AND rr.item_id  = r.item_id
 WHERE  r.score <= 2
 AND    r.rating_date >= ADD_MONTHS(SYSDATE, -3)
 ORDER  BY b.name,
           CASE WHEN r.score = 1 THEN 1 ELSE 2 END,
           days_since DESC;
+
 
 
 -- Procedure 1
@@ -1994,7 +2004,6 @@ CREATE OR REPLACE PROCEDURE prc_rate_item (
     PRAGMA EXCEPTION_INIT(e_orphan_line, -2291);
 
     e_order_open  EXCEPTION;                      
-
     v_status    Orders.order_status%TYPE;
     v_item_name Item.name%TYPE;
     v_rating_id Rating.rating_id%TYPE;
@@ -2014,7 +2023,7 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20047,
             'A rating of 1 or 2 star must come with a comment so the buyer can act on it.');
     ELSIF v_status <> 'Completed' THEN
-        RAISE e_order_open;                      
+        RAISE e_order_open;                       
     END IF;
 
     v_rating_id := 'RT' || LPAD(rating_seq.NEXTVAL, 5, '0');
@@ -2062,181 +2071,231 @@ END prc_rate_item;
 
 -- report 1
 
-SET LINESIZE 200
-SET PAGESIZE 100
+CREATE OR REPLACE PROCEDURE rpt_return_risk (
+    p_category IN Item.category%TYPE DEFAULT NULL
+) AS
+    CURSOR c_category IS
+        SELECT DISTINCT category
+        FROM   vw_item_return_analysis
+        WHERE  return_cases > 0
+        AND   (p_category IS NULL OR UPPER(category) = UPPER(p_category))
+        ORDER  BY category;
 
-COLUMN run_stamp NEW_VALUE v_run NOPRINT
-SELECT TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI') AS run_stamp FROM dual;
+    CURSOR c_item (cp_category Item.category%TYPE) IS
+        SELECT item_id, item_name, supplier_name, units_sold, units_returned,
+               return_rate_pct, refund_value, avg_score, risk_band
+        FROM   vw_item_return_analysis
+        WHERE  return_cases > 0
+        AND    category = cp_category
+        ORDER  BY return_rate_pct DESC, refund_value DESC;
 
-COLUMN item_id FORMAT A7 HEADING 'Item|ID'
-COLUMN category FORMAT A25 HEADING 'Category'
-COLUMN item_name FORMAT A40 HEADING 'Item'
-COLUMN supplier_name FORMAT A25 HEADING 'Supplier'
-COLUMN units_sold FORMAT 999,999 HEADING 'Units|Sold'
-COLUMN units_returned FORMAT 9,999 HEADING 'Units|Ret.'
-COLUMN return_rate_pct FORMAT 90.99 HEADING 'Return|Rate %'
-COLUMN refund_value FORMAT 99,990.00 HEADING 'Refund|RM'
-COLUMN avg_score FORMAT 90.00 HEADING 'Avg|Star'
-COLUMN top_reason FORMAT A27 HEADING 'Most Common Reason'
-COLUMN risk_band FORMAT A8 HEADING 'Risk'
+    c_width  CONSTANT PLS_INTEGER := 129;
+    v_rule   VARCHAR2(200) := RPAD('-', 129, '-');
+    v_double VARCHAR2(200) := RPAD('=', 129, '=');
 
-TTITLE LEFT 'Run : ' v_run RIGHT 'Page ' FORMAT 999 SQL.PNO SKIP 1 -
-       CENTER '88 SPEEDMART SDN BHD' SKIP 1 -
-       CENTER 'VOICE OF CUSTOMER - HIGH RETURN ITEMS AND REFUND EXPOSURE' SKIP 1 -
-       CENTER '========================================================' SKIP 2
-
-BTITLE RIGHT 'End of Report 1'
-
-BREAK ON category SKIP 1 ON REPORT
-COMPUTE SUM LABEL 'Subtotal' OF units_returned refund_value ON category
-COMPUTE SUM LABEL 'GRAND TOTAL' OF units_returned refund_value ON REPORT
-
-SELECT category,
-       item_id,
-       SUBSTR(item_name, 1, 40)     AS item_name,
-       SUBSTR(supplier_name, 1, 25) AS supplier_name,
-       units_sold,
-       units_returned,
-       return_rate_pct,
-       refund_value,
-       avg_score,
-       top_reason,
-       risk_band
-FROM   vw_item_return_analysis
-WHERE  return_cases > 0
-ORDER  BY category, return_rate_pct DESC, refund_value DESC;
-
-
-SET LINESIZE 120
-SET PAGESIZE 30
-
-
-COLUMN rnk FORMAT 90 HEADING 'No'
-COLUMN item_name FORMAT A30 HEADING 'Item'
-COLUMN category FORMAT A25 HEADING 'Category'
-COLUMN units_sold FORMAT 999,999 HEADING 'Units|Sold'
-COLUMN units_returned FORMAT 9,999 HEADING 'Units|Ret.'
-COLUMN return_rate_pct FORMAT 90.99 HEADING 'Return|Rate %'
-COLUMN refund_value FORMAT 99,990.00 HEADING 'Refund|RM'
-COLUMN avg_score FORMAT 90.00 HEADING 'Avg|Star'
-
-TTITLE CENTER '88 SPEEDMART SDN BHD - TOP 15 ITEMS BY REFUND EXPOSURE' SKIP 1 -
-       CENTER '======================================================' SKIP 2
-
-BREAK ON REPORT
-COMPUTE SUM LABEL 'TOP 15 TOTAL' OF refund_value units_returned ON REPORT
-
-SELECT ROWNUM AS rnk, item_name, category, units_sold, units_returned,
-       return_rate_pct, refund_value, avg_score
-FROM  (SELECT SUBSTR(item_name, 1, 30) AS item_name, category, units_sold,
-              units_returned, return_rate_pct, refund_value, avg_score
-       FROM   vw_item_return_analysis
-       WHERE  return_cases > 0
-       ORDER  BY refund_value DESC)
-WHERE ROWNUM <= 15;
-
-
--- report 2
-SET LINESIZE 130
-SET PAGESIZE 0
-
-
-DECLARE
-    c_width      CONSTANT PLS_INTEGER := 126;  
-    c_money_end  CONSTANT PLS_INTEGER := 115;   
-
-    v_prev_branch Branch.name%TYPE := NULL;
-    v_branch_sum  NUMBER(12,2) := 0;
-    v_branch_cnt  NUMBER := 0;
-    v_grand_sum   NUMBER(12,2) := 0;
-    v_grand_cnt   NUMBER := 0;
-    v_p1          NUMBER := 0;
-    v_p2          NUMBER := 0;
-    v_p3          NUMBER := 0;
-    v_oldest      NUMBER := 0;
-    v_rule        VARCHAR2(200) := RPAD('-', 126, '-');
-    v_double      VARCHAR2(200) := RPAD('=', 126, '=');
+    v_cat_units  NUMBER := 0;   v_cat_refund NUMBER := 0;   v_cat_lines NUMBER := 0;
+    v_all_units  NUMBER := 0;   v_all_refund NUMBER := 0;   v_all_lines NUMBER := 0;
+    v_critical   NUMBER := 0;   v_watch      NUMBER := 0;
 
     FUNCTION ctr (p_text IN VARCHAR2) RETURN VARCHAR2 IS
     BEGIN
         RETURN LPAD(p_text, FLOOR((c_width + LENGTH(p_text)) / 2));
     END ctr;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(ctr('88 SPEEDMART SDN BHD'));
+    DBMS_OUTPUT.PUT_LINE(ctr('HIGH RETURN ITEMS AND REFUND EXPOSURE'));
+    DBMS_OUTPUT.PUT_LINE(ctr('Scope : ' || NVL(p_category, 'All categories')));
+    DBMS_OUTPUT.PUT_LINE(ctr('As at ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI')));
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(' ');
+
+    FOR cat IN c_category LOOP                      
+        DBMS_OUTPUT.PUT_LINE('CATEGORY : ' || UPPER(cat.category));
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Item',      8) ||
+            RPAD('Product',  36) ||
+            RPAD('Supplier', 31) ||
+            LPAD('Sold',      9) ||
+            LPAD('Ret.',      7) ||
+            LPAD('Rate %',    9) ||
+            LPAD('Refund RM',12) ||
+            LPAD('Star',      7) ||
+            LPAD('Risk',     10));
+        DBMS_OUTPUT.PUT_LINE(v_rule);
+
+        v_cat_units := 0;  v_cat_refund := 0;  v_cat_lines := 0;
+
+        FOR itm IN c_item(cat.category) LOOP         
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(itm.item_id, 8) ||
+                RPAD(SUBSTR(itm.item_name, 1, 34), 36) ||
+                RPAD(SUBSTR(itm.supplier_name, 1, 29), 31) ||
+                LPAD(TO_CHAR(itm.units_sold,      'FM999,990'),    9) ||
+                LPAD(TO_CHAR(itm.units_returned,  'FM9,990'),      7) ||
+                LPAD(TO_CHAR(itm.return_rate_pct, 'FM990.00'),     9) ||
+                LPAD(TO_CHAR(itm.refund_value,    'FM999,990.00'),12) ||
+                LPAD(NVL(TO_CHAR(itm.avg_score,   'FM90.00'), 'n/a'), 7) ||
+                LPAD(itm.risk_band, 10));
+
+            v_cat_units  := v_cat_units  + itm.units_returned;
+            v_cat_refund := v_cat_refund + itm.refund_value;
+            v_cat_lines  := v_cat_lines  + 1;
+            IF    itm.risk_band = 'CRITICAL' THEN v_critical := v_critical + 1;
+            ELSIF itm.risk_band = 'WATCH'    THEN v_watch    := v_watch    + 1;
+            END IF;
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(v_rule);
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Subtotal  (' || v_cat_lines || ' item(s))', 74) ||
+            LPAD(TO_CHAR(v_cat_units,  'FM9,990'),       7) ||
+            LPAD(TO_CHAR(v_cat_refund, 'FM999,990.00'), 21));
+        DBMS_OUTPUT.PUT_LINE(' ');
+
+        v_all_units  := v_all_units  + v_cat_units;
+        v_all_refund := v_all_refund + v_cat_refund;
+        v_all_lines  := v_all_lines  + v_cat_lines;
+    END LOOP;
+
+    IF v_all_lines = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(ctr('No returns recorded for ' ||
+            NVL(p_category, 'any category') || '.'));
+        DBMS_OUTPUT.PUT_LINE(v_double);
+        RETURN;
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(ctr('SUMMARY'));
+    DBMS_OUTPUT.PUT_LINE(v_rule);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Items with returns', 30) || ': ' ||
+        LPAD(v_all_lines, 12));
+    DBMS_OUTPUT.PUT_LINE(RPAD('   CRITICAL band', 30) || ': ' ||
+        LPAD(v_critical, 12) || '   (' ||
+        TO_CHAR(ROUND(v_critical / v_all_lines * 100, 1), 'FM990.0') || '%)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('   WATCH band', 30) || ': ' ||
+        LPAD(v_watch, 12) || '   (' ||
+        TO_CHAR(ROUND(v_watch / v_all_lines * 100, 1), 'FM990.0') || '%)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Total units returned', 30) || ': ' ||
+        LPAD(TO_CHAR(v_all_units, 'FM999,990'), 12));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Total refund exposure', 30) || ': ' ||
+        LPAD('RM ' || TO_CHAR(v_all_refund, 'FM999,999,990.00'), 12));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Average refund per item', 30) || ': ' ||
+        LPAD('RM ' || TO_CHAR(ROUND(v_all_refund / v_all_lines, 2), 'FM999,990.00'), 12));
+    DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(LPAD('End of Report 1', c_width));
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('REPORT FAILED ' || SQLCODE || ' : ' || SQLERRM);
+END rpt_return_risk;
+/
+
+EXEC rpt_return_risk;
+EXEC rpt_return_risk('beverages');
+
+
+-- report 2
+CREATE OR REPLACE PROCEDURE rpt_pending_returns (
+    p_branch_id IN Branch.branch_id%TYPE DEFAULT NULL
+) AS
+    CURSOR c_branch IS
+        SELECT   branch_id,
+                 branch_name,
+                 COUNT(*)              AS cases,
+                 SUM(refund_exposure)  AS exposure
+        FROM     vw_pending_return_queue
+        WHERE   (p_branch_id IS NULL OR branch_id = p_branch_id)
+        GROUP BY branch_id, branch_name
+        ORDER BY SUM(refund_exposure) DESC;
+
+    CURSOR c_case (cp_branch Branch.branch_id%TYPE) IS
+        SELECT return_id, order_no, item_name, return_quantity, reason,
+               customer_name, membership_type, days_waiting,
+               refund_exposure, priority
+        FROM   vw_pending_return_queue
+        WHERE  branch_id = cp_branch
+        ORDER  BY CASE priority WHEN 'P1-URGENT' THEN 1
+                                WHEN 'P2-HIGH'   THEN 2
+                                ELSE 3 END,
+                  days_waiting DESC, refund_exposure DESC;
+
+    c_width  CONSTANT PLS_INTEGER := 155;
+    v_rule   VARCHAR2(200) := RPAD('-', 155, '-');
+    v_double VARCHAR2(200) := RPAD('=', 155, '=');
+
+    v_branch_sum NUMBER(12,2) := 0;   v_branch_cnt NUMBER := 0;
+    v_grand_sum  NUMBER(12,2) := 0;   v_grand_cnt  NUMBER := 0;
+    v_p1 NUMBER := 0;  v_p2 NUMBER := 0;  v_p3 NUMBER := 0;
+    v_oldest NUMBER := 0;
+
+    FUNCTION ctr (p_text IN VARCHAR2) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN LPAD(p_text, FLOOR((c_width + LENGTH(p_text)) / 2));
+    END ctr;
+
     FUNCTION money_line (p_label IN VARCHAR2, p_amount IN NUMBER) RETURN VARCHAR2 IS
     BEGIN
-        RETURN RPAD(p_label, c_money_end - 10) ||
-               LPAD(TO_CHAR(p_amount, 'FM999,990.00'), 10);
+        RETURN RPAD(p_label, 134) || LPAD(TO_CHAR(p_amount, 'FM999,990.00'), 10);
     END money_line;
-
-    PROCEDURE branch_footer IS
-    BEGIN
-        IF v_prev_branch IS NOT NULL THEN
-            DBMS_OUTPUT.PUT_LINE(
-                money_line('Branch subtotal  (' || v_branch_cnt || ' case(s))',
-                           v_branch_sum));
-            DBMS_OUTPUT.PUT_LINE(v_rule);
-        END IF;
-    END branch_footer;
 BEGIN
     DBMS_OUTPUT.PUT_LINE(v_double);
     DBMS_OUTPUT.PUT_LINE(ctr('88 SPEEDMART SDN BHD'));
     DBMS_OUTPUT.PUT_LINE(ctr('VOICE OF CUSTOMER - PENDING RETURN REQUESTS'));
+    DBMS_OUTPUT.PUT_LINE(ctr('Scope : ' || NVL(p_branch_id, 'All branches')));
     DBMS_OUTPUT.PUT_LINE(ctr('As at ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI')));
     DBMS_OUTPUT.PUT_LINE(v_double);
+    DBMS_OUTPUT.PUT_LINE(' ');
 
-    DBMS_OUTPUT.PUT_LINE(
-        RPAD('Return',   11) ||
-        RPAD('Order',    11) ||
-        RPAD('Item',     26) ||
-        RPAD('Qty',       5) ||
-        RPAD('Reason',   29) ||
-        RPAD('Customer', 18) ||
-        LPAD('Days',      5) ||
-        LPAD('RM',       10) ||
-        '  Priority');
-    DBMS_OUTPUT.PUT_LINE(v_rule);
-
-    FOR r IN (SELECT * FROM vw_pending_return_queue
-              ORDER BY branch_name,
-                       CASE priority WHEN 'P1-URGENT' THEN 1
-                                     WHEN 'P2-HIGH'   THEN 2
-                                     ELSE 3 END,
-                       days_waiting DESC, refund_exposure DESC) LOOP
-
-        IF v_prev_branch IS NULL OR r.branch_name <> v_prev_branch THEN
-            branch_footer;
-            DBMS_OUTPUT.PUT_LINE('BRANCH : ' || UPPER(r.branch_name) ||
-                                 '  (' || r.branch_id || ')');
-            DBMS_OUTPUT.PUT_LINE(v_rule);
-            v_prev_branch := r.branch_name;
-            v_branch_sum  := 0;
-            v_branch_cnt  := 0;
-        END IF;
-
+    FOR br IN c_branch LOOP                              -- OUTER CURSOR
+        DBMS_OUTPUT.PUT_LINE('BRANCH : ' || UPPER(br.branch_name) ||
+                             '  (' || br.branch_id || ')');
         DBMS_OUTPUT.PUT_LINE(
-            RPAD(r.return_id, 11) ||
-            RPAD(r.order_no,  11) ||
-            RPAD(SUBSTR(r.item_name, 1, 24), 26) ||
-            RPAD(r.return_quantity, 5) ||
-            RPAD(SUBSTR(r.reason, 1, 27), 29) ||
-            RPAD(SUBSTR(r.customer_name, 1, 16), 18) ||
-            LPAD(r.days_waiting, 5) ||
-            LPAD(TO_CHAR(r.refund_exposure, 'FM999,990.00'), 10) ||
-            '  ' || r.priority);
+            RPAD('Return',   10) ||
+            RPAD('Order',    10) ||
+            RPAD('Item',     51) ||
+            RPAD('Qty',       5) ||
+            RPAD('Reason',   29) ||
+            RPAD('Customer', 24) ||
+            LPAD('Days',      5) ||
+            LPAD('RM',       10) ||
+            '  Priority');
+        DBMS_OUTPUT.PUT_LINE(v_rule);
 
-        v_branch_sum := v_branch_sum + r.refund_exposure;
-        v_branch_cnt := v_branch_cnt + 1;
-        v_grand_sum  := v_grand_sum  + r.refund_exposure;
-        v_grand_cnt  := v_grand_cnt  + 1;
-        v_oldest     := GREATEST(v_oldest, r.days_waiting);
+        v_branch_sum := 0;  v_branch_cnt := 0;
 
-        CASE r.priority
-            WHEN 'P1-URGENT' THEN v_p1 := v_p1 + 1;
-            WHEN 'P2-HIGH'   THEN v_p2 := v_p2 + 1;
-            ELSE                  v_p3 := v_p3 + 1;
-        END CASE;
+        FOR r IN c_case(br.branch_id) LOOP               -- INNER CURSOR
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(r.return_id, 10) ||
+                RPAD(r.order_no,  10) ||
+                RPAD(SUBSTR(r.item_name, 1, 49), 51) ||
+                RPAD(r.return_quantity, 5) ||
+                RPAD(SUBSTR(r.reason, 1, 27), 29) ||
+                RPAD(SUBSTR(r.customer_name, 1, 22), 24) ||
+                LPAD(r.days_waiting, 5) ||
+                LPAD(TO_CHAR(r.refund_exposure, 'FM999,990.00'), 10) ||
+                '  ' || r.priority);
+
+            v_branch_sum := v_branch_sum + r.refund_exposure;
+            v_branch_cnt := v_branch_cnt + 1;
+            v_oldest     := GREATEST(v_oldest, r.days_waiting);
+
+            CASE r.priority
+                WHEN 'P1-URGENT' THEN v_p1 := v_p1 + 1;
+                WHEN 'P2-HIGH'   THEN v_p2 := v_p2 + 1;
+                ELSE                  v_p3 := v_p3 + 1;
+            END CASE;
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(v_rule);
+        DBMS_OUTPUT.PUT_LINE(
+            money_line('Branch subtotal  (' || v_branch_cnt || ' case(s))',
+                       v_branch_sum));
+        DBMS_OUTPUT.PUT_LINE(' ');
+
+        v_grand_sum := v_grand_sum + v_branch_sum;
+        v_grand_cnt := v_grand_cnt + v_branch_cnt;
     END LOOP;
-
-    branch_footer;
 
     IF v_grand_cnt = 0 THEN
         DBMS_OUTPUT.PUT_LINE(ctr('No return request is waiting for a decision.'));
@@ -2260,50 +2319,2188 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE(RPAD('Average value per case', 36) || ': RM ' ||
         TO_CHAR(ROUND(v_grand_sum / v_grand_cnt, 2), 'FM999,990.00'));
     DBMS_OUTPUT.PUT_LINE(v_double);
-    DBMS_OUTPUT.PUT_LINE(LPAD('End of Report 2', c_width)); 
+    DBMS_OUTPUT.PUT_LINE(LPAD('End of Report 2', c_width));
 
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('REPORT FAILED ' || SQLCODE || ' : ' || SQLERRM);
-END;
+END rpt_pending_returns;
 /
 
-
-BTITLE OFF
-TTITLE OFF
-CLEAR BREAKS
-CLEAR COMPUTES
-
--- Summary 
-SET PAGESIZE 20
-SET LINESIZE 100
-
-
-COLUMN branch_name  FORMAT A30       HEADING 'Branch'
-COLUMN cases        FORMAT 999       HEADING 'Cases'
-COLUMN urgent       FORMAT 999       HEADING 'P1|Urgent'
-COLUMN oldest       FORMAT 999       HEADING 'Oldest|Days'
-COLUMN exposure     FORMAT 99,990.00 HEADING 'Exposure|RM'
-COLUMN avg_case     FORMAT 9,990.00  HEADING 'Avg per|Case RM'
-
-TTITLE CENTER '88 SPEEDMART - PENDING RETURNS BY BRANCH' SKIP 1 -
-       CENTER '========================================' SKIP 2
-
-BREAK ON REPORT
-COMPUTE SUM LABEL 'CHAIN TOTAL' OF cases urgent exposure ON REPORT
-
-SELECT branch_name,
-       COUNT(*)                                                   AS cases,
-       SUM(CASE WHEN priority = 'P1-URGENT' THEN 1 ELSE 0 END)    AS urgent,
-       MAX(days_waiting)                                          AS oldest,
-       SUM(refund_exposure)                                       AS exposure,
-       ROUND(AVG(refund_exposure), 2)                             AS avg_case
-FROM   vw_pending_return_queue
-GROUP  BY branch_name
-ORDER  BY exposure DESC;
+EXEC rpt_pending_returns;
+EXEC rpt_pending_returns('BR003');
 
 
 ------------------
 --  Ng Wei Hao  -- 
 ------------------
+
+-- Index 1
+DROP INDEX idx_orders_branch_date;
+CREATE INDEX idx_orders_branch_date ON Orders (branch_id, order_date_time);
+
+-- Index 2
+DROP INDEX idx_payment_status_method ;
+CREATE INDEX idx_payment_status_method ON Payment (payment_status, payment_method);
+
+-- View 1
+CREATE OR REPLACE VIEW v_branch_monthly_revenue AS
+SELECT
+    EXTRACT(YEAR FROM O.order_date_time) AS sales_year,
+    TRUNC(
+        CAST(O.order_date_time AS DATE),
+        'MM'
+    ) AS sales_month,
+    B.branch_id,
+    B.name AS branch_name,
+    COUNT(O.order_no) AS total_orders,
+    COUNT(DISTINCT O.customer_id) AS total_customers,
+    SUM(O.subtotal_amount) AS gross_sales,
+    SUM(
+        CASE
+            WHEN R.reward_type = 'Discount'
+            THEN O.discount_amount
+            ELSE 0
+        END
+    ) AS voucher_discount,
+    SUM(
+        O.subtotal_amount -
+        CASE
+            WHEN R.reward_type = 'Discount'
+            THEN O.discount_amount
+            ELSE 0
+        END
+    ) AS net_sales,
+    ROUND(
+        AVG(
+            O.subtotal_amount -
+            CASE
+                WHEN R.reward_type = 'Discount'
+                THEN O.discount_amount
+                ELSE 0
+            END
+        ),
+        2
+    ) AS avg_net_sales_per_order
+FROM Branch B
+JOIN Orders O
+    ON B.branch_id = O.branch_id
+JOIN Payment P
+    ON O.order_no = P.order_no
+LEFT JOIN Reward_Redemption RR
+    ON O.redemption_id = RR.redemption_id
+LEFT JOIN Reward R
+    ON RR.reward_id = R.reward_id
+WHERE O.order_status = 'Completed'
+  AND P.payment_status = 'Paid'
+GROUP BY
+    EXTRACT(YEAR FROM O.order_date_time),
+    TRUNC(
+        CAST(O.order_date_time AS DATE),
+        'MM'
+    ),
+    B.branch_id,
+    B.name;
+
+
+
+-- View 2
+CREATE OR REPLACE VIEW v_mykasih_branch_category AS
+SELECT
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM') AS sales_month,
+    B.branch_id,
+    B.name AS branch_name,
+    I.category,
+    COUNT(DISTINCT O.order_no) AS mykasih_orders,
+    COUNT(DISTINCT C.customer_id) AS mykasih_customers,
+    COUNT(DISTINCT I.item_id) AS different_items,
+    SUM(OD.quantity) AS total_units,
+    ROUND(SUM(OD.subtotal), 2) AS gross_mykasih_sales,
+    ROUND(
+        SUM(
+            CASE
+                WHEN R.reward_type = 'Discount'
+                    AND O.subtotal_amount > 0
+                THEN (OD.subtotal / O.subtotal_amount) * O.discount_amount
+                ELSE 0
+            END
+        ),
+        2
+    ) AS voucher_discount,
+    ROUND(
+        SUM(
+            OD.subtotal -
+            CASE
+                WHEN R.reward_type = 'Discount'
+                    AND O.subtotal_amount > 0
+                THEN (OD.subtotal / O.subtotal_amount) * O.discount_amount
+                ELSE 0
+            END
+        ),
+        2
+    ) AS net_mykasih_sales
+FROM Branch B
+JOIN Orders O
+    ON B.branch_id = O.branch_id
+JOIN Customer C
+    ON O.customer_id = C.customer_id
+JOIN Payment P
+    ON O.order_no = P.order_no
+JOIN Order_Detail OD
+    ON O.order_no = OD.order_no
+JOIN Item I
+    ON OD.item_id = I.item_id
+LEFT JOIN Reward_Redemption RR
+    ON O.redemption_id = RR.redemption_id
+LEFT JOIN Reward R
+    ON RR.reward_id = R.reward_id
+WHERE O.order_status = 'Completed'
+  AND P.payment_status = 'Paid'
+  AND O.is_mykasih_purchase = 'Y'
+  AND P.payment_method = 'MyKasih'
+  AND C.ic_number IS NOT NULL
+  AND I.is_mykasih_eligible = 'Y'
+GROUP BY
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM'),
+    B.branch_id,
+    B.name,
+    I.category;
+
+
+
+
+-- Query 1 
+SET LINESIZE 130
+SET PAGESIZE 100
+SET FEEDBACK OFF
+SET TAB OFF
+SET WRAP OFF
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+
+TTITLE CENTER '88 SPEEDMART - MONTHLY BRANCH SALES PERFORMANCE' SKIP 1 -
+       CENTER '=================================================' SKIP 2
+
+
+COLUMN sales_year               HEADING 'Year'           FORMAT 9999
+COLUMN sales_period             HEADING 'Month'          FORMAT A10
+COLUMN branch_name              HEADING 'Branch'         FORMAT A30
+COLUMN total_orders             HEADING 'Orders'         FORMAT 9,999
+COLUMN total_customers          HEADING 'Customers'      FORMAT 9,999
+COLUMN gross_sales              HEADING 'Gross Sales'    FORMAT 9,999,999.99
+COLUMN voucher_discount         HEADING 'Voucher'        FORMAT 999,999.99
+COLUMN net_sales                HEADING 'Net Sales'      FORMAT 9,999,999.99
+COLUMN avg_net_sales_per_order  HEADING 'Avg Net Sales'  FORMAT 99,999.99
+COLUMN branch_rank              HEADING 'Rank'           FORMAT 99
+
+BREAK ON sales_year SKIP 1
+COMPUTE SUM LABEL 'Year Total' OF total_orders gross_sales voucher_discount net_sales ON sales_year
+SELECT
+    sales_year,
+    TO_CHAR(
+        sales_month,
+        'MON-YYYY'
+    ) AS sales_period,
+    branch_name,
+    total_orders,
+    total_customers,
+    gross_sales,
+    voucher_discount,
+    net_sales,
+    avg_net_sales_per_order,
+    RANK() OVER (
+        PARTITION BY sales_month
+        ORDER BY net_sales DESC
+    ) AS branch_rank
+FROM v_branch_monthly_revenue
+ORDER BY
+    sales_year DESC,
+    sales_month DESC,
+    branch_rank;
+
+
+CLEAR BREAKS
+CLEAR COMPUTES
+CLEAR COLUMNS
+
+TTITLE OFF
+SET FEEDBACK ON
+SET WRAP ON
+
+
+-- Query 2
+
+SET LINESIZE 155
+SET PAGESIZE 100
+SET FEEDBACK OFF
+SET TAB OFF
+SET WRAP OFF
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+
+TTITLE CENTER '88 SPEEDMART - MYKASIH SALES SUMMARY BY BRANCH' SKIP 1 -
+       CENTER '================================================' SKIP 2
+
+COLUMN sales_period        HEADING 'Month'       FORMAT A9
+COLUMN branch_name         HEADING 'Branch'      FORMAT A28
+COLUMN category            HEADING 'Category'    FORMAT A27
+COLUMN mykasih_orders      HEADING 'Orders'      FORMAT 9,999
+COLUMN mykasih_customers   HEADING 'Customers'   FORMAT 9,999
+COLUMN total_units         HEADING 'Units'       FORMAT 9,999
+COLUMN gross_mykasih_sales HEADING 'Gross RM'    FORMAT 999,990.00
+COLUMN voucher_discount    HEADING 'Voucher RM'  FORMAT 999,990.00
+COLUMN net_mykasih_sales   HEADING 'Net RM'      FORMAT 999,990.00
+COLUMN category_share_pct  HEADING 'Share %'     FORMAT 990.9
+COLUMN category_rank       HEADING 'Rank'        FORMAT 99
+COLUMN demand_status       HEADING 'Demand'      FORMAT A13
+
+BREAK ON sales_period SKIP 1 ON branch_name SKIP 1
+
+COMPUTE SUM LABEL 'Branch Total' OF total_units gross_mykasih_sales voucher_discount net_mykasih_sales ON branch_name
+
+WITH mykasih_analysis AS (
+    SELECT
+        V.*,
+        DENSE_RANK() OVER (
+            PARTITION BY V.sales_month, V.branch_id
+            ORDER BY V.net_mykasih_sales DESC
+        ) AS category_rank,
+        ROUND(
+            V.net_mykasih_sales * 100 /
+            NULLIF(
+                SUM(V.net_mykasih_sales) OVER (
+                    PARTITION BY V.sales_month, V.branch_id
+                ),
+                0
+            ),
+            1
+        ) AS category_share_pct
+    FROM v_mykasih_branch_category V
+)
+SELECT
+    TO_CHAR(sales_month, 'MON-YYYY') AS sales_period,
+    branch_name,
+    category,
+    mykasih_orders,
+    mykasih_customers,
+    total_units,
+    gross_mykasih_sales,
+    voucher_discount,
+    net_mykasih_sales,
+    category_share_pct,
+    category_rank,
+    CASE
+        WHEN category_rank = 1 THEN 'Top Demand'
+        WHEN category_share_pct >= 25 THEN 'High Demand'
+        WHEN category_share_pct >= 10 THEN 'Moderate'
+        ELSE 'Low Demand'
+    END AS demand_status
+FROM mykasih_analysis
+ORDER BY
+    sales_month DESC,
+    branch_name,
+    category_rank,
+    net_mykasih_sales DESC;
+    
+
+CLEAR BREAKS
+CLEAR COMPUTES
+CLEAR COLUMNS
+
+TTITLE OFF
+SET FEEDBACK ON
+SET WRAP ON
+
+
+
+
+
+
+-- Procedure 1 (add order)
+
+CREATE OR REPLACE PROCEDURE prc_place_order (
+    p_customer_id      IN Customer.customer_id%TYPE,
+    p_branch_id        IN Branch.branch_id%TYPE,
+    p_employee_id      IN Employee.employee_id%TYPE,
+
+    p_item_ids         IN SYS.ODCIVARCHAR2LIST,
+    p_quantities       IN SYS.ODCINUMBERLIST,
+
+    p_order_type       IN Orders.order_type%TYPE,
+    p_service_type     IN Orders.service_type%TYPE,
+    p_payment_method   IN Payment.payment_method%TYPE,
+
+    p_mykasih          IN CHAR DEFAULT 'N',
+    p_redemption_id    IN Reward_Redemption.redemption_id%TYPE
+                           DEFAULT NULL,
+
+    p_order_no         OUT Orders.order_no%TYPE
+)
+IS
+    -- Customer
+    v_customer_ic       Customer.ic_number%TYPE;
+    v_customer_member   Customer.member_id%TYPE;
+
+    -- Branch
+    v_branch_name       Branch.name%TYPE;
+    v_branch_status     Branch.status%TYPE;
+    v_open_time         Branch.open_time%TYPE;
+    v_close_time        Branch.close_time%TYPE;
+
+    -- Employee
+    v_emp_name          Employee.name%TYPE;
+    v_emp_status        Employee.status%TYPE;
+    v_emp_branch        Employee.branch_id%TYPE;
+
+    -- Item / Inventory
+    v_item_name         Item.name%TYPE;
+    v_item_status       Item.status%TYPE;
+    v_item_price        Item.unit_price%TYPE;
+    v_mykasih_eligible  Item.is_mykasih_eligible%TYPE;
+    v_stock             Inventory.quantity%TYPE;
+
+    -- Order calculation
+    v_item_count        NUMBER;
+    v_subtotal          NUMBER(10,2) := 0;
+    v_discount          NUMBER(10,2) := 0;
+    v_total             NUMBER(10,2) := 0;
+
+    -- Voucher
+    v_red_member        Reward_Redemption.member_id%TYPE;
+    v_red_status        Reward_Redemption.status%TYPE;
+    v_expiry_date       Reward_Redemption.expiry_date%TYPE;
+
+    v_reward_name       Reward.name%TYPE;
+    v_reward_status     Reward.status%TYPE;
+    v_reward_value      Reward.value%TYPE;
+
+    -- Payment
+    v_payment_id        Payment.payment_id%TYPE;
+
+BEGIN
+    -- VALIDATE ITEM COLLECTIONS 
+    BEGIN
+        v_item_count := p_item_ids.COUNT;
+
+        IF v_item_count = 0 THEN
+            RAISE_APPLICATION_ERROR(
+                -20062,
+                'The shopping basket cannot be empty.'
+            );
+        END IF;
+
+        IF p_quantities.COUNT <> p_item_ids.COUNT THEN
+            RAISE_APPLICATION_ERROR(
+                -20063,
+                'The number of item IDs must match the number of quantities.'
+            );
+        END IF;
+
+    EXCEPTION
+        WHEN COLLECTION_IS_NULL THEN
+            RAISE_APPLICATION_ERROR(
+                -20401,
+                'The shopping basket cannot be empty.'
+            );
+    END;
+
+    -- VALIDATE ORDER TYPE
+    IF p_order_type NOT IN ('Online', 'Walk-In') THEN
+        RAISE_APPLICATION_ERROR(
+            -20403,
+            'Order type must be Online or Walk-In.'
+        );
+    END IF;
+
+    -- VALIDATE SERVICE TYPE
+    IF p_service_type NOT IN ('Pickup', 'Delivery') THEN
+        RAISE_APPLICATION_ERROR(
+            -20404,
+            'Service type must be Pickup or Delivery.'
+        );
+    END IF;
+
+    -- Walk-In cannot use delivery
+    IF p_order_type = 'Walk-In'
+       AND p_service_type = 'Delivery' THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20405,
+            'Walk-In orders cannot use Delivery service.'
+        );
+
+    END IF;
+
+    -- VALIDATE PAYMENT METHOD
+    IF p_payment_method NOT IN (
+        'Cash',
+        'Card',
+        'E-Wallet',
+        'MyKasih',
+        'Online Banking'
+    ) THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20406,
+            'Invalid payment method.'
+        );
+
+    END IF;
+
+    -- VALIDATE MYKASIH OPTION
+    IF UPPER(p_mykasih) NOT IN ('Y', 'N') THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20407,
+            'MyKasih option must be Y or N.'
+        );
+
+    END IF;
+
+    -- VALIDATE CUSTOMER
+    BEGIN
+
+        SELECT
+            ic_number,
+            member_id
+
+        INTO
+            v_customer_ic,
+            v_customer_member
+
+        FROM Customer
+
+        WHERE customer_id = p_customer_id;
+
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20060,
+                'Customer ' || p_customer_id ||
+                ' does not exist.'
+            );
+    END;
+
+    -- VALIDATE BRANCH
+    BEGIN
+
+        SELECT
+            name,
+            status,
+            open_time,
+            close_time
+
+        INTO
+            v_branch_name,
+            v_branch_status,
+            v_open_time,
+            v_close_time
+
+        FROM Branch
+
+        WHERE branch_id = p_branch_id;
+
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20409,
+                'Branch ' || p_branch_id ||
+                ' does not exist.'
+            );
+    END;
+
+    IF v_branch_status <> 'Active' THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20410,
+            v_branch_name || ' is currently ' ||
+            v_branch_status ||
+            ' and cannot accept new orders.'
+        );
+
+    END IF;
+
+    -- BUSINESS OPERATING DAY / TIME
+    IF TO_CHAR(
+           SYSDATE,
+           'DY',
+           'NLS_DATE_LANGUAGE=ENGLISH'
+       ) = 'SUN' THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20411,
+            'Orders cannot be processed on Sunday.'
+        );
+
+    END IF;
+
+    IF TO_CHAR(SYSDATE, 'HH24:MI') < v_open_time
+       OR
+       TO_CHAR(SYSDATE, 'HH24:MI') >= v_close_time THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20412,
+            v_branch_name ||
+            ' is currently outside its operating hours (' ||
+            v_open_time || ' - ' ||
+            v_close_time || ').'
+        );
+
+    END IF;
+
+    -- VALIDATE EMPLOYEE
+    BEGIN
+        SELECT
+            name,
+            status,
+            branch_id
+        INTO
+            v_emp_name,
+            v_emp_status,
+            v_emp_branch
+        FROM Employee
+        WHERE employee_id = p_employee_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(
+                -20413,
+                'Employee ' || p_employee_id ||
+                ' does not exist.'
+            );
+    END;
+
+    IF v_emp_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20414,
+            'Employee ' || p_employee_id ||
+            ' - ' || v_emp_name ||
+            ' is inactive and cannot process an order.'
+        );
+    END IF;
+
+    -- Employee can only process order at own branch
+    IF v_emp_branch <> p_branch_id THEN
+        RAISE_APPLICATION_ERROR(
+            -20415,
+            'Employee ' || p_employee_id ||
+            ' is assigned to branch ' ||
+            v_emp_branch ||
+            ' and cannot process an order for branch ' ||
+            p_branch_id || '.'
+        );
+    END IF;
+
+    -- MYKASIH CUSTOMER VALIDATION
+    IF UPPER(p_mykasih) = 'Y'
+       AND v_customer_ic IS NULL THEN
+        RAISE_APPLICATION_ERROR(
+            -20416,
+            'Customer ' || p_customer_id ||
+            ' must present an IC for a MyKasih purchase.'
+        );
+    END IF;
+
+    -- MyKasih order must uses MyKasih payment method.
+    IF UPPER(p_mykasih) = 'Y'
+       AND p_payment_method <> 'MyKasih' THEN
+        RAISE_APPLICATION_ERROR(
+            -20417,
+            'A MyKasih order must use MyKasih as the payment method.'
+        );
+    END IF;
+
+    IF UPPER(p_mykasih) = 'N'
+       AND p_payment_method = 'MyKasih' THEN
+        RAISE_APPLICATION_ERROR(
+            -20418,
+            'MyKasih payment cannot be used for a non-MyKasih order.'
+        );
+    END IF;
+
+    -- VALIDATE EVERY ITEM + CALCULATE SUBTOTAL
+    FOR i IN 1 .. p_item_ids.COUNT LOOP
+        -- Quantity
+        IF p_quantities(i) IS NULL
+           OR p_quantities(i) <= 0 THEN
+            RAISE_APPLICATION_ERROR(
+                -20419,
+                'Quantity for item ' ||
+                p_item_ids(i) ||
+                ' must be greater than zero.'
+            );
+        END IF;
+
+        -- Do not allow same item twice
+        IF i > 1 THEN
+            FOR j IN 1 .. i - 1 LOOP
+                IF p_item_ids(i) = p_item_ids(j) THEN
+                    RAISE_APPLICATION_ERROR(
+                        -20420,
+                        'Item ' ||
+                        p_item_ids(i) ||
+                        ' appears more than once in the basket.'
+                    );
+                END IF;
+            END LOOP;
+        END IF;
+
+        -- Check Item
+        BEGIN
+            SELECT
+                name,
+                status,
+                unit_price,
+                is_mykasih_eligible
+            INTO
+                v_item_name,
+                v_item_status,
+                v_item_price,
+                v_mykasih_eligible
+            FROM Item
+            WHERE item_id = p_item_ids(i);
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(
+                    -20421,
+                    'Item ' || p_item_ids(i) ||
+                    ' does not exist.'
+                );
+        END;
+
+        IF v_item_status <> 'Active' THEN
+            RAISE_APPLICATION_ERROR(
+                -20422,
+                v_item_name ||
+                ' is inactive and cannot be ordered.'
+            );
+        END IF;
+
+        -- MyKasih item validation
+        IF UPPER(p_mykasih) = 'Y'
+           AND v_mykasih_eligible <> 'Y' THEN
+            RAISE_APPLICATION_ERROR(
+                -20423,
+                v_item_name ||
+                ' is not eligible for MyKasih purchase.'
+            );
+        END IF;
+
+        -- Check Inventory
+        BEGIN
+            SELECT quantity
+            INTO v_stock
+            FROM Inventory
+            WHERE branch_id = p_branch_id
+              AND item_id = p_item_ids(i)
+            FOR UPDATE;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(
+                    -20424,
+                    v_item_name ||
+                    ' is not stocked at branch ' ||
+                    p_branch_id || '.'
+                );
+        END;
+
+        IF v_stock < p_quantities(i) THEN
+            RAISE_APPLICATION_ERROR(
+                -20425,
+                'Insufficient stock for ' ||
+                v_item_name ||
+                '. Available: ' ||
+                v_stock ||
+                ', requested: ' ||
+                p_quantities(i) || '.'
+            );
+        END IF;
+
+        -- Order subtotal
+        v_subtotal :=
+            v_subtotal +
+            (p_quantities(i) * v_item_price);
+
+    END LOOP;
+
+    -- OPTIONAL VOUCHER VALIDATION
+    IF p_redemption_id IS NOT NULL THEN
+        BEGIN
+            SELECT
+                RR.member_id,
+                RR.status,
+                RR.expiry_date,
+                R.name,
+                R.status,
+                R.value
+            INTO
+                v_red_member,
+                v_red_status,
+                v_expiry_date,
+                v_reward_name,
+                v_reward_status,
+                v_reward_value
+            FROM Reward_Redemption RR
+            JOIN Reward R
+                ON RR.reward_id = R.reward_id
+            WHERE RR.redemption_id =
+                  p_redemption_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(
+                    -20426,
+                    'Redemption ' ||
+                    p_redemption_id ||
+                    ' does not exist.'
+                );
+        END;
+
+        -- Only member owning redemption can use it
+        IF v_customer_member IS NULL
+           OR
+           v_customer_member <> v_red_member THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20427,
+                'Redemption ' ||
+                p_redemption_id ||
+                ' does not belong to this customer.'
+            );
+        END IF;
+
+        IF v_red_status <> 'Active' THEN
+            RAISE_APPLICATION_ERROR(
+                -20428,
+                'Redemption ' ||
+                p_redemption_id ||
+                ' is ' ||
+                v_red_status ||
+                ' and cannot be used.'
+            );
+        END IF;
+
+        IF v_expiry_date IS NOT NULL
+           AND v_expiry_date < TRUNC(SYSDATE) THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20429,
+                'Redemption ' ||
+                p_redemption_id ||
+                ' expired on ' ||
+                TO_CHAR(
+                    v_expiry_date,
+                    'DD-MON-YYYY'
+                ) || '.'
+            );
+        END IF;
+
+        IF v_reward_status <> 'Active' THEN
+            RAISE_APPLICATION_ERROR(
+                -20430,
+                'Reward ' ||
+                v_reward_name ||
+                ' is no longer active.'
+            );
+        END IF;
+
+        v_discount := v_reward_value;
+
+        IF v_discount > v_subtotal THEN
+            RAISE_APPLICATION_ERROR(
+                -20431,
+                'Voucher value RM ' ||
+                TO_CHAR(v_discount, 'FM9990.00') ||
+                ' exceeds the order subtotal RM ' ||
+                TO_CHAR(v_subtotal, 'FM9990.00') || '.'
+            );
+        END IF;
+    END IF;
+
+    -- CALCULATE CURRENT TOTAL
+    v_total :=
+        v_subtotal -
+        v_discount;
+
+    -- For Delivery orders the delivery fee is calculated later
+    -- when the Delivery_Request is created.
+
+    -- GENERATE ORDER NUMBER
+    p_order_no :=
+        'ORD' ||
+        TO_CHAR(
+            order_seq.NEXTVAL,
+            'FM000000'
+        );
+
+    -- INSERT ORDER HEADER
+    INSERT INTO Orders (
+        order_no,
+        order_date_time,
+        order_type,
+        service_type,
+        subtotal_amount,
+        total_amount,
+        points_earned,
+        discount_amount,
+        order_status,
+        is_mykasih_purchase,
+        redemption_id,
+        customer_id,
+        branch_id,
+        handled_by
+    )
+    VALUES (
+        p_order_no,
+        SYSTIMESTAMP,
+        p_order_type,
+        p_service_type,
+        v_subtotal,
+        v_total,
+        0,
+        v_discount,
+        'Processing',
+        UPPER(p_mykasih),
+        p_redemption_id,
+        p_customer_id,
+        p_branch_id,
+        p_employee_id
+    );
+
+    -- INSERT ORDER DETAILS + REDUCE INVENTORY
+    FOR i IN 1 .. p_item_ids.COUNT LOOP
+        SELECT
+            name,
+            unit_price
+        INTO
+            v_item_name,
+            v_item_price
+        FROM Item
+        WHERE item_id = p_item_ids(i);
+
+        INSERT INTO Order_Detail (
+            order_no,
+            item_id,
+            subtotal,
+            quantity,
+            unit_price
+        )
+        VALUES (
+            p_order_no,
+            p_item_ids(i),
+            p_quantities(i) * v_item_price,
+            p_quantities(i),
+            v_item_price
+        );
+
+        -- Inventory immediately updated
+        UPDATE Inventory
+        SET quantity =
+            quantity - p_quantities(i)
+        WHERE branch_id = p_branch_id
+          AND item_id = p_item_ids(i);
+    END LOOP;
+
+    -- USE VOUCHER
+    IF p_redemption_id IS NOT NULL THEN
+        UPDATE Reward_Redemption
+        SET status = 'Used'
+        WHERE redemption_id =
+              p_redemption_id;
+    END IF;
+
+    -- CREATE ONE PAYMENT RECORD
+    v_payment_id :=
+        'PAY' ||
+        TO_CHAR(
+            payment_seq.NEXTVAL,
+            'FM000000'
+        );
+
+    INSERT INTO Payment (
+        payment_id,
+        payment_method,
+        payment_date_time,
+        reference_no,
+        payment_status,
+        order_no
+    )
+    VALUES (
+        v_payment_id,
+        p_payment_method,
+        SYSTIMESTAMP,
+        NULL,
+        'Pending',
+        p_order_no
+    );
+
+    COMMIT;
+
+    -- ORDER CONFIRMATION MESSAGE
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 72, '='));
+    DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ORDER PLACEMENT CONFIRMATION');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 72, '='));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Order No', 20) ||': ' || p_order_no);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Branch', 20) ||': ' || p_branch_id ||' - ' || v_branch_name);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Customer', 20) ||': ' || p_customer_id);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Handled By', 20) ||': ' || p_employee_id ||' - ' || v_emp_name);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Items', 20) ||': ' || p_item_ids.COUNT);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Subtotal', 20) ||': RM ' ||TO_CHAR(v_subtotal,'FM999,990.00'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Voucher Discount', 20) ||': RM ' ||TO_CHAR(v_discount,'FM999,990.00'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Current Total', 20) ||': RM ' ||TO_CHAR(v_total,'FM999,990.00'));
+
+    IF p_service_type = 'Delivery' THEN
+        DBMS_OUTPUT.PUT_LINE(
+            'NOTE: Delivery fee will be added when the delivery request is dispatched.'
+        );
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(RPAD('Payment', 20) ||': ' ||p_payment_method ||' (Pending)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Order Status', 20) ||': Processing');
+    DBMS_OUTPUT.PUT_LINE(RPAD('MyKasih', 20) ||': ' || UPPER(p_mykasih));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 72, '='));
+
+EXCEPTION
+    -- Duplicate order/redemption/order-detail
+    WHEN DUP_VAL_ON_INDEX THEN
+        ROLLBACK;
+        p_order_no := NULL;
+
+        RAISE_APPLICATION_ERROR(
+            -20432,
+            'Duplicate data detected.'
+        );
+
+    -- Unexpected error
+    WHEN OTHERS THEN
+        ROLLBACK;
+        p_order_no := NULL;
+
+        DBMS_OUTPUT.PUT_LINE(
+            '=== ORDER PLACEMENT FAILED ==='
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Code    : ' || SQLCODE
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Message : ' || SQLERRM
+        );
+        RAISE;
+
+END prc_place_order;
+/
+
+
+-- Procedure 2 (search item )
+CREATE OR REPLACE PROCEDURE prc_search_items (
+    p_branch_id       IN Branch.branch_id%TYPE,
+    p_keyword         IN VARCHAR2 DEFAULT NULL,
+    p_mykasih_only    IN CHAR DEFAULT 'N'
+)
+IS
+    v_branch_name     Branch.name%TYPE;
+    v_branch_status   Branch.status%TYPE;
+    v_found           NUMBER := 0;
+    e_no_items_found  EXCEPTION;
+
+    CURSOR c_item IS
+        SELECT
+            I.item_id,
+            I.name AS item_name,
+            I.category,
+            I.unit_price,
+            INV.quantity,
+            I.is_mykasih_eligible
+        FROM Branch B
+        JOIN Inventory INV
+            ON B.branch_id =
+               INV.branch_id
+        JOIN Item I
+            ON INV.item_id =
+               I.item_id
+        WHERE B.branch_id =
+              p_branch_id
+          AND (
+                p_keyword IS NULL
+                OR
+                UPPER(I.name) LIKE
+                    '%' ||
+                    UPPER(TRIM(p_keyword)) ||
+                    '%'
+              )
+          AND I.status = 'Active'
+          AND INV.quantity > 0
+          AND (
+                UPPER(p_mykasih_only) = 'N'
+                OR
+                I.is_mykasih_eligible = 'Y'
+              )
+        ORDER BY I.name;
+
+BEGIN
+    -- VALIDATE Y/N
+    IF UPPER(p_mykasih_only)
+       NOT IN ('Y', 'N') THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20441,
+            'MyKasih search option must be Y or N.'
+        );
+    END IF;
+
+    -- VALIDATE BRANCH
+    BEGIN
+        SELECT
+            name,
+            status
+        INTO
+            v_branch_name,
+            v_branch_status
+        FROM Branch
+        WHERE branch_id =
+              p_branch_id;
+    EXCEPTION
+
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(
+                -20442,
+                'Branch ' ||
+                p_branch_id ||
+                ' does not exist.'
+            );
+    END;
+
+    IF v_branch_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20443,
+            v_branch_name ||
+            ' is currently ' ||
+            v_branch_status ||
+            ' and is unavailable for item search.'
+        );
+    END IF;
+
+    -- OUTPUT HEADER
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('=', 115, '=')
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        '88 SPEEDMART - ADVANCED ITEM SEARCH'
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        'Branch       : ' ||
+        p_branch_id ||
+        ' - ' ||
+        v_branch_name
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        'Search       : ' ||
+        NVL(
+            p_keyword,
+            'All Items'
+        )
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        'MyKasih Only : ' ||
+        UPPER(p_mykasih_only)
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('=', 115, '=')
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('Item ID', 10) ||
+        RPAD('Item Name', 42) ||
+        RPAD('Category', 30) ||
+        LPAD('Price RM', 12) ||
+        LPAD('Stock', 10) ||
+        LPAD('MK', 6)
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('-', 115, '-')
+    );
+
+    -- CURSOR
+    FOR item_rec IN c_item LOOP
+        v_found :=
+            v_found + 1;
+        DBMS_OUTPUT.PUT_LINE(
+
+            RPAD(
+                item_rec.item_id,
+                10
+            ) ||
+
+            RPAD(
+                SUBSTR(
+                    item_rec.item_name,
+                    1,
+                    40
+                ),
+                42
+            ) ||
+
+            RPAD(
+                SUBSTR(
+                    item_rec.category,
+                    1,
+                    28
+                ),
+                30
+            ) ||
+
+            LPAD(
+                TO_CHAR(
+                    item_rec.unit_price,
+                    'FM9990.00'
+                ),
+                12
+            ) ||
+
+            LPAD(
+                item_rec.quantity,
+                10
+            ) ||
+
+            LPAD(
+                item_rec.is_mykasih_eligible,
+                6
+            )
+        );
+    END LOOP;
+
+    -- When NO RESULT
+    IF v_found = 0 THEN
+        RAISE e_no_items_found;
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('-', 115, '-')
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Total matching item(s): ' ||
+        v_found
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('=', 115, '=')
+    );
+
+EXCEPTION
+    WHEN e_no_items_found THEN
+        RAISE_APPLICATION_ERROR(
+            -20444,
+            'No available items matched the selected branch, keyword and MyKasih option.'
+        );
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE(
+            '=== ITEM SEARCH FAILED ==='
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Code    : ' ||
+            SQLCODE
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Message : ' ||
+            SQLERRM
+        );
+        RAISE;
+END prc_search_items;
+/
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+EXEC prc_search_items('BR001','','Y');
+
+
+-- REPORT 1
+
+CREATE OR REPLACE PROCEDURE report_branch_sales (
+    p_year IN NUMBER DEFAULT NULL
+)
+IS
+    -- Available year range
+    v_min_year NUMBER;
+    v_max_year NUMBER;
+
+    -- Report counters
+    v_year_count         NUMBER := 0;
+    v_branch_count       NUMBER;
+    v_branch_month_count NUMBER;
+
+    -- Branch yearly totals
+    v_branch_orders      NUMBER;
+    v_branch_gross       NUMBER;
+    v_branch_discount    NUMBER;
+    v_branch_net         NUMBER;
+
+    -- Best / weakest month for each branch
+    v_month_best         DATE;
+    v_month_best_net     NUMBER;
+    v_month_weak         DATE;
+    v_month_weak_net     NUMBER;
+
+    -- Year totals
+    v_year_orders        NUMBER;
+    v_year_gross         NUMBER;
+    v_year_discount      NUMBER;
+    v_year_net           NUMBER;
+
+    -- Grand totals for multi-year report
+    v_grand_orders       NUMBER := 0;
+    v_grand_gross        NUMBER := 0;
+    v_grand_discount     NUMBER := 0;
+    v_grand_net          NUMBER := 0;
+
+    -- Strongest / weakest branch-month for each year
+    v_year_best_branch_id    Branch.branch_id%TYPE;
+    v_year_best_branch_name  Branch.name%TYPE;
+    v_year_best_month        DATE;
+    v_year_best_net          NUMBER;
+
+    v_year_weak_branch_id    Branch.branch_id%TYPE;
+    v_year_weak_branch_name  Branch.name%TYPE;
+    v_year_weak_month        DATE;
+    v_year_weak_net          NUMBER;
+
+    -- Custom exception
+    e_no_report_data EXCEPTION;
+
+    -- LEVEL 1: YEAR
+    CURSOR c_year (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT sales_year
+        FROM v_branch_monthly_revenue
+        WHERE cp_year IS NULL
+           OR sales_year = cp_year
+        ORDER BY sales_year DESC;
+
+    -- LEVEL 2: BRANCH
+    CURSOR c_branch (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT
+            branch_id,
+            branch_name
+        FROM v_branch_monthly_revenue
+        WHERE sales_year = cp_year
+        ORDER BY branch_id;
+
+    -- LEVEL 3: MONTH
+    CURSOR c_month (
+        cp_year      NUMBER,
+        cp_branch_id Branch.branch_id%TYPE
+    ) IS
+        SELECT
+            sales_month,
+            total_orders,
+            total_customers,
+            gross_sales,
+            voucher_discount,
+            net_sales,
+            avg_net_sales_per_order
+        FROM v_branch_monthly_revenue
+        WHERE sales_year = cp_year
+          AND branch_id = cp_branch_id
+        ORDER BY sales_month;
+
+BEGIN
+    -- Find available branch revenue history
+    SELECT
+        MIN(sales_year),
+        MAX(sales_year)
+    INTO
+        v_min_year,
+        v_max_year
+    FROM v_branch_monthly_revenue;
+
+    -- No valid branch revenue data
+    IF v_min_year IS NULL THEN
+        RAISE e_no_report_data;
+    END IF;
+
+    -- Validate input year
+    IF p_year IS NOT NULL THEN
+        IF p_year <> TRUNC(p_year) THEN
+            RAISE_APPLICATION_ERROR(
+                -20461,
+                'Year must be entered as a whole number, for example 2026.'
+            );
+        END IF;
+
+        IF p_year < v_min_year OR p_year > v_max_year THEN
+            RAISE_APPLICATION_ERROR(
+                -20462,
+                'Year ' || p_year ||
+                ' is outside the available branch sales history (' ||
+                v_min_year || ' to ' || v_max_year || ').'
+            );
+        END IF;
+    END IF;
+
+    -- Report title
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+    IF p_year IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - MULTI-YEAR BRANCH SALES TREND REPORT');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ANNUAL BRANCH SALES TREND REPORT FOR ' || p_year);
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('Generated: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+    -- LEVEL 1 LOOP: YEAR
+    FOR y IN c_year(p_year) LOOP
+
+        v_year_count := v_year_count + 1;
+        v_branch_count := 0;
+
+        v_year_orders := 0;
+        v_year_gross := 0;
+        v_year_discount := 0;
+        v_year_net := 0;
+
+        v_year_best_branch_id := NULL;
+        v_year_best_branch_name := NULL;
+        v_year_best_month := NULL;
+        v_year_best_net := NULL;
+
+        v_year_weak_branch_id := NULL;
+        v_year_weak_branch_name := NULL;
+        v_year_weak_month := NULL;
+        v_year_weak_net := NULL;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR: ' || y.sales_year);
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+        -- LEVEL 2 LOOP: BRANCH
+        FOR b IN c_branch(y.sales_year) LOOP
+
+            v_branch_count := v_branch_count + 1;
+            v_branch_month_count := 0;
+
+            v_branch_orders := 0;
+            v_branch_gross := 0;
+            v_branch_discount := 0;
+            v_branch_net := 0;
+
+            v_month_best := NULL;
+            v_month_best_net := NULL;
+            v_month_weak := NULL;
+            v_month_weak_net := NULL;
+
+            -- Branch heading
+            DBMS_OUTPUT.PUT_LINE(CHR(10));
+            DBMS_OUTPUT.PUT_LINE('BRANCH: ' || b.branch_id || ' - ' || b.branch_name);
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Month', 13) ||
+                LPAD('Orders', 9) ||
+                LPAD('Customers', 12) ||
+                LPAD('Gross RM', 17) ||
+                LPAD('Voucher RM', 16) ||
+                LPAD('Net Sales RM', 17) ||
+                LPAD('Avg Net Sale', 17)
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+
+            -- LEVEL 3 LOOP: MONTH
+            FOR m IN c_month(y.sales_year, b.branch_id) LOOP
+
+                v_branch_month_count := v_branch_month_count + 1;
+
+                -- Accumulate branch totals
+                v_branch_orders := v_branch_orders + m.total_orders;
+                v_branch_gross := v_branch_gross + m.gross_sales;
+                v_branch_discount := v_branch_discount + m.voucher_discount;
+                v_branch_net := v_branch_net + m.net_sales;
+
+                -- Determine best month
+                IF v_month_best_net IS NULL
+                   OR m.net_sales > v_month_best_net THEN
+
+                    v_month_best_net := m.net_sales;
+                    v_month_best := m.sales_month;
+
+                END IF;
+
+                -- Determine weakest month
+                IF v_month_weak_net IS NULL
+                   OR m.net_sales < v_month_weak_net THEN
+
+                    v_month_weak_net := m.net_sales;
+                    v_month_weak := m.sales_month;
+                END IF;
+
+                -- Determine strongest branch-month of the year
+                IF v_year_best_net IS NULL
+                   OR m.net_sales > v_year_best_net THEN
+
+                    v_year_best_net := m.net_sales;
+                    v_year_best_month := m.sales_month;
+                    v_year_best_branch_id := b.branch_id;
+                    v_year_best_branch_name := b.branch_name;
+                END IF;
+
+                -- Determine weakest branch-month of the year
+                IF v_year_weak_net IS NULL
+                   OR m.net_sales < v_year_weak_net THEN
+
+                    v_year_weak_net := m.net_sales;
+                    v_year_weak_month := m.sales_month;
+                    v_year_weak_branch_id := b.branch_id;
+                    v_year_weak_branch_name := b.branch_name;
+                END IF;
+
+                -- Monthly branch detail
+                DBMS_OUTPUT.PUT_LINE(
+                    RPAD(TO_CHAR(m.sales_month, 'MON-YYYY'), 13) ||
+                    LPAD(m.total_orders, 9) ||
+                    LPAD(m.total_customers, 12) ||
+                    LPAD(TO_CHAR(m.gross_sales, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(m.voucher_discount, 'FM999,999,990.00'), 16) ||
+                    LPAD(TO_CHAR(m.net_sales, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(m.avg_net_sales_per_order, 'FM999,990.00'), 17)
+                );
+            END LOOP;
+
+            -- Branch annual summary
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+            DBMS_OUTPUT.PUT_LINE('BRANCH YEAR SUMMARY');
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Months with sales', 28) || ': ' || v_branch_month_count
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Total orders', 28) || ': ' || v_branch_orders
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Gross sales', 28) ||
+                ': RM ' || TO_CHAR(v_branch_gross, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Voucher discounts', 28) ||
+                ': RM ' || TO_CHAR(v_branch_discount, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Net sales', 28) ||
+                ': RM ' || TO_CHAR(v_branch_net, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Average monthly net sales', 28) ||
+                ': RM ' ||
+                TO_CHAR(
+                    v_branch_net / NULLIF(v_branch_month_count, 0),
+                    'FM999,999,990.00'
+                )
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Best month', 28) ||
+                ': ' || TO_CHAR(v_month_best, 'MON-YYYY') ||
+                ' (RM ' || TO_CHAR(v_month_best_net, 'FM999,999,990.00') || ')'
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Weakest month', 28) ||
+                ': ' || TO_CHAR(v_month_weak, 'MON-YYYY') ||
+                ' (RM ' || TO_CHAR(v_month_weak_net, 'FM999,999,990.00') || ')'
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+
+            -- Add branch totals into year totals
+            v_year_orders := v_year_orders + v_branch_orders;
+            v_year_gross := v_year_gross + v_branch_gross;
+            v_year_discount := v_year_discount + v_branch_discount;
+            v_year_net := v_year_net + v_branch_net;
+        END LOOP;
+
+        -- Year summary
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Branches analysed', 28) || ': ' || v_branch_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total orders', 28) || ': ' || v_year_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross sales', 28) ||
+            ': RM ' || TO_CHAR(v_year_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 28) ||
+            ': RM ' || TO_CHAR(v_year_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net sales', 28) ||
+            ': RM ' || TO_CHAR(v_year_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Strongest branch-month', 28) ||
+            ': ' || v_year_best_branch_id ||
+            ' - ' || v_year_best_branch_name ||
+            ' | ' || TO_CHAR(v_year_best_month, 'MON-YYYY') ||
+            ' | RM ' || TO_CHAR(v_year_best_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Weakest branch-month', 28) ||
+            ': ' || v_year_weak_branch_id ||
+            ' - ' || v_year_weak_branch_name ||
+            ' | ' || TO_CHAR(v_year_weak_month, 'MON-YYYY') ||
+            ' | RM ' || TO_CHAR(v_year_weak_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+        -- Grand totals
+        v_grand_orders := v_grand_orders + v_year_orders;
+        v_grand_gross := v_grand_gross + v_year_gross;
+        v_grand_discount := v_grand_discount + v_year_discount;
+        v_grand_net := v_grand_net + v_year_net;
+
+    END LOOP;
+
+    -- No matching year
+    IF v_year_count = 0 THEN
+        RAISE e_no_report_data;
+    END IF;
+
+    -- Show grand summary only for multi-year report
+    IF p_year IS NULL THEN
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+        DBMS_OUTPUT.PUT_LINE('FINAL MULTI-YEAR REPORT SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Years analysed', 28) || ': ' || v_year_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total orders', 28) || ': ' || v_grand_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross sales', 28) ||
+            ': RM ' || TO_CHAR(v_grand_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 28) ||
+            ': RM ' || TO_CHAR(v_grand_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net sales', 28) ||
+            ': RM ' || TO_CHAR(v_grand_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+    END IF;
+
+EXCEPTION
+    -- Custom exception
+    WHEN e_no_report_data THEN
+        RAISE_APPLICATION_ERROR(
+            -20463,
+            'No completed and paid branch revenue data was found for the selected year.'
+        );
+
+    -- Unexpected database error
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('=== BRANCH REVENUE REPORT FAILED ===');
+        DBMS_OUTPUT.PUT_LINE('Error Code    : ' || SQLCODE);
+        DBMS_OUTPUT.PUT_LINE('Error Message : ' || SQLERRM);
+        RAISE;
+
+END report_branch_sales;
+/
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+EXEC report_branch_sales(2026);
+EXEC report_branch_sales();
+
+
+
+
+-- REPORT 2
+
+CREATE OR REPLACE PROCEDURE report_annual_myKasih_category (
+    p_year IN NUMBER DEFAULT NULL
+)
+IS
+    -- Available year range
+    v_min_year NUMBER;
+    v_max_year NUMBER;
+
+    -- Counters
+    v_year_count      NUMBER := 0;
+    v_category_count  NUMBER;
+    v_branch_count    NUMBER;
+
+    -- Category totals
+    v_cat_orders      NUMBER;
+    v_cat_units       NUMBER;
+    v_cat_gross       NUMBER;
+    v_cat_discount    NUMBER;
+    v_cat_net         NUMBER;
+
+    -- Year totals
+    v_year_orders      NUMBER;
+    v_year_customers   NUMBER;
+    v_year_units       NUMBER;
+    v_year_gross       NUMBER;
+    v_year_discount    NUMBER;
+    v_year_net         NUMBER;
+
+    -- Strongest / weakest category within each year
+    v_best_category      Item.category%TYPE;
+    v_best_category_net  NUMBER;
+    v_weak_category      Item.category%TYPE;
+    v_weak_category_net  NUMBER;
+
+    -- Grand totals across all years
+    v_grand_orders      NUMBER := 0;
+    v_grand_units       NUMBER := 0;
+    v_grand_gross       NUMBER := 0;
+    v_grand_discount    NUMBER := 0;
+    v_grand_net         NUMBER := 0;
+
+    -- Strongest / weakest category across all years
+    v_all_best_category      Item.category%TYPE;
+    v_all_best_category_net  NUMBER;
+    v_all_weak_category      Item.category%TYPE;
+    v_all_weak_category_net  NUMBER;
+
+    -- Custom exception
+    e_no_mykasih_data EXCEPTION;
+
+    -- LEVEL 1: YEAR
+    CURSOR c_year (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT EXTRACT(YEAR FROM sales_month) AS sales_year
+        FROM v_mykasih_branch_category
+        WHERE cp_year IS NULL
+           OR EXTRACT(YEAR FROM sales_month) = cp_year
+        ORDER BY sales_year DESC;
+
+    -- LEVEL 2: CATEGORY
+    CURSOR c_category (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT category
+        FROM v_mykasih_branch_category
+        WHERE EXTRACT(YEAR FROM sales_month) = cp_year
+        ORDER BY category;
+
+    -- LEVEL 3: BRANCH
+    CURSOR c_branch (
+        cp_year     NUMBER,
+        cp_category Item.category%TYPE
+    ) IS
+        SELECT
+            branch_id,
+            branch_name,
+            SUM(mykasih_orders) AS category_orders,
+            SUM(total_units) AS total_units,
+            ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
+            ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(net_mykasih_sales), 2) AS net_sales,
+            COUNT(DISTINCT sales_month) AS months_active
+        FROM v_mykasih_branch_category
+        WHERE EXTRACT(YEAR FROM sales_month) = cp_year
+          AND category = cp_category
+        GROUP BY branch_id, branch_name
+        ORDER BY branch_id;
+
+    -- Category totals for one year
+    CURSOR c_year_category (
+        cp_year NUMBER
+    ) IS
+        SELECT
+            category,
+            SUM(total_units) AS total_units,
+            ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
+            ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(net_mykasih_sales), 2) AS net_sales
+        FROM v_mykasih_branch_category
+        WHERE EXTRACT(YEAR FROM sales_month) = cp_year
+        GROUP BY category
+        ORDER BY net_sales DESC;
+
+    -- Category totals across all years
+    CURSOR c_all_category IS
+        SELECT
+            category,
+            SUM(total_units) AS total_units,
+            ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
+            ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(net_mykasih_sales), 2) AS net_sales
+        FROM v_mykasih_branch_category
+        GROUP BY category
+        ORDER BY net_sales DESC;
+
+BEGIN
+    -- Determine available MyKasih year range
+    SELECT
+        MIN(EXTRACT(YEAR FROM sales_month)),
+        MAX(EXTRACT(YEAR FROM sales_month))
+    INTO
+        v_min_year,
+        v_max_year
+    FROM v_mykasih_branch_category;
+
+    -- No MyKasih data
+    IF v_min_year IS NULL THEN
+        RAISE e_no_mykasih_data;
+    END IF;
+
+    -- Validate year parameter
+    IF p_year IS NOT NULL THEN
+
+        IF p_year <> TRUNC(p_year) THEN
+            RAISE_APPLICATION_ERROR(
+                -20471,
+                'Year must be entered as a whole number, for example 2026.'
+            );
+        END IF;
+
+        IF p_year < v_min_year OR p_year > v_max_year THEN
+            RAISE_APPLICATION_ERROR(
+                -20472,
+                'Year ' || p_year ||
+                ' is outside the available MyKasih transaction history (' ||
+                v_min_year || ' to ' || v_max_year || ').'
+            );
+        END IF;
+
+    END IF;
+
+    -- Report title
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+
+    IF p_year IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - MULTI-YEAR MYKASIH CATEGORY CONTRIBUTION REPORT');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ANNUAL MYKASIH CATEGORY CONTRIBUTION REPORT FOR ' || p_year);
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('Generated: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+
+    -- LEVEL 1 LOOP: YEAR
+    FOR y IN c_year(p_year) LOOP
+
+        v_year_count := v_year_count + 1;
+        v_category_count := 0;
+
+        v_year_units := 0;
+        v_year_gross := 0;
+        v_year_discount := 0;
+        v_year_net := 0;
+
+        v_best_category := NULL;
+        v_best_category_net := NULL;
+        v_weak_category := NULL;
+        v_weak_category_net := NULL;
+
+        -- Unique MyKasih orders and customers for year
+        SELECT
+            COUNT(DISTINCT O.order_no),
+            COUNT(DISTINCT O.customer_id)
+        INTO
+            v_year_orders,
+            v_year_customers
+        FROM Orders O
+        JOIN Payment P
+            ON O.order_no = P.order_no
+        JOIN Customer C
+            ON O.customer_id = C.customer_id
+        WHERE EXTRACT(YEAR FROM CAST(O.order_date_time AS DATE)) = y.sales_year
+          AND O.order_status = 'Completed'
+          AND P.payment_status = 'Paid'
+          AND O.is_mykasih_purchase = 'Y'
+          AND P.payment_method = 'MyKasih'
+          AND C.ic_number IS NOT NULL;
+
+        -- Year header
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR: ' || y.sales_year);
+        DBMS_OUTPUT.PUT_LINE('Unique MyKasih Orders    : ' || v_year_orders);
+        DBMS_OUTPUT.PUT_LINE('Unique MyKasih Customers : ' || v_year_customers);
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+
+        -- LEVEL 2 LOOP: CATEGORY
+        FOR c IN c_category(y.sales_year) LOOP
+
+            v_category_count := v_category_count + 1;
+            v_branch_count := 0;
+
+            v_cat_orders := 0;
+            v_cat_units := 0;
+            v_cat_gross := 0;
+            v_cat_discount := 0;
+            v_cat_net := 0;
+
+            -- Category header
+            DBMS_OUTPUT.PUT_LINE(CHR(10));
+            DBMS_OUTPUT.PUT_LINE('CATEGORY: ' || c.category);
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Branch ID', 12) ||
+                RPAD('Branch', 32) ||
+                LPAD('Months', 9) ||
+                LPAD('Orders', 9) ||
+                LPAD('Units', 9) ||
+                LPAD('Gross RM', 17) ||
+                LPAD('Voucher RM', 17) ||
+                LPAD('Net RM', 17)
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
+
+            -- LEVEL 3 LOOP: BRANCH
+            FOR b IN c_branch(y.sales_year, c.category) LOOP
+
+                v_branch_count := v_branch_count + 1;
+
+                v_cat_orders := v_cat_orders + b.category_orders;
+                v_cat_units := v_cat_units + b.total_units;
+                v_cat_gross := v_cat_gross + b.gross_sales;
+                v_cat_discount := v_cat_discount + b.voucher_discount;
+                v_cat_net := v_cat_net + b.net_sales;
+
+
+                -- Branch contribution detail
+                DBMS_OUTPUT.PUT_LINE(
+                    RPAD(b.branch_id, 12) ||
+                    RPAD(SUBSTR(b.branch_name, 1, 30), 32) ||
+                    LPAD(b.months_active, 9) ||
+                    LPAD(b.category_orders, 9) ||
+                    LPAD(b.total_units, 9) ||
+                    LPAD(TO_CHAR(b.gross_sales, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(b.voucher_discount, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(b.net_sales, 'FM999,999,990.00'), 17)
+                );
+
+            END LOOP;
+
+            -- Category year summary
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
+            DBMS_OUTPUT.PUT_LINE('CATEGORY YEAR SUMMARY');
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Branches contributing', 30) || ': ' || v_branch_count
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Orders containing category', 30) || ': ' || v_cat_orders
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Total units', 30) || ': ' || v_cat_units
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Gross MyKasih sales', 30) ||
+                ': RM ' || TO_CHAR(v_cat_gross, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Voucher discounts', 30) ||
+                ': RM ' || TO_CHAR(v_cat_discount, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Net MyKasih sales', 30) ||
+                ': RM ' || TO_CHAR(v_cat_net, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
+
+
+            -- Determine strongest category of year
+            IF v_best_category_net IS NULL
+               OR v_cat_net > v_best_category_net THEN
+
+                v_best_category := c.category;
+                v_best_category_net := v_cat_net;
+
+            END IF;
+
+            -- Determine weakest category of year
+            IF v_weak_category_net IS NULL
+               OR v_cat_net < v_weak_category_net THEN
+
+                v_weak_category := c.category;
+                v_weak_category_net := v_cat_net;
+
+            END IF;
+
+            -- Add category totals into year totals
+            v_year_units := v_year_units + v_cat_units;
+            v_year_gross := v_year_gross + v_cat_gross;
+            v_year_discount := v_year_discount + v_cat_discount;
+            v_year_net := v_year_net + v_cat_net;
+
+        END LOOP;
+
+        -- Year MyKasih sales by product category
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' MYKASIH SALES BY PRODUCT CATEGORY');
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Category', 35) ||
+            LPAD('Units', 12) ||
+            LPAD('Gross RM', 20) ||
+            LPAD('Voucher RM', 20) ||
+            LPAD('Net RM', 20)
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+
+        FOR yc IN c_year_category(y.sales_year) LOOP
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(SUBSTR(yc.category, 1, 33), 35) ||
+                LPAD(yc.total_units, 12) ||
+                LPAD(TO_CHAR(yc.gross_sales, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(yc.voucher_discount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(yc.net_sales, 'FM999,999,990.00'), 20)
+            );
+
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+
+        -- Year MyKasih summary
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' MYKASIH SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Categories analysed', 30) || ': ' || v_category_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Unique MyKasih orders', 30) || ': ' || v_year_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Unique MyKasih customers', 30) || ': ' || v_year_customers
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total units', 30) || ': ' || v_year_units
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_year_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 30) ||
+            ': RM ' || TO_CHAR(v_year_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_year_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Strongest category', 30) ||
+            ': ' || v_best_category ||
+            ' | RM ' || TO_CHAR(v_best_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Weakest category', 30) ||
+            ': ' || v_weak_category ||
+            ' | RM ' || TO_CHAR(v_weak_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+
+        -- Add year into all-year totals
+        v_grand_orders := v_grand_orders + v_year_orders;
+        v_grand_units := v_grand_units + v_year_units;
+        v_grand_gross := v_grand_gross + v_year_gross;
+        v_grand_discount := v_grand_discount + v_year_discount;
+        v_grand_net := v_grand_net + v_year_net;
+
+    END LOOP;
+
+    -- No matching year
+    IF v_year_count = 0 THEN
+        RAISE e_no_mykasih_data;
+    END IF;
+
+    -- Final multi-year section
+    IF p_year IS NULL THEN
+
+        v_all_best_category := NULL;
+        v_all_best_category_net := NULL;
+        v_all_weak_category := NULL;
+        v_all_weak_category_net := NULL;
+
+
+        -- Determine strongest / weakest category across all years
+        FOR ac IN c_all_category LOOP
+
+            IF v_all_best_category_net IS NULL
+               OR ac.net_sales > v_all_best_category_net THEN
+
+                v_all_best_category := ac.category;
+                v_all_best_category_net := ac.net_sales;
+
+            END IF;
+
+
+            IF v_all_weak_category_net IS NULL
+               OR ac.net_sales < v_all_weak_category_net THEN
+
+                v_all_weak_category := ac.category;
+                v_all_weak_category_net := ac.net_sales;
+
+            END IF;
+
+        END LOOP;
+
+        -- All-year MyKasih sales by product category
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE('ALL-YEAR MYKASIH SALES BY PRODUCT CATEGORY');
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Category', 35) ||
+            LPAD('Units', 12) ||
+            LPAD('Gross RM', 20) ||
+            LPAD('Voucher RM', 20) ||
+            LPAD('Net RM', 20)
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+
+        FOR ac IN c_all_category LOOP
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(SUBSTR(ac.category, 1, 33), 35) ||
+                LPAD(ac.total_units, 12) ||
+                LPAD(TO_CHAR(ac.gross_sales, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(ac.voucher_discount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(ac.net_sales, 'FM999,999,990.00'), 20)
+            );
+
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+
+        -- Final multi-year summary
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE('FINAL MULTI-YEAR MYKASIH SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Years analysed', 30) || ': ' || v_year_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total MyKasih orders', 30) || ': ' || v_grand_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total units', 30) || ': ' || v_grand_units
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_grand_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 30) ||
+            ': RM ' || TO_CHAR(v_grand_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_grand_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Strongest category', 30) ||
+            ': ' || v_all_best_category ||
+            ' | RM ' || TO_CHAR(v_all_best_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Weakest category', 30) ||
+            ': ' || v_all_weak_category ||
+            ' | RM ' || TO_CHAR(v_all_weak_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+
+    END IF;
+
+EXCEPTION
+
+    -- No valid MyKasih report data
+    WHEN e_no_mykasih_data THEN
+        RAISE_APPLICATION_ERROR(
+            -20061,
+            'No completed and paid MyKasih transaction data was found for the selected year.'
+        );
+
+    -- Unexpected database error
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('=== MYKASIH REPORT FAILED ===');
+        DBMS_OUTPUT.PUT_LINE('Error Code    : ' || SQLCODE);
+        DBMS_OUTPUT.PUT_LINE('Error Message : ' || SQLERRM);
+        RAISE;
+
+END report_annual_myKasih_category;
+/
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+EXEC report_annual_myKasih_category(2026);
+EXEC report_annual_myKasih_category();
+
 

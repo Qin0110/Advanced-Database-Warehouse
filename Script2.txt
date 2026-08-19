@@ -1326,7 +1326,7 @@ VALUES('DC' || TO_CHAR(delivery_company_seq.nextval, 'FM000'), 'GrabExpress', '0
 INSERT INTO Delivery_Company
 VALUES('DC' || TO_CHAR(delivery_company_seq.nextval, 'FM000'), 'Lalamove', '03-7688 6555', 6.00, 'Active');
 INSERT INTO Delivery_Company
-VALUES('DC' || TO_CHAR(delivery_company_seq.nextval, 'FM000'), '''J'' || CHR(38) || ''T Express''', '1300-80-9000', 4.50, 'Active');
+VALUES('DC' || TO_CHAR(delivery_company_seq.nextval, 'FM000'), 'JNT Express', '1300-80-9000', 4.50, 'Active');
 INSERT INTO Delivery_Company
 VALUES('DC' || TO_CHAR(delivery_company_seq.nextval, 'FM000'), 'Pos Laju', '1300-300-300', 5.50, 'Active');
 INSERT INTO Delivery_Company
