@@ -130,7 +130,47 @@ LEFT JOIN (SELECT item_id,
            FROM   Rating
            GROUP  BY item_id) rat ON rat.item_id = i.item_id;
 
---View table 2
+--View Table 2
+
+CREATE OR REPLACE VIEW vw_low_rating_recovery AS
+SELECT r.rating_id,
+       r.rating_date,
+       TRUNC(SYSDATE) - TRUNC(r.rating_date) AS days_since,
+       r.score,
+       NVL(r.comments, '(no comment)') AS comments,
+       B.branch_id, b.name AS branch_name,
+       o.order_no,
+       I.item_id, i.name AS item_name, i.category,
+       NVL(m.name, 'Walk-in customer') AS customer_name,
+       COALESCE(m.phone_no, dr.recipient_phone_no, 'No Number') AS contact,
+       NVL(m.membership_type, 'Non-member') AS membership_type,
+       CASE WHEN rr.return_id IS NULL THEN 'No return'
+            ELSE rr.status
+       END AS return_status,
+       CASE WHEN m.phone_no IS NULL AND dr.recipient_phone_no IS NULL
+                 THEN 'P5 - No Contact'
+            WHEN r.score = 1 AND NVL(m.membership_type, 'Non-member') = 'VIP'
+                 THEN 'P1 - Manager Call'
+            WHEN TRUNC(SYSDATE) - TRUNC(r.rating_date) > 14 AND rr.return_id IS NULL
+                 THEN 'P2 - Phone Call'
+            WHEN r.score = 1
+                 THEN 'P3 - Phone Call'
+            ELSE 'P4 - Email'
+       END AS recovery_action
+FROM   Rating r
+JOIN   Item     i  ON i.item_id     = r.item_id
+JOIN   Orders   o  ON o.order_no    = r.order_no
+JOIN   Branch   b  ON b.branch_id   = o.branch_id
+JOIN   Customer c  ON c.customer_id = o.customer_id
+LEFT   JOIN Member m ON m.member_id = c.member_id
+LEFT   JOIN Delivery_Request dr ON dr.order_no = r.order_no
+LEFT   JOIN Return_Request rr ON rr.order_no = r.order_no AND rr.item_id = r.item_id
+WHERE  r.score <= 2
+AND    r.rating_date >= ADD_MONTHS(SYSDATE, -3);
+
+
+
+--View table 3
 
 CREATE OR REPLACE VIEW vw_pending_return_queue AS
 SELECT rr.return_id,
@@ -210,61 +250,42 @@ ORDER  BY i.category, refund_value DESC;
 
 -- Query 2
 
-SET LINESIZE 220
+SET LINESIZE 225
 SET PAGESIZE 60
 
-COLUMN branch_name FORMAT A30 HEADING 'Branch'
-COLUMN rating_id FORMAT A9  HEADING 'Rating|ID'
-COLUMN rating_date FORMAT A10 HEADING 'Rated|On'
-COLUMN days_since FORMAT 999 HEADING 'Days|Ago'
-COLUMN item_name FORMAT A22 HEADING 'Item'
-COLUMN score FORMAT 9   HEADING 'Star'
-COLUMN comments FORMAT A50 HEADING 'Customer Comments'
-COLUMN customer_name FORMAT A20 HEADING 'Customer'
-COLUMN contact FORMAT A16 HEADING 'Contact Number'
+COLUMN branch_name     FORMAT A30 HEADING 'Branch'
+COLUMN rating_id       FORMAT A9  HEADING 'Rating|ID'
+COLUMN rated_on        FORMAT A10 HEADING 'Rated|On'
+COLUMN days_since      FORMAT 999 HEADING 'Days|Ago'
+COLUMN item_name       FORMAT A22 HEADING 'Item'
+COLUMN score           FORMAT 9   HEADING 'Star'
+COLUMN comments        FORMAT A50 HEADING 'Customer Comments'
+COLUMN customer_name   FORMAT A25 HEADING 'Customer'
+COLUMN contact         FORMAT A16 HEADING 'Contact Number'
 COLUMN membership_type FORMAT A10 HEADING 'Member|Type'
-COLUMN return_status FORMAT A13 HEADING 'Return|Lodged?'
-COLUMN action FORMAT A18 HEADING 'Recovery|Action'
+COLUMN return_status   FORMAT A13 HEADING 'Return|Lodged?'
+COLUMN recovery_action FORMAT A18 HEADING 'Recovery|Action'
 
 TTITLE CENTER '88 SPEEDMART SDN BHD - LOW RATING SERVICE RECOVERY LIST' SKIP 1 -
        CENTER '=======================================================' SKIP 2
 
-SELECT b.name AS branch_name,
-       r.rating_id,
-       TO_CHAR(r.rating_date, 'DD-MON-YY') AS rating_date,
-       TRUNC(SYSDATE) - TRUNC(r.rating_date) AS days_since,
-       SUBSTR(i.name, 1, 22) AS item_name,
-       r.score,
-       SUBSTR(NVL(r.comments, '(no comment)'), 1, 50) AS comments,
-       NVL(m.name, 'Walk-in customer') AS customer_name,
-       COALESCE(m.phone_no, dr.recipient_phone_no,'No Number')  	AS contact,
-       NVL(m.membership_type, 'Non-member') AS membership_type,
-       CASE WHEN rr.return_id IS NULL THEN 'No return'
-            ELSE rr.status
-       END AS return_status,
-       CASE WHEN m.phone_no IS NULL AND dr.recipient_phone_no          
-                 IS NULL THEN 'P5 - No Contact' 
-            WHEN r.score = 1
-             AND NVL(m.membership_type, 'Non-member') = 'VIP'  THEN 'P1 - Manager Call'
-            WHEN TRUNC(SYSDATE) - TRUNC(r.rating_date) > 14
-             AND rr.return_id IS NULL THEN 'P2 - Phone Call'
-            WHEN r.score = 1 THEN 'P3 - Phone Call' 
-            ELSE 'P4 - Email'
-       END AS action
-FROM   Rating r
-JOIN   Item i ON i.item_id = r.item_id
-JOIN   Orders o ON o.order_no = r.order_no
-JOIN   Branch b ON b.branch_id = o.branch_id
-JOIN   Customer c ON c.customer_id = o.customer_id
-LEFT   JOIN Member m ON m.member_id = c.member_id
-LEFT   JOIN Delivery_Request dr ON dr.order_no = r.order_no
-LEFT   JOIN Return_Request rr ON rr.order_no = r.order_no
-                             AND rr.item_id  = r.item_id
-WHERE  r.score <= 2
-AND    r.rating_date >= ADD_MONTHS(SYSDATE, -3)
-ORDER  BY b.name,
-          CASE WHEN r.score = 1 THEN 1 ELSE 2 END,
+SELECT branch_name,
+       rating_id,
+       TO_CHAR(rating_date, 'DD-MON-YY') AS rated_on,
+       days_since,
+       SUBSTR(item_name, 1, 22) AS item_name,
+       score,
+       SUBSTR(comments, 1, 50) AS comments,
+       customer_name,
+       contact,
+       membership_type,
+       return_status,
+       recovery_action
+FROM   vw_low_rating_recovery
+ORDER  BY branch_name,
+          CASE WHEN score = 1 THEN 1 ELSE 2 END,
           days_since DESC;
+
 
 
 
