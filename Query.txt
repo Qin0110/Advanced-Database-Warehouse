@@ -10,6 +10,48 @@ DROP INDEX idx_dr_courier_status; CREATE INDEX idx_dr_courier_status ON Delivery
 DROP INDEX idx_item_mykasih ;
 CREATE INDEX idx_item_mykasih ON Item (supplier_id, is_mykasih_eligible, status);
 
+-- Function
+CREATE OR REPLACE FUNCTION fn_reorder_quantity (
+    p_branch_id IN Branch.branch_id%TYPE,
+    p_item_id   IN Item.item_id%TYPE
+) RETURN NUMBER
+IS
+    v_on_hand   NUMBER;
+    v_daily     NUMBER;
+    v_lead      NUMBER;
+    v_cover_days NUMBER;
+    v_needed    NUMBER;
+
+BEGIN
+    SELECT bs.quantity_on_hand,
+           bs.units_sold_6m / 182,
+           bs.lead_time_days,
+           bs.days_of_cover
+    INTO   v_on_hand,
+           v_daily,
+           v_lead,
+           v_cover_days
+    FROM   v_branch_stock_status bs
+    WHERE  bs.branch_id = p_branch_id
+    AND    bs.item_id   = p_item_id;
+
+    v_needed :=
+        (v_daily * (v_cover_days + v_lead))
+        - v_on_hand;
+
+    IF v_needed <= 0 THEN
+        RETURN 0;
+    END IF;
+
+    RETURN CEIL(v_needed / 12) * 12;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 0;
+
+END fn_reorder_quantity;
+/
+
 -- View Table 1
 CREATE OR REPLACE VIEW v_delivery_performance AS
 	SELECT dc.delivery_company_id, dc.company_name,  dc.base_delivery_fee,  dc.status AS status,
@@ -187,77 +229,140 @@ CREATE OR REPLACE PROCEDURE prc_restock_item (
 ) AS
     e_invalid_quantity EXCEPTION;
     e_branch_closed    EXCEPTION;
- 
+
     v_branch_name   Branch.name%TYPE;
     v_branch_status Branch.status%TYPE;
     v_item_name     Item.name%TYPE;
     v_supplier      Supplier.company_name%TYPE;
     v_lead          Supplier.lead_time_days%TYPE;
     v_before        Inventory.quantity%TYPE;
-    v_grn           VARCHAR2(20);
+    v_after         Inventory.quantity%TYPE;
+
 BEGIN
     SELECT b.name, b.status
     INTO   v_branch_name, v_branch_status
     FROM   Branch b
     WHERE  b.branch_id = p_branch_id;
- 
+
     SELECT i.name, s.company_name, s.lead_time_days
     INTO   v_item_name, v_supplier, v_lead
     FROM   Item i
-           JOIN Supplier s ON s.supplier_id = i.supplier_id
+           JOIN Supplier s
+             ON s.supplier_id = i.supplier_id
     WHERE  i.item_id = p_item_id;
- 
-    IF p_quantity IS NULL OR p_quantity <= 0 OR p_quantity > 1000000 THEN
+
+    IF p_quantity IS NULL
+       OR p_quantity <= 0
+       OR p_quantity > 1000000 THEN
         RAISE e_invalid_quantity;
     END IF;
- 
+
     IF v_branch_status <> 'Active' THEN
         RAISE e_branch_closed;
     END IF;
- 
-    v_grn := 'GRN' || TO_CHAR(stock_movement_seq.NEXTVAL, 'FM000000');
- 
-    BEGIN
-        SELECT quantity INTO v_before
+
+    UPDATE Inventory
+    SET    quantity = quantity + p_quantity,
+           last_restock_date = SYSDATE
+    WHERE  branch_id = p_branch_id
+    AND    item_id = p_item_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+
+        v_before := 0;
+
+        INSERT INTO Inventory (
+            branch_id,
+            item_id,
+            quantity,
+            last_restock_date
+        )
+        VALUES (
+            p_branch_id,
+            p_item_id,
+            p_quantity,
+            SYSDATE
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'New product line opened at ' || v_branch_name || '.'
+        );
+
+    ELSE
+        SELECT quantity
+        INTO   v_after
         FROM   Inventory
-        WHERE  branch_id = p_branch_id AND item_id = p_item_id
-        FOR UPDATE;
- 
-        UPDATE Inventory
-        SET    quantity = quantity + p_quantity,
-               last_restock_date = SYSDATE
-        WHERE  branch_id = p_branch_id AND item_id = p_item_id;
-    EXCEPTION
-        WHEN NO_DATA_FOUND THEN          -- the branch has never carried this line
-            v_before := 0;
-            INSERT INTO Inventory (branch_id, item_id, quantity, last_restock_date)
-            VALUES (p_branch_id, p_item_id, p_quantity, SYSDATE);
-            DBMS_OUTPUT.PUT_LINE('New product line opened at ' || v_branch_name || '.');
-    END;
- 
+        WHERE  branch_id = p_branch_id
+        AND    item_id = p_item_id;
+
+        v_before := v_after - p_quantity;
+    END IF;
+
     COMMIT;
- 
-    DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------');
-    DBMS_OUTPUT.PUT_LINE('GOODS RECEIVED NOTE ' || v_grn);
-    DBMS_OUTPUT.PUT_LINE('  Branch   : ' || p_branch_id || ' - ' || v_branch_name);
-    DBMS_OUTPUT.PUT_LINE('  Product  : ' || p_item_id || ' - ' || v_item_name);
-    DBMS_OUTPUT.PUT_LINE('  Supplier : ' || v_supplier || ' (lead time ' || v_lead || ' day(s))');
-    DBMS_OUTPUT.PUT_LINE('  Received : ' || p_quantity || ' unit(s)');
-    DBMS_OUTPUT.PUT_LINE('  On hand  : ' || v_before || ' -> ' || (v_before + p_quantity));
-    DBMS_OUTPUT.PUT_LINE('  Next suggested order : ' ||
-                         fn_reorder_quantity(p_branch_id, p_item_id) || ' unit(s)');
-    DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------');
+
+    DBMS_OUTPUT.PUT_LINE(
+        '---------------------------------------------------------------'
+    );
+    DBMS_OUTPUT.PUT_LINE('RESTOCK SUMMARY');
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Branch   : ' || p_branch_id || ' - ' || v_branch_name
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Product  : ' || p_item_id || ' - ' || v_item_name
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Supplier : ' || v_supplier ||
+        ' (lead time ' || v_lead || ' day(s))'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Received : ' || p_quantity || ' unit(s)'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  On hand  : ' || v_before ||
+        ' -> ' || (v_before + p_quantity)
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Next suggested order : ' ||
+        fn_reorder_quantity(p_branch_id, p_item_id) ||
+        ' unit(s)'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '---------------------------------------------------------------'
+    );
+
 EXCEPTION
     WHEN e_invalid_quantity THEN
-        RAISE_APPLICATION_ERROR(-20000,
+        RAISE_APPLICATION_ERROR(
+            -20000,
             'The quantity received must be a positive number no greater than ' ||
-            '1,000,000 units. ' || NVL(TO_CHAR(p_quantity), 'NULL') || ' was given.');
+            '1,000,000 units. ' ||
+            NVL(TO_CHAR(p_quantity), 'NULL') ||
+            ' was given.'
+        );
+
     WHEN e_branch_closed THEN
-        RAISE_APPLICATION_ERROR(-20001,
-            v_branch_name || ' is ' || v_branch_status || ' and cannot receive stock.');
+        RAISE_APPLICATION_ERROR(
+            -20001,
+            v_branch_name || ' is ' ||
+            v_branch_status ||
+            ' and cannot receive stock.'
+        );
+
     WHEN NO_DATA_FOUND THEN
-        RAISE_APPLICATION_ERROR(-20002,
-            'Branch ' || p_branch_id || ' or item ' || p_item_id || ' does not exist.');
+        RAISE_APPLICATION_ERROR(
+            -20003,
+            'Branch ' || p_branch_id ||
+            ' or item ' || p_item_id ||
+            ' does not exist.'
+        );
+
 END prc_restock_item;
 /
 
@@ -277,7 +382,7 @@ CREATE OR REPLACE PROCEDURE prc_dispatch_delivery (
        		FROM Courier c
         	WHERE c.delivery_company_id = p_company_id
 			AND NOT EXISTS ( SELECT 1 FROM Delivery_Request dr 
-			WHERE dr.courier_id = c.courier_id AND dr.status IN ('Processing', 'Picked Up', 'On the way') ) 
+			WHERE dr.courier_id = c.courier_id AND dr.status = 'Processing'
         	ORDER BY c.average_rating DESC NULLS LAST, c.courier_id;
 
  
@@ -298,7 +403,7 @@ BEGIN
     	FROM Orders o WHERE o.order_no = p_order_no;
 
     	IF v_status <> 'Processing' 
-		THEN RAISE_APPLICATION_ERROR(-20003, 'Order ' || p_order_no || ' is ' || v_status || '. Only an order still being processed can be dispatched.'); 
+		THEN RAISE_APPLICATION_ERROR(-20004, 'Order ' || p_order_no || ' is ' || v_status || '. Only an order still being processed can be dispatched.'); 
 	END IF;
  
     	SELECT dc.company_name, dc.status, dc.base_delivery_fee
@@ -306,7 +411,7 @@ BEGIN
     	FROM   Delivery_Company dc WHERE dc.delivery_company_id = p_company_id;
  
     	IF v_partner_stat <> 'Active' 
-		THEN RAISE_APPLICATION_ERROR(-20004, v_partner || ' is no longer under contract. Choose another partner.');
+		THEN RAISE_APPLICATION_ERROR(-20005, v_partner || ' is no longer under contract. Choose another partner.');
     	END IF;
  
     	OPEN c_best_rider;
@@ -346,6 +451,7 @@ BEGIN
 
 END prc_dispatch_delivery;
 /
+
 
 
 -- Report 1 
