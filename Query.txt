@@ -2448,46 +2448,51 @@ CREATE INDEX idx_orders_branch_date ON Orders (branch_id, order_date_time);
 -- Index 2
 DROP INDEX idx_payment_status_method ;
 CREATE INDEX idx_payment_status_method ON Payment (payment_status, payment_method);
-
+ 
 -- View 1
 CREATE OR REPLACE VIEW v_branch_monthly_revenue AS
 SELECT
     EXTRACT(YEAR FROM O.order_date_time) AS sales_year,
-    TRUNC(
-        CAST(O.order_date_time AS DATE),
-        'MM'
-    ) AS sales_month,
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM') AS sales_month,
     B.branch_id,
     B.name AS branch_name,
     COUNT(O.order_no) AS total_orders,
     COUNT(DISTINCT O.customer_id) AS total_customers,
-    SUM(O.subtotal_amount) AS gross_sales,
-    SUM(
+    ROUND(SUM(O.subtotal_amount), 2) AS gross_sales,
+    ROUND(SUM(
         CASE
-            WHEN R.reward_type = 'Discount'
-            THEN O.discount_amount
+            WHEN R.reward_type = 'Discount' THEN O.discount_amount
             ELSE 0
         END
-    ) AS voucher_discount,
-    SUM(
-        O.subtotal_amount -
+    ), 2) AS voucher_discount,
+    ROUND(SUM(
         CASE
-            WHEN R.reward_type = 'Discount'
-            THEN O.discount_amount
+            WHEN P.payment_status = 'Refunded' THEN NVL(RBO.refund_amount, 0)
             ELSE 0
         END
-    ) AS net_sales,
-    ROUND(
-        AVG(
-            O.subtotal_amount -
-            CASE
-                WHEN R.reward_type = 'Discount'
-                THEN O.discount_amount
-                ELSE 0
-            END
-        ),
-        2
-    ) AS avg_net_sales_per_order
+    ), 2) AS refund_amount,
+    ROUND(SUM(
+        O.subtotal_amount
+        - CASE
+            WHEN R.reward_type = 'Discount' THEN O.discount_amount
+            ELSE 0
+          END
+        - CASE
+            WHEN P.payment_status = 'Refunded' THEN NVL(RBO.refund_amount, 0)
+            ELSE 0
+          END
+    ), 2) AS net_sales,
+    ROUND(AVG(
+        O.subtotal_amount
+        - CASE
+            WHEN R.reward_type = 'Discount' THEN O.discount_amount
+            ELSE 0
+          END
+        - CASE
+            WHEN P.payment_status = 'Refunded' THEN NVL(RBO.refund_amount, 0)
+            ELSE 0
+          END
+    ), 2) AS avg_net_sales_per_order
 FROM Branch B
 JOIN Orders O
     ON B.branch_id = O.branch_id
@@ -2497,18 +2502,15 @@ LEFT JOIN Reward_Redemption RR
     ON O.redemption_id = RR.redemption_id
 LEFT JOIN Reward R
     ON RR.reward_id = R.reward_id
+LEFT JOIN v_refund_by_order RBO
+    ON O.order_no = RBO.order_no
 WHERE O.order_status = 'Completed'
-  AND P.payment_status = 'Paid'
+AND P.payment_status IN ('Paid', 'Refunded')
 GROUP BY
     EXTRACT(YEAR FROM O.order_date_time),
-    TRUNC(
-        CAST(O.order_date_time AS DATE),
-        'MM'
-    ),
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM'),
     B.branch_id,
     B.name;
-
-
 
 -- View 2
 CREATE OR REPLACE VIEW v_mykasih_branch_category AS
@@ -2535,11 +2537,26 @@ SELECT
     ) AS voucher_discount,
     ROUND(
         SUM(
+            CASE
+                WHEN P.payment_status = 'Refunded'
+                THEN NVL(RTN.refund_amount, 0)
+                ELSE 0
+            END
+        ),
+        2
+    ) AS refund_amount,
+    ROUND(
+        SUM(
             OD.subtotal -
             CASE
                 WHEN R.reward_type = 'Discount'
                     AND O.subtotal_amount > 0
                 THEN (OD.subtotal / O.subtotal_amount) * O.discount_amount
+                ELSE 0
+            END -
+            CASE
+                WHEN P.payment_status = 'Refunded'
+                THEN NVL(RTN.refund_amount, 0)
                 ELSE 0
             END
         ),
@@ -2560,8 +2577,12 @@ LEFT JOIN Reward_Redemption RR
     ON O.redemption_id = RR.redemption_id
 LEFT JOIN Reward R
     ON RR.reward_id = R.reward_id
+LEFT JOIN Return_Request RTN
+    ON O.order_no = RTN.order_no
+    AND OD.item_id = RTN.item_id
+    AND RTN.status = 'Refunded'
 WHERE O.order_status = 'Completed'
-  AND P.payment_status = 'Paid'
+  AND P.payment_status IN ('Paid', 'Refunded')
   AND O.is_mykasih_purchase = 'Y'
   AND P.payment_method = 'MyKasih'
   AND C.ic_number IS NOT NULL
@@ -2572,11 +2593,20 @@ GROUP BY
     B.name,
     I.category;
 
+--additional view (Refund View — By Order)
+CREATE OR REPLACE VIEW v_refund_by_order AS
+SELECT
+    order_no,
+    ROUND(SUM(refund_amount), 2) AS refund_amount
+FROM Return_Request
+WHERE status = 'Refunded'
+GROUP BY order_no;
+
 
 
 
 -- Query 1 
-SET LINESIZE 130
+SET LINESIZE 145
 SET PAGESIZE 100
 SET FEEDBACK OFF
 SET TAB OFF
@@ -2597,12 +2627,13 @@ COLUMN total_orders             HEADING 'Orders'         FORMAT 9,999
 COLUMN total_customers          HEADING 'Customers'      FORMAT 9,999
 COLUMN gross_sales              HEADING 'Gross Sales'    FORMAT 9,999,999.99
 COLUMN voucher_discount         HEADING 'Voucher'        FORMAT 999,999.99
+COLUMN refund_amount            HEADING 'Refund'         FORMAT 999,999.99
 COLUMN net_sales                HEADING 'Net Sales'      FORMAT 9,999,999.99
 COLUMN avg_net_sales_per_order  HEADING 'Avg Net Sales'  FORMAT 99,999.99
 COLUMN branch_rank              HEADING 'Rank'           FORMAT 99
 
-BREAK ON sales_year SKIP 1
-COMPUTE SUM LABEL 'Year Total' OF total_orders gross_sales voucher_discount net_sales ON sales_year
+BREAK ON sales_year SKIP 2 ON sales_period SKIP 1
+COMPUTE SUM LABEL 'Year Total' OF total_orders gross_sales voucher_discount refund_amount net_sales ON sales_year
 SELECT
     sales_year,
     TO_CHAR(
@@ -2614,6 +2645,7 @@ SELECT
     total_customers,
     gross_sales,
     voucher_discount,
+    refund_amount,
     net_sales,
     avg_net_sales_per_order,
     RANK() OVER (
@@ -2623,7 +2655,7 @@ SELECT
 FROM v_branch_monthly_revenue
 ORDER BY
     sales_year DESC,
-    sales_month DESC,
+    sales_month,
     branch_rank;
 
 
@@ -2636,9 +2668,10 @@ SET FEEDBACK ON
 SET WRAP ON
 
 
+
 -- Query 2
 
-SET LINESIZE 155
+SET LINESIZE 170
 SET PAGESIZE 100
 SET FEEDBACK OFF
 SET TAB OFF
@@ -2651,22 +2684,23 @@ CLEAR COMPUTES
 TTITLE CENTER '88 SPEEDMART - MYKASIH SALES SUMMARY BY BRANCH' SKIP 1 -
        CENTER '================================================' SKIP 2
 
-COLUMN sales_period        HEADING 'Month'       FORMAT A9
-COLUMN branch_name         HEADING 'Branch'      FORMAT A28
-COLUMN category            HEADING 'Category'    FORMAT A27
-COLUMN mykasih_orders      HEADING 'Orders'      FORMAT 9,999
-COLUMN mykasih_customers   HEADING 'Customers'   FORMAT 9,999
-COLUMN total_units         HEADING 'Units'       FORMAT 9,999
-COLUMN gross_mykasih_sales HEADING 'Gross RM'    FORMAT 999,990.00
-COLUMN voucher_discount    HEADING 'Voucher RM'  FORMAT 999,990.00
-COLUMN net_mykasih_sales   HEADING 'Net RM'      FORMAT 999,990.00
-COLUMN category_share_pct  HEADING 'Share %'     FORMAT 990.9
-COLUMN category_rank       HEADING 'Rank'        FORMAT 99
-COLUMN demand_status       HEADING 'Demand'      FORMAT A13
+COLUMN sales_period         HEADING 'Month'       FORMAT A9
+COLUMN branch_name          HEADING 'Branch'      FORMAT A28
+COLUMN category             HEADING 'Category'    FORMAT A27
+COLUMN mykasih_orders       HEADING 'Orders'      FORMAT 9,999
+COLUMN mykasih_customers    HEADING 'Customers'   FORMAT 9,999
+COLUMN total_units          HEADING 'Units'       FORMAT 9,999
+COLUMN gross_mykasih_sales  HEADING 'Gross RM'    FORMAT 999,990.00
+COLUMN voucher_discount     HEADING 'Voucher RM'  FORMAT 999,990.00
+COLUMN refund_amount        HEADING 'Refund RM'   FORMAT 999,990.00
+COLUMN net_mykasih_sales    HEADING 'Net RM'      FORMAT 999,990.00
+COLUMN category_share_pct   HEADING 'Share %'     FORMAT 990.9
+COLUMN category_rank        HEADING 'Rank'        FORMAT 99
+COLUMN demand_status        HEADING 'Demand'      FORMAT A13
 
 BREAK ON sales_period SKIP 1 ON branch_name SKIP 1
 
-COMPUTE SUM LABEL 'Branch Total' OF total_units gross_mykasih_sales voucher_discount net_mykasih_sales ON branch_name
+COMPUTE SUM LABEL 'Branch Total' OF total_units gross_mykasih_sales voucher_discount refund_amount net_mykasih_sales ON branch_name
 
 WITH mykasih_analysis AS (
     SELECT
@@ -2696,6 +2730,7 @@ SELECT
     total_units,
     gross_mykasih_sales,
     voucher_discount,
+    refund_amount,
     net_mykasih_sales,
     category_share_pct,
     category_rank,
@@ -2711,7 +2746,6 @@ ORDER BY
     branch_name,
     category_rank,
     net_mykasih_sales DESC;
-    
 
 CLEAR BREAKS
 CLEAR COMPUTES
@@ -3641,7 +3675,7 @@ EXEC prc_search_items('BR001','','Y');
 
 -- REPORT 1
 
-CREATE OR REPLACE PROCEDURE report_branch_sales (
+CREATE OR REPLACE PROCEDURE report_branch_sales(
     p_year IN NUMBER DEFAULT NULL
 )
 IS
@@ -3658,6 +3692,7 @@ IS
     v_branch_orders      NUMBER;
     v_branch_gross       NUMBER;
     v_branch_discount    NUMBER;
+    v_branch_refund      NUMBER;
     v_branch_net         NUMBER;
 
     -- Best / weakest month for each branch
@@ -3670,12 +3705,14 @@ IS
     v_year_orders        NUMBER;
     v_year_gross         NUMBER;
     v_year_discount      NUMBER;
+    v_year_refund        NUMBER;
     v_year_net           NUMBER;
 
     -- Grand totals for multi-year report
     v_grand_orders       NUMBER := 0;
     v_grand_gross        NUMBER := 0;
     v_grand_discount     NUMBER := 0;
+    v_grand_refund       NUMBER := 0;
     v_grand_net          NUMBER := 0;
 
     -- Strongest / weakest branch-month for each year
@@ -3724,6 +3761,7 @@ IS
             total_customers,
             gross_sales,
             voucher_discount,
+            refund_amount,
             net_sales,
             avg_net_sales_per_order
         FROM v_branch_monthly_revenue
@@ -3769,9 +3807,9 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
 
     IF p_year IS NULL THEN
-        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - MULTI-YEAR BRANCH SALES TREND REPORT');
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - MULTI-YEAR BRANCH REVENUE TREND REPORT');
     ELSE
-        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ANNUAL BRANCH SALES TREND REPORT FOR ' || p_year);
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ANNUAL BRANCH REVENUE TREND REPORT FOR ' || p_year);
     END IF;
 
     DBMS_OUTPUT.PUT_LINE('Generated: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
@@ -3786,6 +3824,7 @@ BEGIN
         v_year_orders := 0;
         v_year_gross := 0;
         v_year_discount := 0;
+        v_year_refund := 0;
         v_year_net := 0;
 
         v_year_best_branch_id := NULL;
@@ -3812,6 +3851,7 @@ BEGIN
             v_branch_orders := 0;
             v_branch_gross := 0;
             v_branch_discount := 0;
+            v_branch_refund := 0;
             v_branch_net := 0;
 
             v_month_best := NULL;
@@ -3830,6 +3870,7 @@ BEGIN
                 LPAD('Customers', 12) ||
                 LPAD('Gross RM', 17) ||
                 LPAD('Voucher RM', 16) ||
+                LPAD('Refund RM', 16) ||
                 LPAD('Net Sales RM', 17) ||
                 LPAD('Avg Net Sale', 17)
             );
@@ -3845,6 +3886,7 @@ BEGIN
                 v_branch_orders := v_branch_orders + m.total_orders;
                 v_branch_gross := v_branch_gross + m.gross_sales;
                 v_branch_discount := v_branch_discount + m.voucher_discount;
+                v_branch_refund := v_branch_refund + m.refund_amount;
                 v_branch_net := v_branch_net + m.net_sales;
 
                 -- Determine best month
@@ -3891,6 +3933,7 @@ BEGIN
                     LPAD(m.total_customers, 12) ||
                     LPAD(TO_CHAR(m.gross_sales, 'FM999,999,990.00'), 17) ||
                     LPAD(TO_CHAR(m.voucher_discount, 'FM999,999,990.00'), 16) ||
+                    LPAD(TO_CHAR(m.refund_amount, 'FM999,999,990.00'), 16) ||
                     LPAD(TO_CHAR(m.net_sales, 'FM999,999,990.00'), 17) ||
                     LPAD(TO_CHAR(m.avg_net_sales_per_order, 'FM999,990.00'), 17)
                 );
@@ -3916,6 +3959,11 @@ BEGIN
             DBMS_OUTPUT.PUT_LINE(
                 RPAD('Voucher discounts', 28) ||
                 ': RM ' || TO_CHAR(v_branch_discount, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Refunds', 28) ||
+                ': RM ' || TO_CHAR(v_branch_refund, 'FM999,999,990.00')
             );
 
             DBMS_OUTPUT.PUT_LINE(
@@ -3950,6 +3998,7 @@ BEGIN
             v_year_orders := v_year_orders + v_branch_orders;
             v_year_gross := v_year_gross + v_branch_gross;
             v_year_discount := v_year_discount + v_branch_discount;
+            v_year_refund := v_year_refund + v_branch_refund;
             v_year_net := v_year_net + v_branch_net;
         END LOOP;
 
@@ -3974,6 +4023,11 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE(
             RPAD('Voucher discounts', 28) ||
             ': RM ' || TO_CHAR(v_year_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 28) ||
+            ': RM ' || TO_CHAR(v_year_refund, 'FM999,999,990.00')
         );
 
         DBMS_OUTPUT.PUT_LINE(
@@ -4003,6 +4057,7 @@ BEGIN
         v_grand_orders := v_grand_orders + v_year_orders;
         v_grand_gross := v_grand_gross + v_year_gross;
         v_grand_discount := v_grand_discount + v_year_discount;
+        v_grand_refund := v_grand_refund + v_year_refund;
         v_grand_net := v_grand_net + v_year_net;
 
     END LOOP;
@@ -4038,6 +4093,11 @@ BEGIN
         );
 
         DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 28) ||
+            ': RM ' || TO_CHAR(v_grand_refund, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
             RPAD('Net sales', 28) ||
             ': RM ' || TO_CHAR(v_grand_net, 'FM999,999,990.00')
         );
@@ -4066,6 +4126,13 @@ END report_branch_sales;
 
 SET SERVEROUTPUT ON SIZE UNLIMITED;
 EXEC report_branch_sales(2026);
+
+
+
+EXEC report_branch_sales();
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+EXEC report_branch_sales(2026);
 EXEC report_branch_sales();
 
 
@@ -4091,6 +4158,7 @@ IS
     v_cat_units       NUMBER;
     v_cat_gross       NUMBER;
     v_cat_discount    NUMBER;
+    v_cat_refund      NUMBER;
     v_cat_net         NUMBER;
 
     -- Year totals
@@ -4099,6 +4167,7 @@ IS
     v_year_units       NUMBER;
     v_year_gross       NUMBER;
     v_year_discount    NUMBER;
+    v_year_refund      NUMBER;
     v_year_net         NUMBER;
 
     -- Strongest / weakest category within each year
@@ -4112,6 +4181,7 @@ IS
     v_grand_units       NUMBER := 0;
     v_grand_gross       NUMBER := 0;
     v_grand_discount    NUMBER := 0;
+    v_grand_refund      NUMBER := 0;
     v_grand_net         NUMBER := 0;
 
     -- Strongest / weakest category across all years
@@ -4154,6 +4224,7 @@ IS
             SUM(total_units) AS total_units,
             ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
             ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(refund_amount), 2) AS refund_amount,
             ROUND(SUM(net_mykasih_sales), 2) AS net_sales,
             COUNT(DISTINCT sales_month) AS months_active
         FROM v_mykasih_branch_category
@@ -4171,6 +4242,7 @@ IS
             SUM(total_units) AS total_units,
             ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
             ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(refund_amount), 2) AS refund_amount,
             ROUND(SUM(net_mykasih_sales), 2) AS net_sales
         FROM v_mykasih_branch_category
         WHERE EXTRACT(YEAR FROM sales_month) = cp_year
@@ -4184,6 +4256,7 @@ IS
             SUM(total_units) AS total_units,
             ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
             ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(refund_amount), 2) AS refund_amount,
             ROUND(SUM(net_mykasih_sales), 2) AS net_sales
         FROM v_mykasih_branch_category
         GROUP BY category
@@ -4226,7 +4299,7 @@ BEGIN
     END IF;
 
     -- Report title
-    DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
 
     IF p_year IS NULL THEN
         DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - MULTI-YEAR MYKASIH CATEGORY CONTRIBUTION REPORT');
@@ -4235,7 +4308,7 @@ BEGIN
     END IF;
 
     DBMS_OUTPUT.PUT_LINE('Generated: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
-    DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
 
     -- LEVEL 1 LOOP: YEAR
     FOR y IN c_year(p_year) LOOP
@@ -4246,6 +4319,7 @@ BEGIN
         v_year_units := 0;
         v_year_gross := 0;
         v_year_discount := 0;
+        v_year_refund := 0;
         v_year_net := 0;
 
         v_best_category := NULL;
@@ -4267,18 +4341,18 @@ BEGIN
             ON O.customer_id = C.customer_id
         WHERE EXTRACT(YEAR FROM CAST(O.order_date_time AS DATE)) = y.sales_year
           AND O.order_status = 'Completed'
-          AND P.payment_status = 'Paid'
+          AND P.payment_status IN ('Paid', 'Refunded')
           AND O.is_mykasih_purchase = 'Y'
           AND P.payment_method = 'MyKasih'
           AND C.ic_number IS NOT NULL;
 
         -- Year header
         DBMS_OUTPUT.PUT_LINE(CHR(10));
-        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
         DBMS_OUTPUT.PUT_LINE('YEAR: ' || y.sales_year);
         DBMS_OUTPUT.PUT_LINE('Unique MyKasih Orders    : ' || v_year_orders);
         DBMS_OUTPUT.PUT_LINE('Unique MyKasih Customers : ' || v_year_customers);
-        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
 
         -- LEVEL 2 LOOP: CATEGORY
         FOR c IN c_category(y.sales_year) LOOP
@@ -4290,12 +4364,13 @@ BEGIN
             v_cat_units := 0;
             v_cat_gross := 0;
             v_cat_discount := 0;
+            v_cat_refund := 0;
             v_cat_net := 0;
 
             -- Category header
             DBMS_OUTPUT.PUT_LINE(CHR(10));
             DBMS_OUTPUT.PUT_LINE('CATEGORY: ' || c.category);
-            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
             DBMS_OUTPUT.PUT_LINE(
                 RPAD('Branch ID', 12) ||
@@ -4305,10 +4380,11 @@ BEGIN
                 LPAD('Units', 9) ||
                 LPAD('Gross RM', 17) ||
                 LPAD('Voucher RM', 17) ||
+                LPAD('Refund RM', 17) ||
                 LPAD('Net RM', 17)
             );
 
-            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
             -- LEVEL 3 LOOP: BRANCH
             FOR b IN c_branch(y.sales_year, c.category) LOOP
@@ -4319,8 +4395,8 @@ BEGIN
                 v_cat_units := v_cat_units + b.total_units;
                 v_cat_gross := v_cat_gross + b.gross_sales;
                 v_cat_discount := v_cat_discount + b.voucher_discount;
+                v_cat_refund := v_cat_refund + b.refund_amount;
                 v_cat_net := v_cat_net + b.net_sales;
-
 
                 -- Branch contribution detail
                 DBMS_OUTPUT.PUT_LINE(
@@ -4331,13 +4407,14 @@ BEGIN
                     LPAD(b.total_units, 9) ||
                     LPAD(TO_CHAR(b.gross_sales, 'FM999,999,990.00'), 17) ||
                     LPAD(TO_CHAR(b.voucher_discount, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(b.refund_amount, 'FM999,999,990.00'), 17) ||
                     LPAD(TO_CHAR(b.net_sales, 'FM999,999,990.00'), 17)
                 );
 
             END LOOP;
 
             -- Category year summary
-            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
             DBMS_OUTPUT.PUT_LINE('CATEGORY YEAR SUMMARY');
 
             DBMS_OUTPUT.PUT_LINE(
@@ -4363,12 +4440,16 @@ BEGIN
             );
 
             DBMS_OUTPUT.PUT_LINE(
+                RPAD('Refunds', 30) ||
+                ': RM ' || TO_CHAR(v_cat_refund, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
                 RPAD('Net MyKasih sales', 30) ||
                 ': RM ' || TO_CHAR(v_cat_net, 'FM999,999,990.00')
             );
 
-            DBMS_OUTPUT.PUT_LINE(RPAD('-', 125, '-'));
-
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
             -- Determine strongest category of year
             IF v_best_category_net IS NULL
@@ -4392,6 +4473,7 @@ BEGIN
             v_year_units := v_year_units + v_cat_units;
             v_year_gross := v_year_gross + v_cat_gross;
             v_year_discount := v_year_discount + v_cat_discount;
+            v_year_refund := v_year_refund + v_cat_refund;
             v_year_net := v_year_net + v_cat_net;
 
         END LOOP;
@@ -4399,17 +4481,18 @@ BEGIN
         -- Year MyKasih sales by product category
         DBMS_OUTPUT.PUT_LINE(CHR(10));
         DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' MYKASIH SALES BY PRODUCT CATEGORY');
-        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
         DBMS_OUTPUT.PUT_LINE(
             RPAD('Category', 35) ||
             LPAD('Units', 12) ||
             LPAD('Gross RM', 20) ||
             LPAD('Voucher RM', 20) ||
+            LPAD('Refund RM', 20) ||
             LPAD('Net RM', 20)
         );
 
-        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
         FOR yc IN c_year_category(y.sales_year) LOOP
 
@@ -4418,16 +4501,17 @@ BEGIN
                 LPAD(yc.total_units, 12) ||
                 LPAD(TO_CHAR(yc.gross_sales, 'FM999,999,990.00'), 20) ||
                 LPAD(TO_CHAR(yc.voucher_discount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(yc.refund_amount, 'FM999,999,990.00'), 20) ||
                 LPAD(TO_CHAR(yc.net_sales, 'FM999,999,990.00'), 20)
             );
 
         END LOOP;
 
-        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
         -- Year MyKasih summary
         DBMS_OUTPUT.PUT_LINE(CHR(10));
-        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
         DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' MYKASIH SUMMARY');
 
         DBMS_OUTPUT.PUT_LINE(
@@ -4457,6 +4541,11 @@ BEGIN
         );
 
         DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 30) ||
+            ': RM ' || TO_CHAR(v_year_refund, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
             RPAD('Net MyKasih sales', 30) ||
             ': RM ' || TO_CHAR(v_year_net, 'FM999,999,990.00')
         );
@@ -4473,13 +4562,14 @@ BEGIN
             ' | RM ' || TO_CHAR(v_weak_category_net, 'FM999,999,990.00')
         );
 
-        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
 
         -- Add year into all-year totals
         v_grand_orders := v_grand_orders + v_year_orders;
         v_grand_units := v_grand_units + v_year_units;
         v_grand_gross := v_grand_gross + v_year_gross;
         v_grand_discount := v_grand_discount + v_year_discount;
+        v_grand_refund := v_grand_refund + v_year_refund;
         v_grand_net := v_grand_net + v_year_net;
 
     END LOOP;
@@ -4489,14 +4579,14 @@ BEGIN
         RAISE e_no_mykasih_data;
     END IF;
 
-    -- Final multi-year section
+    -- FINAL MULTI-YEAR SECTION
     IF p_year IS NULL THEN
 
         v_all_best_category := NULL;
         v_all_best_category_net := NULL;
+
         v_all_weak_category := NULL;
         v_all_weak_category_net := NULL;
-
 
         -- Determine strongest / weakest category across all years
         FOR ac IN c_all_category LOOP
@@ -4509,7 +4599,6 @@ BEGIN
 
             END IF;
 
-
             IF v_all_weak_category_net IS NULL
                OR ac.net_sales < v_all_weak_category_net THEN
 
@@ -4520,20 +4609,25 @@ BEGIN
 
         END LOOP;
 
-        -- All-year MyKasih sales by product category
+        -- ALL-YEAR MYKASIH SALES BY PRODUCT CATEGORY
         DBMS_OUTPUT.PUT_LINE(CHR(10));
-        DBMS_OUTPUT.PUT_LINE('ALL-YEAR MYKASIH SALES BY PRODUCT CATEGORY');
-        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+
+        DBMS_OUTPUT.PUT_LINE(
+            'ALL-YEAR MYKASIH SALES BY PRODUCT CATEGORY'
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
         DBMS_OUTPUT.PUT_LINE(
             RPAD('Category', 35) ||
             LPAD('Units', 12) ||
             LPAD('Gross RM', 20) ||
             LPAD('Voucher RM', 20) ||
+            LPAD('Refund RM', 20) ||
             LPAD('Net RM', 20)
         );
 
-        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
         FOR ac IN c_all_category LOOP
 
@@ -4542,16 +4636,17 @@ BEGIN
                 LPAD(ac.total_units, 12) ||
                 LPAD(TO_CHAR(ac.gross_sales, 'FM999,999,990.00'), 20) ||
                 LPAD(TO_CHAR(ac.voucher_discount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(ac.refund_amount, 'FM999,999,990.00'), 20) ||
                 LPAD(TO_CHAR(ac.net_sales, 'FM999,999,990.00'), 20)
             );
 
         END LOOP;
 
-        DBMS_OUTPUT.PUT_LINE(RPAD('-', 110, '-'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
 
         -- Final multi-year summary
         DBMS_OUTPUT.PUT_LINE(CHR(10));
-        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
         DBMS_OUTPUT.PUT_LINE('FINAL MULTI-YEAR MYKASIH SUMMARY');
 
         DBMS_OUTPUT.PUT_LINE(
@@ -4577,6 +4672,11 @@ BEGIN
         );
 
         DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 30) ||
+            ': RM ' || TO_CHAR(v_grand_refund, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
             RPAD('Net MyKasih sales', 30) ||
             ': RM ' || TO_CHAR(v_grand_net, 'FM999,999,990.00')
         );
@@ -4593,7 +4693,7 @@ BEGIN
             ' | RM ' || TO_CHAR(v_all_weak_category_net, 'FM999,999,990.00')
         );
 
-        DBMS_OUTPUT.PUT_LINE(RPAD('=', 125, '='));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
 
     END IF;
 
@@ -4603,7 +4703,7 @@ EXCEPTION
     WHEN e_no_mykasih_data THEN
         RAISE_APPLICATION_ERROR(
             -20061,
-            'No completed and paid MyKasih transaction data was found for the selected year.'
+            'No completed and paid or refunded MyKasih transaction data was found for the selected year.'
         );
 
     -- Unexpected database error
