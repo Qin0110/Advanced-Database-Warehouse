@@ -1,3 +1,4 @@
+
 SET LINESIZE 200
 SET PAGESIZE 100
 SET SERVEROUTPUT ON SIZE UNLIMITED
@@ -1058,38 +1059,38 @@ BEFORE INSERT OR UPDATE ON Inventory
 FOR EACH ROW
 DECLARE
     v_item_status   Item.status%TYPE;
+    v_item_name     Item.name%TYPE;
     v_branch_status Branch.status%TYPE;
+    v_branch_name   Branch.name%TYPE;
 BEGIN
-    SELECT status
-    INTO v_item_status
-    FROM Item
-    WHERE item_id = :NEW.item_id;
+    SELECT status, name
+    INTO   v_item_status, v_item_name
+    FROM   Item
+    WHERE  item_id = :NEW.item_id;
 
-    IF UPPER(v_item_status) <> 'Active' THEN
-        RAISE_APPLICATION_ERROR(
-            -20129,
-            'Inventory cannot be added or updated because the item is not Active.'
-        );
+    SELECT status, name
+    INTO   v_branch_status, v_branch_name
+    FROM   Branch
+    WHERE  branch_id = :NEW.branch_id;
+    IF UPPER(v_branch_status) <> 'ACTIVE' THEN
+        RAISE_APPLICATION_ERROR(-20130,
+            v_branch_name || ' is ' || v_branch_status ||
+            ' and cannot hold stock.');
     END IF;
 
-    SELECT status
-    INTO v_branch_status
-    FROM Branch
-    WHERE branch_id = :NEW.branch_id;
-
-    IF UPPER(v_branch_status) <> 'Active' THEN
-        RAISE_APPLICATION_ERROR(
-            -20130,
-            'Inventory cannot be added or updated because the branch is not Active.'
-        );
+    IF UPPER(v_item_status) <> 'ACTIVE'
+       AND UPDATING
+       AND :NEW.quantity > :OLD.quantity THEN
+        RAISE_APPLICATION_ERROR(-20129,
+            v_item_name || ' has been discontinued. The ' || :OLD.quantity ||
+            ' unit(s) already at ' || v_branch_name || ' may be sold down, but no ' ||
+            'further stock may be brought in.');
     END IF;
-
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        RAISE_APPLICATION_ERROR(
-            -20131,
-            'Inventory cannot be added or updated because the item or branch does not exist.'
-        );
+        RAISE_APPLICATION_ERROR(-20131,
+            'Inventory cannot be recorded because item ' || :NEW.item_id ||
+            ' or branch ' || :NEW.branch_id || ' does not exist.');
 END;
 /
 
