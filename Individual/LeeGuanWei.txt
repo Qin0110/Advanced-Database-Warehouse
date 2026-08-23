@@ -749,89 +749,95 @@ END;
 -- Report 1: Delivery Performance Audit Report 
 
 CREATE OR REPLACE PROCEDURE rpt_delivery_fulfilment (
-    	p_year IN NUMBER DEFAULT NULL
+    p_year IN NUMBER DEFAULT NULL
 ) AS
-    	CURSOR c_year (cp_year NUMBER) IS
-        	SELECT DISTINCT year
-        	FROM v_delivery_performance
-        	WHERE (cp_year IS NULL OR year = cp_year)
-        	ORDER BY year DESC;
+    CURSOR c_year (cp_year NUMBER) IS
+        SELECT DISTINCT year
+        FROM v_delivery_performance
+        WHERE (cp_year IS NULL OR year = cp_year)
+        ORDER BY year DESC;
 
-    	CURSOR c_partner (cp_year NUMBER) IS
-        	SELECT delivery_company_id, company_name, no_jobs_taken, success_rate, fee_paid
-        	FROM v_delivery_performance
-        	WHERE year = cp_year
-        	ORDER BY no_jobs_taken DESC;
+    CURSOR c_partner (cp_year NUMBER) IS
+        SELECT delivery_company_id, company_name, no_jobs_taken, success_rate, fee_paid
+        FROM v_delivery_performance
+        WHERE year = cp_year
+        ORDER BY no_jobs_taken DESC;
 
-    	CURSOR c_rider (cp_company Delivery_Company.delivery_company_id%TYPE, cp_year NUMBER) IS
-        	SELECT c.name,
-               		NVL(c.average_rating, 0) AS rating,
-               		COUNT(dr.delivery_request_id) AS jobs,
-               		SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) AS delivered,
-               		SUM(CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END) AS failed
-        	FROM Courier c
-               		JOIN Delivery_Request dr ON dr.courier_id = c.courier_id
-               		JOIN Orders o ON o.order_no = dr.order_no
-        	WHERE c.delivery_company_id = cp_company
-        		AND EXTRACT(YEAR FROM o.order_date_time) = cp_year
-        		GROUP BY c.name, c.average_rating
-        		ORDER BY jobs DESC;
+    -- MODIFIED CURSOR: Selects only the Top 3 based on average_rating
+    CURSOR c_rider (cp_company Delivery_Company.delivery_company_id%TYPE, cp_year NUMBER) IS
+        SELECT * FROM (
+            SELECT c.name,
+                   NVL(c.average_rating, 0) AS rating,
+                   COUNT(dr.delivery_request_id) AS jobs,
+                   SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) AS delivered,
+                   SUM(CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END) AS failed
+            FROM Courier c
+            JOIN Delivery_Request dr ON dr.courier_id = c.courier_id
+            JOIN Orders o ON o.order_no = dr.order_no
+            WHERE c.delivery_company_id = cp_company
+                AND EXTRACT(YEAR FROM o.order_date_time) = cp_year
+            GROUP BY c.name, c.average_rating
+            ORDER BY NVL(c.average_rating, 0) DESC, COUNT(dr.delivery_request_id) DESC
+        )
+        WHERE ROWNUM <= 3;
 
-    	v_total_years   NUMBER := 0;
-    	v_year_partners NUMBER;
-	BEGIN
-    		IF p_year IS NOT NULL AND p_year NOT BETWEEN 2020 AND 2026 THEN
-        		RAISE_APPLICATION_ERROR(-20341, 'The trading history runs from 2020 to 2026. Year ' || p_year || ' is outside it.');
-    		END IF;
+    v_total_years   NUMBER := 0;
+    v_year_partners NUMBER;
+BEGIN
+    IF p_year IS NOT NULL AND p_year NOT BETWEEN 2020 AND 2026 THEN
+        RAISE_APPLICATION_ERROR(-20341, 'The trading history runs from 2020 to 2026. Year ' || p_year || ' is outside it.');
+    END IF;
 
-    		DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
-    		IF p_year IS NULL THEN
-        		DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MULTI-YEAR DELIVERY FULFILMENT AND RIDER REPORT (ALL YEARS)');
-    		ELSE
-        		DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   DELIVERY FULFILMENT AND RIDER REPORT FOR YEAR ' || p_year);
-    		END IF;
-    			DBMS_OUTPUT.PUT_LINE('Generated on ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
-    			DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+    IF p_year IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MULTI-YEAR DELIVERY FULFILMENT AND RIDER REPORT (ALL YEARS)');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   DELIVERY FULFILMENT AND RIDER REPORT FOR YEAR ' || p_year);
+    END IF;
+    DBMS_OUTPUT.PUT_LINE('Generated on ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
 
-    		FOR y IN c_year(p_year) LOOP
-        		v_total_years := v_total_years + 1;
-        		v_year_partners := 0;
+    FOR y IN c_year(p_year) LOOP
+        v_total_years := v_total_years + 1;
+        v_year_partners := 0;
 
-        		DBMS_OUTPUT.PUT_LINE(CHR(10) || '---------------------------------------------------------------------------------');
-        		DBMS_OUTPUT.PUT_LINE('>> PERFORMANCE REPORT FOR YEAR: ' || y.year);
-        		DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------------------------');
+        DBMS_OUTPUT.PUT_LINE(CHR(10) || '---------------------------------------------------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('>> PERFORMANCE REPORT FOR YEAR: ' || y.year);
+        DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------------------------');
 
-        		FOR p IN c_partner(y.year) LOOP
-            			v_year_partners := v_year_partners + 1;
+        FOR p IN c_partner(y.year) LOOP
+            v_year_partners := v_year_partners + 1;
 
-            			DBMS_OUTPUT.PUT_LINE(CHR(10) || '  Partner: ' || p.company_name ||
+            DBMS_OUTPUT.PUT_LINE(CHR(10) || '  Partner: ' || p.company_name ||
                                  ' | Jobs: ' || p.no_jobs_taken ||
                                  ' | Success: ' || p.success_rate || '%' ||
                                  ' | Fees: RM ' || p.fee_paid);
-            			DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
-            			DBMS_OUTPUT.PUT_LINE('  ' || RPAD('Rider Name', 28) || LPAD('Rating', 8) || 
+            DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
+            -- Adjusted header slightly to reflect the Top 3 limit
+            DBMS_OUTPUT.PUT_LINE('  ' || RPAD('Top 3 Riders', 28) || LPAD('Rating', 8) || 
                                  LPAD('Jobs', 8) || LPAD('Delivered', 12) || LPAD('Failed', 8));
-            			DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
+            DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
 
-            			FOR r IN c_rider(p.delivery_company_id, y.year) LOOP
-                			DBMS_OUTPUT.PUT_LINE('    ' || RPAD(SUBSTR(r.name, 1, 26), 28) ||
-                                     	LPAD(TO_CHAR(r.rating, '9.0'), 8) ||
-                                     	LPAD(r.jobs, 8) ||
-                                     	LPAD(r.delivered, 12) ||
-                                     	LPAD(r.failed, 8));
-            			END LOOP;
-        		END LOOP;
+            FOR r IN c_rider(p.delivery_company_id, y.year) LOOP
+                DBMS_OUTPUT.PUT_LINE('    ' || RPAD(SUBSTR(r.name, 1, 26), 28) ||
+                                     LPAD(TO_CHAR(r.rating, '9.0'), 8) ||
+                                     LPAD(r.jobs, 8) ||
+                                     LPAD(r.delivered, 12) ||
+                                     LPAD(r.failed, 8));
+            END LOOP;
+        END LOOP;
 
-        		IF v_year_partners = 0 THEN
-            			DBMS_OUTPUT.PUT_LINE('  No delivery data recorded for ' || y.year);
-        		END IF;
-    		END LOOP;
+        IF v_year_partners = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('  No delivery data recorded for ' || y.year);
+        END IF;
+    END LOOP;
 
-    	DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('=', 85, '='));
-    	DBMS_OUTPUT.PUT_LINE('END OF REPORT. Evaluated ' || v_total_years || ' year(s) of history.');
-    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+    DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('=', 85, '='));
+    DBMS_OUTPUT.PUT_LINE('END OF REPORT. Evaluated ' || v_total_years || ' year(s) of history.');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
 END rpt_delivery_fulfilment;
 /
+
 
 -- Report 2: MyKasih Subsidy Report
 
