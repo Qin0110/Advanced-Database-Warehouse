@@ -1073,7 +1073,7 @@ BEGIN
     FROM   Branch
     WHERE  branch_id = :NEW.branch_id;
     IF UPPER(v_branch_status) <> 'ACTIVE' THEN
-        RAISE_APPLICATION_ERROR(-20130,
+        RAISE_APPLICATION_ERROR(-20129,
             v_branch_name || ' is ' || v_branch_status ||
             ' and cannot hold stock.');
     END IF;
@@ -1081,7 +1081,7 @@ BEGIN
     IF UPPER(v_item_status) <> 'ACTIVE'
        AND UPDATING
        AND :NEW.quantity > :OLD.quantity THEN
-        RAISE_APPLICATION_ERROR(-20129,
+        RAISE_APPLICATION_ERROR(-20130,
             v_item_name || ' has been discontinued. The ' || :OLD.quantity ||
             ' unit(s) already at ' || v_branch_name || ' may be sold down, but no ' ||
             'further stock may be brought in.');
