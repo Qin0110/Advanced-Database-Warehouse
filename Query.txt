@@ -3228,9 +3228,20 @@ BEGIN
     END IF;
 
     -- CALCULATE CURRENT TOTAL
-    v_total :=
-        v_subtotal -
-        v_discount;
+    v_total := v_subtotal - v_discount;
+
+    -- MYKASIH RM100 PURCHASE LIMIT
+    IF UPPER(p_mykasih) = 'Y'
+    AND v_total > 100 THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20105,
+            'MyKasih purchase amount cannot exceed RM100.00. ' ||
+            'Current amount: RM ' ||
+            TO_CHAR(v_total, 'FM9990.00') || '.'
+        );
+
+    END IF;
 
     -- For Delivery orders the delivery fee is calculated later
     -- when the Delivery_Request is created.

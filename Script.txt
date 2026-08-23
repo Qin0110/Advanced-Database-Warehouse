@@ -683,35 +683,93 @@ CREATE OR REPLACE TRIGGER trg_payment_completes_order
 AFTER UPDATE OF payment_status ON Payment
 FOR EACH ROW
 WHEN (NEW.payment_status = 'Paid' AND OLD.payment_status <> 'Paid')
+DECLARE
+    v_order_status Orders.order_status%TYPE;
 BEGIN
-    UPDATE Orders SET order_status = 'Completed'
-    WHERE  order_no = :NEW.order_no AND order_status = 'Processing';
+    SELECT order_status
+    INTO v_order_status
+    FROM Orders
+    WHERE order_no = :NEW.order_no;
+
+    IF v_order_status = 'Cancelled' THEN
+        RAISE_APPLICATION_ERROR(
+            -20481,
+            'Payment cannot be completed because order ' ||
+            :NEW.order_no || ' has already been cancelled.'
+        );
+    END IF;
+
+    IF v_order_status = 'Processing' THEN
+        UPDATE Orders
+        SET order_status = 'Completed'
+        WHERE order_no = :NEW.order_no;
+    END IF;
 END;
 /
 
 
 
-CREATE OR REPLACE TRIGGER trg_award_points
+
+CREATE OR REPLACE TRIGGER trg_award_member_points
 BEFORE UPDATE OF order_status ON Orders
 FOR EACH ROW
 WHEN (NEW.order_status = 'Completed' AND OLD.order_status <> 'Completed')
 DECLARE
-    v_member Member.member_id%TYPE;
-    v_rate   Member.point_rate%TYPE;
-    v_points NUMBER;
+    v_member_id       Customer.member_id%TYPE;
+    v_membership_type Member.membership_type%TYPE;
+    v_point_rate      Member.point_rate%TYPE;
+    v_member_status   Member.status%TYPE;
+    v_base_points     NUMBER;
+    v_points_earned   NUMBER;
 BEGIN
-    SELECT member_id INTO v_member FROM Customer WHERE customer_id = :NEW.customer_id;
-    IF v_member IS NULL THEN
+    -- Find membership linked to the customer
+    SELECT member_id
+    INTO v_member_id
+    FROM Customer
+    WHERE customer_id = :NEW.customer_id;
+
+    -- Non-member customer earns no points
+    IF v_member_id IS NULL THEN
         :NEW.points_earned := 0;
         RETURN;
     END IF;
 
-    SELECT point_rate INTO v_rate FROM Member WHERE member_id = v_member;
-    v_points := FLOOR(:NEW.subtotal_amount - :NEW.discount_amount) * v_rate;
-    :NEW.points_earned := v_points;
+    -- Get member details
+    SELECT
+        membership_type,
+        point_rate,
+        status
+    INTO
+        v_membership_type,
+        v_point_rate,
+        v_member_status
+    FROM Member
+    WHERE member_id = v_member_id;
 
-    UPDATE Member SET points_balance = points_balance + v_points
-    WHERE  member_id = v_member;
+    -- Inactive member earns no points
+    IF v_member_status <> 'Active' THEN
+        :NEW.points_earned := 0;
+        RETURN;
+    END IF;
+
+    -- Calculate base points from net merchandise spending
+    v_base_points := FLOOR(
+        :NEW.subtotal_amount -
+        :NEW.discount_amount
+    );
+
+    -- Normal = x1.00, VIP = x2.00
+    v_points_earned := FLOOR(
+        v_base_points * v_point_rate
+    );
+
+    -- Store points earned by the order
+    :NEW.points_earned := v_points_earned;
+
+    -- Add points to member balance
+    UPDATE Member
+    SET points_balance = points_balance + v_points_earned
+    WHERE member_id = v_member_id;
 END;
 /
 
