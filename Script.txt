@@ -158,7 +158,7 @@ CREATE TABLE Reward_Redemption (
 CREATE TABLE Inventory (
     branch_id VARCHAR2(20) NOT NULL,
     item_id VARCHAR2(20) NOT NULL,
-    quantity NUMBER(8) DEFAULT 0 NOT NULL CHECK (quantity >= 0),
+    quantity NUMBER(8) DEFAULT 0 NOT NULL CHECK (quantity >= 0 AND quantity < 1000000),
     last_restock_date DATE,
     PRIMARY KEY (branch_id, item_id),
     FOREIGN KEY (branch_id) REFERENCES Branch(branch_id),
@@ -619,11 +619,60 @@ END;
 
 
 CREATE OR REPLACE TRIGGER trg_delivery_fee_to_order
-AFTER INSERT ON Delivery_Request
+AFTER INSERT OR UPDATE OF delivery_fee OR DELETE
+ON Delivery_Request
 FOR EACH ROW
+
+DECLARE
+    v_order_no Orders.order_no%TYPE;
+    v_delta    NUMBER := 0;
+    v_status   Orders.order_status%TYPE;
+
 BEGIN
-    UPDATE Orders SET total_amount = total_amount + :NEW.delivery_fee
-    WHERE  order_no = :NEW.order_no;
+    IF INSERTING THEN
+        v_order_no := :NEW.order_no;
+        v_delta := NVL(:NEW.delivery_fee, 0);
+
+    ELSIF UPDATING THEN
+        v_order_no := :NEW.order_no;
+        v_delta := NVL(:NEW.delivery_fee, 0)
+                   - NVL(:OLD.delivery_fee, 0);
+
+    ELSIF DELETING THEN
+        v_order_no := :OLD.order_no;
+        v_delta := -NVL(:OLD.delivery_fee, 0);
+    END IF;
+
+
+    SELECT order_status
+    INTO v_status
+    FROM Orders
+    WHERE order_no = v_order_no;
+
+
+    IF NOT INSERTING
+       AND v_status IN ('Completed', 'Cancelled') THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20111,
+            'Delivery fee cannot be changed because order '
+            || v_order_no || ' is already ' || v_status || '.'
+        );
+    END IF;
+
+
+    UPDATE Orders
+    SET total_amount = total_amount + v_delta
+    WHERE order_no = v_order_no;
+
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(
+            -20114,
+            'Order ' || v_order_no || ' does not exist.'
+        );
+
 END;
 /
 
@@ -1004,27 +1053,46 @@ END;
 
 
 
-CREATE OR REPLACE TRIGGER trg_validate_inventory_item
-BEFORE UPDATE OF quantity ON Inventory
+CREATE OR REPLACE TRIGGER trg_validate_inventory
+BEFORE INSERT OR UPDATE ON Inventory
 FOR EACH ROW
 DECLARE
-    v_item_status Item.status%TYPE;
-    v_item_name   Item.name%TYPE;
+    v_item_status   Item.status%TYPE;
+    v_branch_status Branch.status%TYPE;
 BEGIN
-    SELECT status, name INTO v_item_status, v_item_name
-    FROM   Item WHERE item_id = :NEW.item_id;
+    SELECT status
+    INTO v_item_status
+    FROM Item
+    WHERE item_id = :NEW.item_id;
 
-    IF UPPER(v_item_status) <> 'ACTIVE' AND :NEW.quantity > :OLD.quantity THEN
-        RAISE_APPLICATION_ERROR(-20131,
-            v_item_name || ' has been discontinued. The stock already on the shelf ' ||
-            'may be sold down but no further stock may be brought in.');
+    IF UPPER(v_item_status) <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20129,
+            'Inventory cannot be added or updated because the item is not Active.'
+        );
     END IF;
+
+    SELECT status
+    INTO v_branch_status
+    FROM Branch
+    WHERE branch_id = :NEW.branch_id;
+
+    IF UPPER(v_branch_status) <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20130,
+            'Inventory cannot be added or updated because the branch is not Active.'
+        );
+    END IF;
+
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        RAISE_APPLICATION_ERROR(-20132,
-            'Item ' || :NEW.item_id || ' does not exist.');
+        RAISE_APPLICATION_ERROR(
+            -20131,
+            'Inventory cannot be added or updated because the item or branch does not exist.'
+        );
 END;
 /
+
 
 -- SUPPLIER (12 rows)
 INSERT INTO Supplier

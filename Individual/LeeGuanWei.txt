@@ -1,54 +1,5 @@
--- Index 1
-DROP INDEX idx_dr_courier_status;
-DROP INDEX idx_dr_courier_status; CREATE INDEX idx_dr_courier_status ON Delivery_Request (courier_id, status); 
+-- Query 1: Delivery Company Performance By Year
 
--- Index 2
-DROP INDEX idx_item_mykasih ;
-CREATE INDEX idx_item_mykasih ON Item (supplier_id, is_mykasih_eligible, status);
-
--- Function
-CREATE OR REPLACE FUNCTION fn_reorder_quantity (
-    p_branch_id IN Branch.branch_id%TYPE,
-    p_item_id   IN Item.item_id%TYPE
-) RETURN NUMBER
-IS
-    v_on_hand   NUMBER;
-    v_daily     NUMBER;
-    v_lead      NUMBER;
-    v_cover_days NUMBER;
-    v_needed    NUMBER;
-
-BEGIN
-    SELECT bs.quantity_on_hand,
-           bs.units_sold_6m / 182,
-           bs.lead_time_days,
-           bs.days_of_cover
-    INTO   v_on_hand,
-           v_daily,
-           v_lead,
-           v_cover_days
-    FROM   v_branch_stock_status bs
-    WHERE  bs.branch_id = p_branch_id
-    AND    bs.item_id   = p_item_id;
-
-    v_needed :=
-        (v_daily * (v_cover_days + v_lead))
-        - v_on_hand;
-
-    IF v_needed <= 0 THEN
-        RETURN 0;
-    END IF;
-
-    RETURN CEIL(v_needed / 12) * 12;
-
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN 0;
-
-END fn_reorder_quantity;
-/
-
--- View Table 1
 CREATE OR REPLACE VIEW v_delivery_performance AS
 	SELECT dc.delivery_company_id, dc.company_name,  dc.base_delivery_fee,  dc.status AS status,
 		EXTRACT(YEAR FROM o.order_date_time) AS year,
@@ -68,7 +19,57 @@ CREATE OR REPLACE VIEW v_delivery_performance AS
 	GROUP BY dc.delivery_company_id, dc.company_name, dc.status, dc.base_delivery_fee, EXTRACT(YEAR FROM o.order_date_time);
 
 
--- View Table 2
+SET LINESIZE 160
+SET PAGESIZE 110
+
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+ 
+TTITLE CENTER '88 – SPEEDMART DELIVERY COMPANY PERFORMANCE BY YEAR' SKIP 1 -
+       CENTER '===================================================' SKIP 2
+BTITLE CENTER 'Strategic review -  prepared for the contract renewal meeting'
+ 
+COLUMN company_name HEADING 'Delivery COMPANY' FORMAT A22
+COLUMN year HEADING 'Year' FORMAT 999999999
+COLUMN no_riders HEADING 'Riders' FORMAT 999
+COLUMN no_jobs_taken HEADING 'Jobs' FORMAT 9,999
+COLUMN success_rate HEADING 'Success Rate %' FORMAT 990.9
+COLUMN company_avg_rating HEADING 'Company Average Rating' FORMAT 9.99
+COLUMN avg_minutes HEADING 'Avg Mins' FORMAT 999
+COLUMN fee_paid HEADING 'Fees Paid (RM)' FORMAT 99,990.00
+COLUMN cost_per_job HEADING 'Cost per Job (RM)' FORMAT 990.00
+COLUMN fee_pct HEADING 'Fee %' FORMAT 990.9
+COLUMN verdict HEADING 'Recommendation' FORMAT A16
+ 
+BREAK ON year SKIP 1
+COMPUTE SUM LABEL 'Year Total' OF no_jobs_taken fee_paid ON year
+
+
+SELECT 
+v.year, 
+v.company_name, 
+v.no_riders, 
+v.no_jobs_taken, 
+v.avg_minutes, 
+v.fee_paid, 
+v.company_avg_rating,
+ROUND(v.fee_paid / NULLIF(v.no_jobs_taken, 0), 2) AS cost_per_job,
+ROUND(v.fee_paid * 100 / NULLIF(v.total_order_value, 0), 1) AS fee_pct,
+v.success_rate AS success_rate,
+CASE WHEN v.status <> 'Active' THEN 'Contract Ended' 
+WHEN v.success_rate >= 95 AND NVL(v.company_avg_rating, 0) >= 4.3 THEN 'Renew'
+            	WHEN v.success_rate >= 90 THEN 'Review Terms'
+            	ELSE 'Review Closely'
+       	END AS verdict
+FROM   v_delivery_performance v
+WHERE  v.year >= EXTRACT(YEAR FROM ADD_MONTHS((SELECT MAX(order_date_time) FROM Orders), - 72))
+ORDER  BY v.year DESC, v.no_jobs_taken DESC;
+
+
+-- Query 2: Low Stock Alert
+
 CREATE OR REPLACE VIEW v_branch_stock_status AS 
 WITH Past_6_Months_Sales AS (
     SELECT o.branch_id, 
@@ -112,65 +113,9 @@ JOIN Item i ON i.item_id = inv.item_id
        	LEFT JOIN Past_6_Months_Sales sold ON sold.branch_id = inv.branch_id AND sold.item_id = inv.item_id;
 
 
-
--- Query 1
-SET LINESIZE 135
-SET PAGESIZE 60
-SET FEEDBACK OFF
-SET TAB OFF
-SET WRAP OFF
-
-COLUMN reason       FORMAT A28       HEADING 'Reason Given by the Customer'
-COLUMN fault_type   FORMAT A17       HEADING 'Fault Type'
-COLUMN cases        FORMAT 9,999     HEADING 'Cases'
-COLUMN units        FORMAT 9,999     HEADING 'Units'
-COLUMN refund_value FORMAT 99,990.00 HEADING 'Refunded|RM'
-COLUMN avg_refund   FORMAT 990.00    HEADING 'Avg per|Case RM'
-COLUMN pct_cases    FORMAT 990.9     HEADING '% of Returns'
-COLUMN refunded     FORMAT 999       HEADING 'Refunded'
-COLUMN approved     FORMAT 999       HEADING 'Approved'
-COLUMN rejected     FORMAT 999       HEADING 'Rejected'
-COLUMN pending      FORMAT 999       HEADING 'Pending'
-
-TTITLE CENTER '88 SPEEDMART SDN BHD - RETURN REASON AND REFUND COST ANALYSIS' SKIP 1 -
-       CENTER '=============================================================' SKIP 2
-
-BREAK ON REPORT
-COMPUTE SUM LABEL 'ALL REASONS' OF cases units refund_value ON REPORT
-
-SELECT rr.reason,
-       CASE WHEN rr.reason IN ('Changed mind after purchase')
-            THEN 'Customer choice'
-            ELSE 'Shop or supplier'
-       END AS fault_type,
-       COUNT(*) AS cases,
-       SUM(rr.return_quantity) AS units,
-       SUM(CASE WHEN rr.status = 'Refunded'
-                THEN rr.refund_amount ELSE 0 END) AS 	        refund_value,
-       ROUND(SUM(CASE WHEN rr.status = 'Refunded'
-                      THEN rr.refund_amount ELSE 0 END) / COUNT(*), 2) AS avg_refund,
-       ROUND(COUNT(*) * 100 /
-             (SELECT COUNT(*) FROM Return_Request), 1) AS pct_cases,
-       SUM(CASE WHEN rr.status = 'Refunded'  THEN 1 ELSE 0 END) AS refunded,
-       SUM(CASE WHEN rr.status = 'Approved'  THEN 1 ELSE 0 END) AS approved,
-       SUM(CASE WHEN rr.status = 'Rejected'  THEN 1 ELSE 0 END) AS rejected,
-       SUM(CASE WHEN rr.status = 'Requested' THEN 1 ELSE 0 END) AS pending
-FROM   Return_Request rr
-GROUP  BY rr.reason
-ORDER  BY refund_value DESC,
-          cases        DESC;
-
-CLEAR BREAKS
-CLEAR COMPUTES
-CLEAR COLUMNS
-TTITLE OFF
-SET FEEDBACK ON
-SET WRAP ON
-
-
--- Query 2
 SET LINESIZE 160
 SET PAGESIZE 150
+
 
 CLEAR COLUMNS
 CLEAR BREAKS
@@ -217,13 +162,55 @@ ORDER  BY bs.branch_name,
           END, 
           Bs.quantity_on_hand;
 
--- Procedure 1
+-- Procedure 1: Inventory Restock Procedure
+
+CREATE OR REPLACE FUNCTION fn_reorder_quantity (
+    p_branch_id IN Branch.branch_id%TYPE,
+    p_item_id   IN Item.item_id%TYPE
+) RETURN NUMBER
+IS
+    v_on_hand   NUMBER;
+    v_daily     NUMBER;
+    v_lead      NUMBER;
+    v_cover_days NUMBER;
+    v_needed    NUMBER;
+
+BEGIN
+    SELECT bs.quantity_on_hand,
+           bs.units_sold_6m / 182,
+           bs.lead_time_days,
+           bs.days_of_cover
+    INTO   v_on_hand,
+           v_daily,
+           v_lead,
+           v_cover_days
+    FROM   v_branch_stock_status bs
+    WHERE  bs.branch_id = p_branch_id
+    AND    bs.item_id   = p_item_id;
+
+    v_needed :=
+        (v_daily * (v_cover_days + v_lead))
+        - v_on_hand;
+
+    IF v_needed <= 0 THEN
+        RETURN 0;
+    END IF;
+
+    RETURN CEIL(v_needed / 12) * 12;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 0;
+
+END fn_reorder_quantity;
+/
+
+
 CREATE OR REPLACE PROCEDURE prc_restock_item (
     p_branch_id IN Branch.branch_id%TYPE,
     p_item_id   IN Item.item_id%TYPE,
     p_quantity  IN NUMBER
 ) AS
-    e_invalid_quantity EXCEPTION;
     e_branch_closed    EXCEPTION;
 
     v_branch_name   Branch.name%TYPE;
@@ -247,11 +234,6 @@ BEGIN
              ON s.supplier_id = i.supplier_id
     WHERE  i.item_id = p_item_id;
 
-    IF p_quantity IS NULL
-       OR p_quantity <= 0
-       OR p_quantity > 1000000 THEN
-        RAISE e_invalid_quantity;
-    END IF;
 
     IF v_branch_status <> 'Active' THEN
         RAISE e_branch_closed;
@@ -334,14 +316,6 @@ BEGIN
     );
 
 EXCEPTION
-    WHEN e_invalid_quantity THEN
-        RAISE_APPLICATION_ERROR(
-            -20000,
-            'The quantity received must be a positive number no greater than ' ||
-            '1,000,000 units. ' ||
-            NVL(TO_CHAR(p_quantity), 'NULL') ||
-            ' was given.'
-        );
 
     WHEN e_branch_closed THEN
         RAISE_APPLICATION_ERROR(
@@ -363,94 +337,417 @@ END prc_restock_item;
 /
 
 
--- Procedure 2
+-- Procedure 2: Order Dispatch and Rider Assignment Procedure 
+
+DROP INDEX idx_dr_courier_status;
+CREATE INDEX idx_dr_courier_status ON Delivery_Request (courier_id, status); 
+
+
 CREATE OR REPLACE PROCEDURE prc_dispatch_delivery (
-	p_order_no IN Orders.order_no%TYPE,
-    	p_company_id IN Delivery_Company.delivery_company_id%TYPE,
-    	p_recipient_name  IN Delivery_Request.recipient_name%TYPE,
-    	p_recipient_phone IN Delivery_Request.recipient_phone_no%TYPE,
-    	p_address IN Delivery_Request.delivery_address%TYPE
+    p_order_no        IN Orders.order_no%TYPE,
+    p_company_id      IN Delivery_Company.delivery_company_id%TYPE,
+    p_recipient_name  IN Delivery_Request.recipient_name%TYPE,
+    p_recipient_phone IN Delivery_Request.recipient_phone_no%TYPE,
+    p_address         IN Delivery_Request.delivery_address%TYPE
 ) AS
-   	
- 
-    	CURSOR c_best_rider IS
-        	SELECT c.courier_id, c.name, c.average_rating
-       		FROM Courier c
-        	WHERE c.delivery_company_id = p_company_id
-			AND NOT EXISTS ( SELECT 1 FROM Delivery_Request dr 
-			WHERE dr.courier_id = c.courier_id AND dr.status = 'Processing'
-        	ORDER BY c.average_rating DESC NULLS LAST, c.courier_id;
 
- 
-    	v_order_type Orders.order_type%TYPE;
-    	v_service Orders.service_type%TYPE;
-    	v_status Orders.order_status%TYPE;
-    	v_partner Delivery_Company.company_name%TYPE;
-    	v_partner_stat Delivery_Company.status%TYPE;
-    	v_base_fee Delivery_Company.base_delivery_fee%TYPE;
-    	v_courier Courier.courier_id%TYPE;
-    	v_rider_name Courier.name%TYPE;
-    	v_rating Courier.average_rating%TYPE;
-    	v_ref Delivery_Request.delivery_request_id%TYPE;
-    	v_fee Delivery_Request.delivery_fee%TYPE;
+    CURSOR c_random_rider IS
+        SELECT c.courier_id,
+               c.name,
+               c.average_rating
+        FROM Courier c
+        WHERE c.delivery_company_id = p_company_id
+        AND NOT EXISTS (
+            SELECT 1
+            FROM Delivery_Request dr
+            WHERE dr.courier_id = c.courier_id
+            AND dr.status = 'Processing'
+        )
+        ORDER BY DBMS_RANDOM.VALUE;
+
+    v_order_type   Orders.order_type%TYPE;
+    v_service      Orders.service_type%TYPE;
+    v_status       Orders.order_status%TYPE;
+    v_partner      Delivery_Company.company_name%TYPE;
+    v_partner_stat Delivery_Company.status%TYPE;
+    v_base_fee     Delivery_Company.base_delivery_fee%TYPE;
+    v_courier      Courier.courier_id%TYPE;
+    v_rider_name   Courier.name%TYPE;
+    v_rating       Courier.average_rating%TYPE;
+    v_ref          Delivery_Request.delivery_request_id%TYPE;
+    v_fee          Delivery_Request.delivery_fee%TYPE;
+
 BEGIN
-    	SELECT o.order_type, o.service_type, o.order_status
-    	INTO v_order_type, v_service, v_status
-    	FROM Orders o WHERE o.order_no = p_order_no;
 
-    	IF v_status <> 'Processing' 
-		THEN RAISE_APPLICATION_ERROR(-20004, 'Order ' || p_order_no || ' is ' || v_status || '. Only an order still being processed can be dispatched.'); 
-	END IF;
- 
-    	SELECT dc.company_name, dc.status, dc.base_delivery_fee
-    	INTO   v_partner, v_partner_stat, v_base_fee
-    	FROM   Delivery_Company dc WHERE dc.delivery_company_id = p_company_id;
- 
-    	IF v_partner_stat <> 'Active' 
-		THEN RAISE_APPLICATION_ERROR(-20005, v_partner || ' is no longer under contract. Choose another partner.');
-    	END IF;
- 
-    	OPEN c_best_rider;
-    		FETCH c_best_rider INTO v_courier, v_rider_name, v_rating;
-    		IF c_best_rider%NOTFOUND 
-			THEN CLOSE c_best_rider;
-        		RAISE_APPLICATION_ERROR(-20324, v_partner || ' has no rider on file to take this job.');
-    		END IF;
-    	CLOSE c_best_rider;
- 
-   	v_ref := 'DR' || TO_CHAR(delivery_request_seq.NEXTVAL, 'FM000000');
- 
-    	INSERT INTO Delivery_Request (delivery_request_id, recipient_name, recipient_phone_no, delivery_address, delivery_fee, delivered_date_time, status, rating, order_no, courier_id)
-    	VALUES (v_ref, p_recipient_name, p_recipient_phone, p_address, NULL, NULL, 'Processing', NULL, p_order_no, v_courier);
- 
-    	SELECT delivery_fee INTO v_fee
-    	FROM   Delivery_Request WHERE delivery_request_id = v_ref;
- 
-    	COMMIT;
- 
-    	DBMS_OUTPUT.PUT_LINE('-----------------------------------------------------------------------');
-    	DBMS_OUTPUT.PUT_LINE('DISPATCH NOTE ' || v_ref);
-    	DBMS_OUTPUT.PUT_LINE('Order     : ' || p_order_no || '  (' || v_order_type || ')');
-    	DBMS_OUTPUT.PUT_LINE('Partner   : ' || v_partner);
-    	DBMS_OUTPUT.PUT_LINE('Rider     : ' || v_courier || '  ' || v_rider_name || '(rating: ' || NVL(TO_CHAR(v_rating, '0.00'), ' n/a') || ')' );
-    	DBMS_OUTPUT.PUT_LINE('Deliver to: ' || p_recipient_name || '  ' || p_recipient_phone);
-    	DBMS_OUTPUT.PUT_LINE('Address   : ' || p_address);
-    	DBMS_OUTPUT.PUT_LINE('Fee       : RM ' || TO_CHAR(v_fee, '990.00') || ' (base RM ' || TO_CHAR(v_base_fee, '990.00') || ' plus the weight of the basket)');
-    	DBMS_OUTPUT.PUT_LINE('Promise   : delivered within 2 hours, by ' || TO_CHAR(SYSDATE + 2/24, 'HH24:MI'));
-    	DBMS_OUTPUT.PUT_LINE('-----------------------------------------------------------------------');
-	EXCEPTION
-    		WHEN NO_DATA_FOUND 
-		THEN RAISE_APPLICATION_ERROR(-20325, 'Order ' || p_order_no || ' or delivery company ' || p_company_id ||' does not exist.');
-    	WHEN DUP_VAL_ON_INDEX 
-		THEN RAISE_APPLICATION_ERROR(-20326, 'Order ' || p_order_no || ' has already been dispatched.');
-    	
+    SELECT o.order_type,
+           o.service_type,
+           o.order_status
+    INTO   v_order_type,
+           v_service,
+           v_status
+    FROM Orders o
+    WHERE o.order_no = p_order_no;
+
+    IF v_status <> 'Processing' THEN
+        RAISE_APPLICATION_ERROR(
+            -20004,
+            'Order ' || p_order_no || ' is ' || v_status ||
+            '. Only an order still being processed can be dispatched.'
+        );
+    END IF;
+
+
+    SELECT dc.company_name,
+           dc.status,
+           dc.base_delivery_fee
+    INTO   v_partner,
+           v_partner_stat,
+           v_base_fee
+    FROM Delivery_Company dc
+    WHERE dc.delivery_company_id = p_company_id;
+
+    IF v_partner_stat <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20005,
+            v_partner ||
+            ' is no longer under contract. Choose another partner.'
+        );
+    END IF;
+
+
+    -- Randomly select one available courier
+    OPEN c_random_rider;
+
+    FETCH c_random_rider
+    INTO v_courier, v_rider_name, v_rating;
+
+    IF c_random_rider%NOTFOUND THEN
+        CLOSE c_random_rider;
+
+        RAISE_APPLICATION_ERROR(
+            -20324,
+            v_partner ||
+            ' has no available rider to take this job.'
+        );
+    END IF;
+
+    CLOSE c_random_rider;
+
+
+    v_ref :=
+        'DR' ||
+        TO_CHAR(delivery_request_seq.NEXTVAL, 'FM000000');
+
+
+    INSERT INTO Delivery_Request (
+        delivery_request_id,
+        recipient_name,
+        recipient_phone_no,
+        delivery_address,
+        delivery_fee,
+        delivered_date_time,
+        status,
+        rating,
+        order_no,
+        courier_id
+    )
+    VALUES (
+        v_ref,
+        p_recipient_name,
+        p_recipient_phone,
+        p_address,
+        NULL,
+        NULL,
+        'Processing',
+        NULL,
+        p_order_no,
+        v_courier
+    );
+
+
+    SELECT delivery_fee
+    INTO v_fee
+    FROM Delivery_Request
+    WHERE delivery_request_id = v_ref;
+
+
+    COMMIT;
+
+
+    DBMS_OUTPUT.PUT_LINE(
+        '-----------------------------------------------------------------------'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'DISPATCH NOTE ' || v_ref
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Order     : ' || p_order_no ||
+        ' (' || v_order_type || ')'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Partner   : ' || v_partner
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Rider     : ' ||
+        v_courier || ' ' ||
+        v_rider_name ||
+        ' (rating: ' ||
+        NVL(TO_CHAR(v_rating, '0.00'), 'n/a') || ')'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Deliver to: ' ||
+        p_recipient_name || ' ' ||
+        p_recipient_phone
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Address   : ' || p_address
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Fee       : RM ' ||
+        TO_CHAR(v_fee, '990.00') ||
+        ' (base RM ' ||
+        TO_CHAR(v_base_fee, '990.00') ||
+        ' plus the weight of the basket)'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Promise   : delivered within 2 hours, by ' ||
+        TO_CHAR(SYSDATE + 2/24, 'HH24:MI')
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '-----------------------------------------------------------------------'
+    );
+
+
+EXCEPTION
+
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(
+            -20325,
+            'Order ' || p_order_no ||
+            ' or delivery company ' ||
+            p_company_id || ' does not exist.'
+        );
+
+    WHEN DUP_VAL_ON_INDEX THEN
+        RAISE_APPLICATION_ERROR(
+            -20326,
+            'Order ' || p_order_no ||
+            ' has already been dispatched.'
+        );
 
 END prc_dispatch_delivery;
 /
 
 
+-- Trigger 1:  Automatic Delivery Fee Trigger
 
--- Report 1 
+CREATE OR REPLACE TRIGGER trg_delivery_fee
+BEFORE INSERT ON Delivery_Request
+FOR EACH ROW
+DECLARE
+    v_service Orders.service_type%TYPE;
+    v_base    Delivery_Company.base_delivery_fee%TYPE;
+    v_weight  NUMBER;
+BEGIN
+    SELECT service_type INTO v_service FROM Orders WHERE order_no = :NEW.order_no;
+    IF v_service <> 'Delivery' THEN
+        RAISE_APPLICATION_ERROR(-20103,
+            'Order ' || :NEW.order_no || ' is a pickup order and cannot be delivered.');
+    END IF;
+
+    IF :NEW.delivery_fee IS NULL THEN
+        SELECT dc.base_delivery_fee INTO v_base
+        FROM   Courier c JOIN Delivery_Company dc
+               ON dc.delivery_company_id = c.delivery_company_id
+        WHERE  c.courier_id = :NEW.courier_id;
+
+        SELECT NVL(SUM(i.unit_weight_kg * od.quantity), 0) INTO v_weight
+        FROM   Order_Detail od JOIN Item i ON i.item_id = od.item_id
+        WHERE  od.order_no = :NEW.order_no;
+
+        :NEW.delivery_fee := ROUND(v_base + v_weight, 2);
+    END IF;
+END;
+/
+
+-- Trigger 2:  Delivery Fee Synchronisation Trigger 
+
+CREATE OR REPLACE TRIGGER trg_delivery_fee_to_order
+AFTER INSERT OR UPDATE OF delivery_fee OR DELETE
+ON Delivery_Request
+FOR EACH ROW
+
+DECLARE
+    v_order_no Orders.order_no%TYPE;
+    v_delta    NUMBER := 0;
+    v_status   Orders.order_status%TYPE;
+
+BEGIN
+    IF INSERTING THEN
+        v_order_no := :NEW.order_no;
+        v_delta := NVL(:NEW.delivery_fee, 0);
+
+    ELSIF UPDATING THEN
+        v_order_no := :NEW.order_no;
+        v_delta := NVL(:NEW.delivery_fee, 0)
+                   - NVL(:OLD.delivery_fee, 0);
+
+    ELSIF DELETING THEN
+        v_order_no := :OLD.order_no;
+        v_delta := -NVL(:OLD.delivery_fee, 0);
+    END IF;
+
+
+    SELECT order_status
+    INTO v_status
+    FROM Orders
+    WHERE order_no = v_order_no;
+
+
+    IF NOT INSERTING
+       AND v_status IN ('Completed', 'Cancelled') THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20111,
+            'Delivery fee cannot be changed because order '
+            || v_order_no || ' is already ' || v_status || '.'
+        );
+    END IF;
+
+
+    UPDATE Orders
+    SET total_amount = total_amount + v_delta
+    WHERE order_no = v_order_no;
+
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(
+            -20114,
+            'Order ' || v_order_no || ' does not exist.'
+        );
+
+END;
+/
+
+-- Trigger 3: Inventory Item Validation Trigger
+
+CREATE OR REPLACE TRIGGER trg_validate_inventory
+BEFORE INSERT OR UPDATE ON Inventory
+FOR EACH ROW
+DECLARE
+    v_item_status   Item.status%TYPE;
+    v_branch_status Branch.status%TYPE;
+BEGIN
+    SELECT status
+    INTO v_item_status
+    FROM Item
+    WHERE item_id = :NEW.item_id;
+
+    IF UPPER(v_item_status) <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20001,
+            'Inventory cannot be added or updated because the item is not Active.'
+        );
+    END IF;
+
+    SELECT status
+    INTO v_branch_status
+    FROM Branch
+    WHERE branch_id = :NEW.branch_id;
+
+    IF UPPER(v_branch_status) <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20002,
+            'Inventory cannot be added or updated because the branch is not Active.'
+        );
+    END IF;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(
+            -20003,
+            'Inventory cannot be added or updated because the item or branch does not exist.'
+        );
+END;
+/
+
+-- Trigger 4:  Delivery Time Validation Trigger 
+
+CREATE OR REPLACE TRIGGER trg_delivery_time
+BEFORE INSERT OR UPDATE OF delivered_date_time ON Delivery_Request
+FOR EACH ROW
+DECLARE
+    v_hour    NUMBER;
+    v_order   Orders.order_date_time%TYPE;
+    v_minutes NUMBER;
+BEGIN
+    IF :NEW.delivered_date_time IS NULL THEN
+        RETURN;
+    END IF;
+
+    v_hour := TO_NUMBER(TO_CHAR(:NEW.delivered_date_time, 'HH24'));
+    IF v_hour < 9 OR v_hour >= 22 THEN
+        RAISE_APPLICATION_ERROR(-20107,
+            'Delivery time ' || TO_CHAR(:NEW.delivered_date_time, 'HH24:MI') ||
+            ' is outside trading hours. Deliveries run from 09:00 to 22:00.');
+    END IF;
+
+    SELECT order_date_time INTO v_order FROM Orders WHERE order_no = :NEW.order_no;
+
+    IF :NEW.delivered_date_time < v_order THEN
+        RAISE_APPLICATION_ERROR(-20108,
+            'A delivery cannot be dated before the order was placed.');
+    END IF;
+
+    v_minutes := (CAST(:NEW.delivered_date_time AS DATE) - CAST(v_order AS DATE)) * 1440;
+    IF v_minutes > 120 THEN
+        RAISE_APPLICATION_ERROR(-20109,
+            'Order ' || :NEW.order_no || ' must be delivered within 2 hours. This delivery is ' ||
+            ROUND(v_minutes) || ' minutes after the order.');
+    END IF;
+END;
+/
+
+-- Trigger 5:  Active Supplier Validation Trigger 
+
+CREATE OR REPLACE TRIGGER trg_item_supplier_active
+BEFORE INSERT OR UPDATE OF supplier_id, status ON Item
+FOR EACH ROW
+DECLARE
+    v_status Supplier.status%TYPE;
+    v_name   Supplier.company_name%TYPE;
+BEGIN
+    IF :NEW.status <> 'Active' THEN
+        RETURN;
+    END IF;
+
+    SELECT status, company_name INTO v_status, v_name
+    FROM   Supplier WHERE supplier_id = :NEW.supplier_id;
+
+    IF v_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20124,
+            'Item ' || :NEW.item_id || ' cannot be sold because supplier ' || v_name ||
+            ' is no longer trading with us.');
+    END IF;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(-20125,
+            'Supplier ' || :NEW.supplier_id || ' does not exist.');
+END;
+/
+
+-- Report 1: Delivery Performance Audit Report 
+
 CREATE OR REPLACE PROCEDURE rpt_delivery_fulfilment (
     	p_year IN NUMBER DEFAULT NULL
 ) AS
@@ -536,8 +833,16 @@ CREATE OR REPLACE PROCEDURE rpt_delivery_fulfilment (
 END rpt_delivery_fulfilment;
 /
 
+-- Report 2: MyKasih Subsidy Report
 
--- Report 2
+DROP INDEX idx_orders_mykasih_year;
+CREATE INDEX idx_orders_mykasih_year ON Orders (
+    is_mykasih_purchase,
+    order_status,
+    EXTRACT(YEAR FROM order_date_time)
+);
+
+
 
 CREATE OR REPLACE PROCEDURE rpt_mykasih_subsidy (
     	p_year IN NUMBER DEFAULT NULL
@@ -668,3 +973,4 @@ BEGIN
     	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
 END rpt_mykasih_subsidy;
 /
+
