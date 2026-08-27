@@ -1,0 +1,389 @@
+-- Procedure 1: Inventory Restock Procedure
+
+CREATE OR REPLACE FUNCTION fn_reorder_quantity (
+    p_branch_id IN Branch.branch_id%TYPE,
+    p_item_id   IN Item.item_id%TYPE
+) RETURN NUMBER
+IS
+    v_on_hand   NUMBER;
+    v_daily     NUMBER;
+    v_lead      NUMBER;
+    v_cover_days NUMBER;
+    v_needed    NUMBER;
+
+BEGIN
+    SELECT bs.quantity_on_hand,
+           bs.units_sold_6m / 182,
+           bs.lead_time_days,
+           bs.days_of_cover
+    INTO   v_on_hand,
+           v_daily,
+           v_lead,
+           v_cover_days
+    FROM   v_branch_stock_status bs
+    WHERE  bs.branch_id = p_branch_id
+    AND    bs.item_id   = p_item_id;
+
+    v_needed :=
+        (v_daily * (v_cover_days + v_lead))
+        - v_on_hand;
+
+    IF v_needed <= 0 THEN
+        RETURN 0;
+    END IF;
+
+    RETURN CEIL(v_needed / 12) * 12;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 0;
+
+END fn_reorder_quantity;
+/
+
+EXEC prc_restock_item('BR001', 'IT003', 50); 
+
+
+
+CREATE OR REPLACE PROCEDURE prc_restock_item (
+    p_branch_id IN Branch.branch_id%TYPE,
+    p_item_id   IN Item.item_id%TYPE,
+    p_quantity  IN NUMBER
+) AS
+    e_branch_closed    EXCEPTION;
+
+    v_branch_name   Branch.name%TYPE;
+    v_branch_status Branch.status%TYPE;
+    v_item_name     Item.name%TYPE;
+    v_supplier      Supplier.company_name%TYPE;
+    v_lead          Supplier.lead_time_days%TYPE;
+    v_before        Inventory.quantity%TYPE;
+    v_after         Inventory.quantity%TYPE;
+
+BEGIN
+    SELECT b.name, b.status
+    INTO   v_branch_name, v_branch_status
+    FROM   Branch b
+    WHERE  b.branch_id = p_branch_id;
+
+    SELECT i.name, s.company_name, s.lead_time_days
+    INTO   v_item_name, v_supplier, v_lead
+    FROM   Item i
+           JOIN Supplier s
+             ON s.supplier_id = i.supplier_id
+    WHERE  i.item_id = p_item_id;
+
+
+    IF v_branch_status <> 'Active' THEN
+        RAISE e_branch_closed;
+    END IF;
+
+    UPDATE Inventory
+    SET    quantity = quantity + p_quantity,
+           last_restock_date = SYSDATE
+    WHERE  branch_id = p_branch_id
+    AND    item_id = p_item_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+
+        v_before := 0;
+
+        INSERT INTO Inventory (
+            branch_id,
+            item_id,
+            quantity,
+            last_restock_date
+        )
+        VALUES (
+            p_branch_id,
+            p_item_id,
+            p_quantity,
+            SYSDATE
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'New product line opened at ' || v_branch_name || '.'
+        );
+
+    ELSE
+        SELECT quantity
+        INTO   v_after
+        FROM   Inventory
+        WHERE  branch_id = p_branch_id
+        AND    item_id = p_item_id;
+
+        v_before := v_after - p_quantity;
+    END IF;
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE(
+        '---------------------------------------------------------------'
+    );
+    DBMS_OUTPUT.PUT_LINE('RESTOCK SUMMARY');
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Branch   : ' || p_branch_id || ' - ' || v_branch_name
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Product  : ' || p_item_id || ' - ' || v_item_name
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Supplier : ' || v_supplier ||
+        ' (lead time ' || v_lead || ' day(s))'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Received : ' || p_quantity || ' unit(s)'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  On hand  : ' || v_before ||
+        ' -> ' || (v_before + p_quantity)
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '  Next suggested order : ' ||
+        fn_reorder_quantity(p_branch_id, p_item_id) ||
+        ' unit(s)'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '---------------------------------------------------------------'
+    );
+
+EXCEPTION
+
+    WHEN e_branch_closed THEN
+        RAISE_APPLICATION_ERROR(
+            -20001,
+            v_branch_name || ' is ' ||
+            v_branch_status ||
+            ' and cannot receive stock.'
+        );
+
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(
+            -20003,
+            'Branch ' || p_branch_id ||
+            ' or item ' || p_item_id ||
+            ' does not exist.'
+        );
+
+END prc_restock_item;
+/
+
+
+-- Procedure 2: Order Dispatch and Rider Assignment Procedure 
+
+DROP INDEX idx_dr_courier_status;
+CREATE INDEX idx_dr_courier_status ON Delivery_Request (courier_id, status); 
+
+
+CREATE OR REPLACE PROCEDURE prc_dispatch_delivery (
+    p_order_no        IN Orders.order_no%TYPE,
+    p_company_id      IN Delivery_Company.delivery_company_id%TYPE,
+    p_recipient_name  IN Delivery_Request.recipient_name%TYPE,
+    p_recipient_phone IN Delivery_Request.recipient_phone_no%TYPE,
+    p_address         IN Delivery_Request.delivery_address%TYPE
+) AS
+
+    CURSOR c_random_rider IS
+        SELECT c.courier_id,
+               c.name,
+               c.average_rating
+        FROM Courier c
+        WHERE c.delivery_company_id = p_company_id
+        AND NOT EXISTS (
+            SELECT 1
+            FROM Delivery_Request dr
+            WHERE dr.courier_id = c.courier_id
+            AND dr.status = 'Processing'
+        )
+        ORDER BY DBMS_RANDOM.VALUE;
+
+    v_order_type   Orders.order_type%TYPE;
+    v_service      Orders.service_type%TYPE;
+    v_status       Orders.order_status%TYPE;
+    v_partner      Delivery_Company.company_name%TYPE;
+    v_partner_stat Delivery_Company.status%TYPE;
+    v_base_fee     Delivery_Company.base_delivery_fee%TYPE;
+    v_courier      Courier.courier_id%TYPE;
+    v_rider_name   Courier.name%TYPE;
+    v_rating       Courier.average_rating%TYPE;
+    v_ref          Delivery_Request.delivery_request_id%TYPE;
+    v_fee          Delivery_Request.delivery_fee%TYPE;
+
+BEGIN
+
+    SELECT o.order_type,
+           o.service_type,
+           o.order_status
+    INTO   v_order_type,
+           v_service,
+           v_status
+    FROM Orders o
+    WHERE o.order_no = p_order_no;
+
+    IF v_status <> 'Processing' THEN
+        RAISE_APPLICATION_ERROR(
+            -20004,
+            'Order ' || p_order_no || ' is ' || v_status ||
+            '. Only an order still being processed can be dispatched.'
+        );
+    END IF;
+
+
+    SELECT dc.company_name,
+           dc.status,
+           dc.base_delivery_fee
+    INTO   v_partner,
+           v_partner_stat,
+           v_base_fee
+    FROM Delivery_Company dc
+    WHERE dc.delivery_company_id = p_company_id;
+
+    IF v_partner_stat <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20005,
+            v_partner ||
+            ' is no longer under contract. Choose another partner.'
+        );
+    END IF;
+
+
+    -- Randomly select one available courier
+    OPEN c_random_rider;
+
+    FETCH c_random_rider
+    INTO v_courier, v_rider_name, v_rating;
+
+    IF c_random_rider%NOTFOUND THEN
+        CLOSE c_random_rider;
+
+        RAISE_APPLICATION_ERROR(
+            -20324,
+            v_partner ||
+            ' has no available rider to take this job.'
+        );
+    END IF;
+
+    CLOSE c_random_rider;
+
+
+    v_ref :=
+        'DR' ||
+        TO_CHAR(delivery_request_seq.NEXTVAL, 'FM000000');
+
+
+    INSERT INTO Delivery_Request (
+        delivery_request_id,
+        recipient_name,
+        recipient_phone_no,
+        delivery_address,
+        delivery_fee,
+        delivered_date_time,
+        status,
+        rating,
+        order_no,
+        courier_id
+    )
+    VALUES (
+        v_ref,
+        p_recipient_name,
+        p_recipient_phone,
+        p_address,
+        NULL,
+        NULL,
+        'Processing',
+        NULL,
+        p_order_no,
+        v_courier
+    );
+
+
+    SELECT delivery_fee
+    INTO v_fee
+    FROM Delivery_Request
+    WHERE delivery_request_id = v_ref;
+
+
+    COMMIT;
+
+
+    DBMS_OUTPUT.PUT_LINE(
+        '-----------------------------------------------------------------------'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'DISPATCH NOTE ' || v_ref
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Order     : ' || p_order_no ||
+        ' (' || v_order_type || ')'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Partner   : ' || v_partner
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Rider     : ' ||
+        v_courier || ' ' ||
+        v_rider_name ||
+        ' (rating: ' ||
+        NVL(TO_CHAR(v_rating, '0.00'), 'n/a') || ')'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Deliver to: ' ||
+        p_recipient_name || ' ' ||
+        p_recipient_phone
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Address   : ' || p_address
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Fee       : RM ' ||
+        TO_CHAR(v_fee, '990.00') ||
+        ' (base RM ' ||
+        TO_CHAR(v_base_fee, '990.00') ||
+        ' plus the weight of the basket)'
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Promise   : delivered within 2 hours, by ' ||
+        TO_CHAR(SYSDATE + 2/24, 'HH24:MI')
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        '-----------------------------------------------------------------------'
+    );
+
+
+EXCEPTION
+
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(
+            -20325,
+            'Order ' || p_order_no ||
+            ' or delivery company ' ||
+            p_company_id || ' does not exist.'
+        );
+
+    WHEN DUP_VAL_ON_INDEX THEN
+        RAISE_APPLICATION_ERROR(
+            -20326,
+            'Order ' || p_order_no ||
+            ' has already been dispatched.'
+        );
+
+END prc_dispatch_delivery;
+/
+
+EXEC prc_dispatch_delivery('ORD012613', 'DC001', 'Ali bin Ahmad', '012-885 9506', '123 Jalan Ampang, Kuala Lumpur'); 

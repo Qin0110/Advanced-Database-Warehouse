@@ -1,0 +1,163 @@
+-- Query 1: Delivery Company Performance By Year
+
+CREATE OR REPLACE VIEW v_delivery_performance AS
+	SELECT dc.delivery_company_id, dc.company_name,  dc.base_delivery_fee,  dc.status AS status,
+		EXTRACT(YEAR FROM o.order_date_time) AS year,
+		COUNT(DISTINCT c.courier_id) AS no_riders,
+		COUNT(dr.delivery_request_id) AS no_jobs_taken,
+		SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) AS delivery_success,
+		SUM(CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END) AS delivery_failed,
+		ROUND(SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) * 100 / NULLIF(SUM(CASE WHEN dr.status IN ('Delivered', 'Failed') THEN 1 ELSE 0 END), 0), 1) AS success_rate, 	
+		ROUND(AVG(c.average_rating), 2) AS company_avg_rating,
+		ROUND(AVG((CAST(dr.delivered_date_time AS DATE) - CAST(o.order_date_time AS DATE)) * 1440), 0) AS avg_minutes,
+		SUM(dr.delivery_fee) AS fee_paid,
+		SUM(o.total_amount) AS total_order_value
+	FROM Delivery_Company dc
+		JOIN Courier c ON c.delivery_company_id = dc.delivery_company_id
+		JOIN Delivery_Request dr ON dr.courier_id = c.courier_id
+		JOIN Orders o ON o.order_no = dr.order_no 
+	GROUP BY dc.delivery_company_id, dc.company_name, dc.status, dc.base_delivery_fee, EXTRACT(YEAR FROM o.order_date_time);
+
+
+SET LINESIZE 160
+SET PAGESIZE 105
+SET SERVEROUTPUT ON SIZE UNLIMITED
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+ 
+TTITLE CENTER '88 SPEEDMART: DELIVERY COMPANY PERFORMANCE BY YEAR' SKIP 1 -
+       CENTER '===================================================' SKIP 2
+BTITLE CENTER 'Strategic review -  prepared for the contract renewal meeting'
+ 
+COLUMN company_name HEADING 'Delivery COMPANY' FORMAT A22
+COLUMN year HEADING 'Year' FORMAT 999999999
+COLUMN no_riders HEADING 'Riders' FORMAT 999
+COLUMN no_jobs_taken HEADING 'Jobs' FORMAT 9,999
+COLUMN success_rate HEADING 'Success Rate %' FORMAT 990.9
+COLUMN company_avg_rating HEADING 'Company Average Rating' FORMAT 9.99
+COLUMN avg_minutes HEADING 'Avg Mins' FORMAT 999
+COLUMN fee_paid HEADING 'Fees Paid (RM)' FORMAT 99,990.00
+COLUMN cost_per_job HEADING 'Cost per Job (RM)' FORMAT 990.00
+COLUMN fee_pct HEADING 'Fee %' FORMAT 990.9
+COLUMN verdict HEADING 'Recommendation' FORMAT A16
+ 
+BREAK ON year SKIP 1
+COMPUTE SUM LABEL 'Year Total' OF no_jobs_taken fee_paid ON year
+
+
+SELECT 
+v.year, 
+v.company_name, 
+v.no_riders, 
+v.no_jobs_taken, 
+v.avg_minutes, 
+v.fee_paid, 
+v.company_avg_rating,
+ROUND(v.fee_paid / NULLIF(v.no_jobs_taken, 0), 2) AS cost_per_job,
+ROUND(v.fee_paid * 100 / NULLIF(v.total_order_value, 0), 1) AS fee_pct,
+v.success_rate AS success_rate,
+CASE WHEN v.status <> 'Active' THEN 'Contract Ended' 
+WHEN v.success_rate >= 95 AND NVL(v.company_avg_rating, 0) >= 4.3 THEN 'Renew'
+            	WHEN v.success_rate >= 90 THEN 'Review Terms'
+            	ELSE 'Review Closely'
+       	END AS verdict
+FROM   v_delivery_performance v
+WHERE  v.year >= EXTRACT(YEAR FROM ADD_MONTHS((SELECT MAX(order_date_time) FROM Orders), - 72))
+ORDER  BY v.year DESC, v.no_jobs_taken DESC;
+
+
+-- Query 2: Low Stock Alert
+
+CREATE OR REPLACE VIEW v_branch_stock_status AS 
+WITH Past_6_Months_Sales AS (
+    SELECT o.branch_id, 
+           od.item_id, 
+           SUM(od.quantity) AS units_6m
+    FROM   Order_Detail od
+           JOIN Orders o ON o.order_no = od.order_no
+    WHERE  o.order_status = 'Completed'
+    AND    o.order_date_time >= ADD_MONTHS((SELECT MAX(order_date_time) FROM Orders), -6)
+    GROUP  BY o.branch_id, od.item_id
+)
+SELECT inv.branch_id, 
+b.name AS branch_name, 
+i.item_id,
+       	i.name AS item_name, 
+       	i.unit_price, 
+	i.category,
+       	i.status AS item_status, 
+       	inv.quantity AS quantity_on_hand, 
+       	inv.last_restock_date, 
+       	inv.quantity * i.unit_price AS stock_value, 
+       	s.supplier_id, 
+	s.company_name AS supplier_name,
+	s.contact_no AS supplier_phone,
+       	s.lead_time_days, 
+       	s.status AS supplier_status, 
+       	CASE WHEN inv.quantity = 0 THEN 'Out of Stock'
+            	WHEN inv.quantity < 20 THEN 'Critical'
+            	WHEN inv.quantity < 100 THEN 'Low'
+            	ELSE 'Good' 
+       	END AS stock_level,
+       	NVL(sold.units_6m, 0) AS units_sold_6m, 
+       	CASE WHEN NVL(sold.units_6m, 0) = 0 THEN NULL 
+            	ELSE ROUND(inv.quantity / (sold.units_6m / 182), 0) 
+       	END AS days_of_cover,
+       	ROUND(NVL(sold.units_6m, 0) / 26, 1) AS avg_weekly_demand
+FROM   Inventory inv 
+JOIN Item i ON i.item_id = inv.item_id
+       	JOIN Branch b ON b.branch_id = inv.branch_id
+       	JOIN Supplier s ON s.supplier_id = i.supplier_id 
+       	LEFT JOIN Past_6_Months_Sales sold ON sold.branch_id = inv.branch_id AND sold.item_id = inv.item_id;
+
+
+SET LINESIZE 160
+SET PAGESIZE 150
+
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+ 
+TTITLE CENTER '88 SPEEDMART: LOW STOCK ALERT AND REORDER LIST' SKIP 1 -
+       CENTER '===============================================' SKIP 2
+BTITLE CENTER 'Operational   -   run at the start of every trading day'
+ 
+COLUMN branch_name HEADING 'Branch' FORMAT A28
+COLUMN item_name HEADING 'Product' FORMAT A50
+COLUMN quantity_on_hand HEADING 'Quantity' FORMAT 9,990
+COLUMN stock_level HEADING 'Level' FORMAT A14
+COLUMN avg_weekly_demand HEADING 'Weekly|Demand' FORMAT 9990.9
+COLUMN days_of_cover HEADING 'Days of|Cover' FORMAT 99990
+COLUMN lead_time_days  HEADING 'Lead|Days' FORMAT 9990
+COLUMN supplier_id  HEADING 'Reorder From' FORMAT A14
+COLUMN urgency HEADING 'Urgency' FORMAT A15
+ 
+BREAK ON branch_name SKIP 1
+COMPUTE COUNT LABEL 'Products to Order' OF item_name ON branch_name
+
+SELECT bs.branch_name, 
+bs.item_name,
+       	bs.quantity_on_hand,
+       	bs.stock_level,
+       	bs.avg_weekly_demand,
+       	bs.days_of_cover,
+       	bs.lead_time_days, 
+       	bs.supplier_id,
+       	CASE WHEN bs.quantity_on_hand < 20 OR bs.days_of_cover <= bs.lead_time_days THEN 'ORDER NOW'
+            	WHEN bs.quantity_on_hand < 50 OR bs.days_of_cover <= bs.lead_time_days + 7 THEN 'This week'
+            	WHEN bs.days_of_cover IS NULL THEN 'No recent sales'
+            	ELSE 'Monitor'
+       	END AS urgency
+FROM   v_branch_stock_status bs
+WHERE  bs.item_status = 'Active'
+AND    (bs.quantity_on_hand < 100 OR bs.days_of_cover <= bs.lead_time_days + 7)
+ORDER  BY bs.branch_name, 
+          	CASE WHEN bs.quantity_on_hand = 0  THEN 0
+               	WHEN bs.quantity_on_hand < 20 THEN 1
+               	WHEN bs.quantity_on_hand < 50 THEN 2
+               	ELSE 3
+          END, 
+          Bs.quantity_on_hand;

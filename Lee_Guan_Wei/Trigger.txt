@@ -1,0 +1,197 @@
+-- Trigger 1:  Automatic Delivery Fee Trigger
+
+CREATE OR REPLACE TRIGGER trg_delivery_fee
+BEFORE INSERT ON Delivery_Request
+FOR EACH ROW
+DECLARE
+    v_service Orders.service_type%TYPE;
+    v_base    Delivery_Company.base_delivery_fee%TYPE;
+    v_weight  NUMBER;
+BEGIN
+    SELECT service_type INTO v_service FROM Orders WHERE order_no = :NEW.order_no;
+    IF v_service <> 'Delivery' THEN
+        RAISE_APPLICATION_ERROR(-20103,
+            'Order ' || :NEW.order_no || ' is a pickup order and cannot be delivered.');
+    END IF;
+
+    IF :NEW.delivery_fee IS NULL THEN
+        SELECT dc.base_delivery_fee INTO v_base
+        FROM   Courier c JOIN Delivery_Company dc
+               ON dc.delivery_company_id = c.delivery_company_id
+        WHERE  c.courier_id = :NEW.courier_id;
+
+        SELECT NVL(SUM(i.unit_weight_kg * od.quantity), 0) INTO v_weight
+        FROM   Order_Detail od JOIN Item i ON i.item_id = od.item_id
+        WHERE  od.order_no = :NEW.order_no;
+
+        :NEW.delivery_fee := ROUND(v_base + v_weight, 2);
+    END IF;
+END;
+/
+
+-- Trigger 2:  Delivery Fee Synchronisation Trigger 
+
+CREATE OR REPLACE TRIGGER trg_delivery_fee_to_order
+AFTER INSERT OR UPDATE OF delivery_fee OR DELETE
+ON Delivery_Request
+FOR EACH ROW
+
+DECLARE
+    v_order_no Orders.order_no%TYPE;
+    v_delta    NUMBER := 0;
+    v_status   Orders.order_status%TYPE;
+
+BEGIN
+    IF INSERTING THEN
+        v_order_no := :NEW.order_no;
+        v_delta := NVL(:NEW.delivery_fee, 0);
+
+    ELSIF UPDATING THEN
+        v_order_no := :NEW.order_no;
+        v_delta := NVL(:NEW.delivery_fee, 0)
+                   - NVL(:OLD.delivery_fee, 0);
+
+    ELSIF DELETING THEN
+        v_order_no := :OLD.order_no;
+        v_delta := -NVL(:OLD.delivery_fee, 0);
+    END IF;
+
+
+    SELECT order_status
+    INTO v_status
+    FROM Orders
+    WHERE order_no = v_order_no;
+
+
+    IF NOT INSERTING
+       AND v_status IN ('Completed', 'Cancelled') THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20111,
+            'Delivery fee cannot be changed because order '
+            || v_order_no || ' is already ' || v_status || '.'
+        );
+    END IF;
+
+
+    UPDATE Orders
+    SET total_amount = total_amount + v_delta
+    WHERE order_no = v_order_no;
+
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(
+            -20114,
+            'Order ' || v_order_no || ' does not exist.'
+        );
+
+END;
+/
+
+-- Trigger 3: Inventory Item Validation Trigger
+
+CREATE OR REPLACE TRIGGER trg_validate_inventory
+BEFORE INSERT OR UPDATE ON Inventory
+FOR EACH ROW
+DECLARE
+    v_item_status   Item.status%TYPE;
+    v_item_name     Item.name%TYPE;
+    v_branch_status Branch.status%TYPE;
+    v_branch_name   Branch.name%TYPE;
+BEGIN
+    SELECT status, name
+    INTO   v_item_status, v_item_name
+    FROM   Item
+    WHERE  item_id = :NEW.item_id;
+
+    SELECT status, name
+    INTO   v_branch_status, v_branch_name
+    FROM   Branch
+    WHERE  branch_id = :NEW.branch_id;
+    IF UPPER(v_branch_status) <> 'ACTIVE' THEN
+        RAISE_APPLICATION_ERROR(-20129,
+            v_branch_name || ' is ' || v_branch_status ||
+            ' and cannot hold stock.');
+    END IF;
+
+    IF UPPER(v_item_status) <> 'ACTIVE'
+       AND UPDATING
+       AND :NEW.quantity > :OLD.quantity THEN
+        RAISE_APPLICATION_ERROR(-20130,
+            v_item_name || ' has been discontinued. The ' || :OLD.quantity ||
+            ' unit(s) already at ' || v_branch_name || ' may be sold down, but no ' ||
+            'further stock may be brought in.');
+    END IF;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(-20131,
+            'Inventory cannot be recorded because item ' || :NEW.item_id ||
+            ' or branch ' || :NEW.branch_id || ' does not exist.');
+END;
+/
+
+-- Trigger 4:  Delivery Time Validation Trigger 
+
+CREATE OR REPLACE TRIGGER trg_delivery_time
+BEFORE INSERT OR UPDATE OF delivered_date_time ON Delivery_Request
+FOR EACH ROW
+DECLARE
+    v_hour    NUMBER;
+    v_order   Orders.order_date_time%TYPE;
+    v_minutes NUMBER;
+BEGIN
+    IF :NEW.delivered_date_time IS NULL THEN
+        RETURN;
+    END IF;
+
+    v_hour := TO_NUMBER(TO_CHAR(:NEW.delivered_date_time, 'HH24'));
+    IF v_hour < 9 OR v_hour >= 22 THEN
+        RAISE_APPLICATION_ERROR(-20107,
+            'Delivery time ' || TO_CHAR(:NEW.delivered_date_time, 'HH24:MI') ||
+            ' is outside trading hours. Deliveries run from 09:00 to 22:00.');
+    END IF;
+
+    SELECT order_date_time INTO v_order FROM Orders WHERE order_no = :NEW.order_no;
+
+    IF :NEW.delivered_date_time < v_order THEN
+        RAISE_APPLICATION_ERROR(-20108,
+            'A delivery cannot be dated before the order was placed.');
+    END IF;
+
+    v_minutes := (CAST(:NEW.delivered_date_time AS DATE) - CAST(v_order AS DATE)) * 1440;
+    IF v_minutes > 120 THEN
+        RAISE_APPLICATION_ERROR(-20109,
+            'Order ' || :NEW.order_no || ' must be delivered within 2 hours. This delivery is ' ||
+            ROUND(v_minutes) || ' minutes after the order.');
+    END IF;
+END;
+/
+
+-- Trigger 5:  Active Supplier Validation Trigger 
+
+CREATE OR REPLACE TRIGGER trg_item_supplier_active
+BEFORE INSERT OR UPDATE OF supplier_id, status ON Item
+FOR EACH ROW
+DECLARE
+    v_status Supplier.status%TYPE;
+    v_name   Supplier.company_name%TYPE;
+BEGIN
+    IF :NEW.status <> 'Active' THEN
+        RETURN;
+    END IF;
+
+    SELECT status, company_name INTO v_status, v_name
+    FROM   Supplier WHERE supplier_id = :NEW.supplier_id;
+
+    IF v_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20124,
+            'Item ' || :NEW.item_id || ' cannot be sold because supplier ' || v_name ||
+            ' is no longer trading with us.');
+    END IF;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(-20125,
+            'Supplier ' || :NEW.supplier_id || ' does not exist.');
+END;
+/

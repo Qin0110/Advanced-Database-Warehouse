@@ -1,0 +1,238 @@
+-- Report 1: Delivery Performance Audit Report 
+
+CREATE OR REPLACE PROCEDURE rpt_delivery_fulfilment (
+    p_year IN NUMBER DEFAULT NULL
+) AS
+    CURSOR c_year (cp_year NUMBER) IS
+        SELECT DISTINCT year
+        FROM v_delivery_performance
+        WHERE (cp_year IS NULL OR year = cp_year)
+        ORDER BY year DESC;
+
+    CURSOR c_partner (cp_year NUMBER) IS
+        SELECT delivery_company_id, company_name, no_jobs_taken, success_rate, fee_paid
+        FROM v_delivery_performance
+        WHERE year = cp_year
+        ORDER BY no_jobs_taken DESC;
+
+    -- MODIFIED CURSOR: Selects only the Top 3 based on average_rating
+    CURSOR c_rider (cp_company Delivery_Company.delivery_company_id%TYPE, cp_year NUMBER) IS
+        SELECT * FROM (
+            SELECT c.name,
+                   NVL(c.average_rating, 0) AS rating,
+                   COUNT(dr.delivery_request_id) AS jobs,
+                   SUM(CASE WHEN dr.status = 'Delivered' THEN 1 ELSE 0 END) AS delivered,
+                   SUM(CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END) AS failed
+            FROM Courier c
+            JOIN Delivery_Request dr ON dr.courier_id = c.courier_id
+            JOIN Orders o ON o.order_no = dr.order_no
+            WHERE c.delivery_company_id = cp_company
+                AND EXTRACT(YEAR FROM o.order_date_time) = cp_year
+            GROUP BY c.name, c.average_rating
+            ORDER BY NVL(c.average_rating, 0) DESC, COUNT(dr.delivery_request_id) DESC
+        )
+        WHERE ROWNUM <= 3;
+
+    v_total_years   NUMBER := 0;
+    v_year_partners NUMBER;
+BEGIN
+    IF p_year IS NOT NULL AND p_year NOT BETWEEN 2020 AND 2026 THEN
+        RAISE_APPLICATION_ERROR(-20341, 'The trading history runs from 2020 to 2026. Year ' || p_year || ' is outside it.');
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+    IF p_year IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MULTI-YEAR DELIVERY FULFILMENT AND RIDER REPORT (ALL YEARS)');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   DELIVERY FULFILMENT AND RIDER REPORT FOR YEAR ' || p_year);
+    END IF;
+    DBMS_OUTPUT.PUT_LINE('Generated on ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+
+    FOR y IN c_year(p_year) LOOP
+        v_total_years := v_total_years + 1;
+        v_year_partners := 0;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10) || '---------------------------------------------------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('>> PERFORMANCE REPORT FOR YEAR: ' || y.year);
+        DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------------------------------');
+
+        FOR p IN c_partner(y.year) LOOP
+            v_year_partners := v_year_partners + 1;
+
+            DBMS_OUTPUT.PUT_LINE(CHR(10) || '  Partner: ' || p.company_name ||
+                                 ' | Jobs: ' || p.no_jobs_taken ||
+                                 ' | Success: ' || p.success_rate || '%' ||
+                                 ' | Fees: RM ' || p.fee_paid);
+            DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
+            -- Adjusted header slightly to reflect the Top 3 limit
+            DBMS_OUTPUT.PUT_LINE('  ' || RPAD('Top 3 Riders', 28) || LPAD('Rating', 8) || 
+                                 LPAD('Jobs', 8) || LPAD('Delivered', 12) || LPAD('Failed', 8));
+            DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 75, '-'));
+
+            FOR r IN c_rider(p.delivery_company_id, y.year) LOOP
+                DBMS_OUTPUT.PUT_LINE('    ' || RPAD(SUBSTR(r.name, 1, 26), 28) ||
+                                     LPAD(TO_CHAR(r.rating, '9.0'), 8) ||
+                                     LPAD(r.jobs, 8) ||
+                                     LPAD(r.delivered, 12) ||
+                                     LPAD(r.failed, 8));
+            END LOOP;
+        END LOOP;
+
+        IF v_year_partners = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('  No delivery data recorded for ' || y.year);
+        END IF;
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('=', 85, '='));
+    DBMS_OUTPUT.PUT_LINE('END OF REPORT. Evaluated ' || v_total_years || ' year(s) of history.');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 85, '='));
+END rpt_delivery_fulfilment;
+/
+
+EXEC rpt_delivery_fulfilment();
+
+
+-- Report 2: MyKasih Subsidy Report
+
+DROP INDEX idx_orders_mykasih_year;
+CREATE INDEX idx_orders_mykasih_year ON Orders (
+    is_mykasih_purchase,
+    order_status,
+    EXTRACT(YEAR FROM order_date_time)
+);
+
+
+
+CREATE OR REPLACE PROCEDURE rpt_mykasih_subsidy (
+    	p_year IN NUMBER DEFAULT NULL
+) AS
+    	CURSOR c_year (cp_year NUMBER) IS
+        	SELECT DISTINCT EXTRACT(YEAR FROM o.order_date_time) AS order_year
+        	FROM Orders o
+        	WHERE o.is_mykasih_purchase = 'Y'
+        	AND o.order_status = 'Completed'
+        	AND (cp_year IS NULL OR EXTRACT(YEAR FROM o.order_date_time) = cp_year)
+        	ORDER BY order_year DESC;
+
+    	CURSOR c_supplier IS 
+        	SELECT s.supplier_id, s.company_name, s.contact_no
+        	FROM Supplier s
+        	WHERE EXISTS (
+            		SELECT 1 
+            		FROM Item i 
+            		WHERE i.supplier_id = s.supplier_id 
+            		AND i.is_mykasih_eligible = 'Y'
+        		)
+        	ORDER  BY s.company_name;
+
+    	CURSOR c_item (cp_supplier Supplier.supplier_id%TYPE, cp_year NUMBER) IS
+        	SELECT i.item_id, 
+               		i.name, 
+               		i.category,
+               		(SELECT NVL(SUM(quantity), 0) 
+                FROM Inventory 
+                WHERE item_id = i.item_id) AS total_stock,
+               		NVL(SUM(od.quantity), 0) AS mykasih_units_sold,
+               		NVL(SUM(od.subtotal), 0) AS mykasih_revenue
+        	FROM Item i
+               		LEFT JOIN Order_Detail od ON i.item_id = od.item_id
+               		LEFT JOIN Orders o ON od.order_no = o.order_no 
+                                  AND o.is_mykasih_purchase = 'Y' 
+                                  AND o.order_status = 'Completed'
+                                  AND EXTRACT(YEAR FROM o.order_date_time) = cp_year
+        	WHERE i.supplier_id = cp_supplier
+        		AND i.is_mykasih_eligible = 'Y'
+        		AND i.status = 'Active'
+        	GROUP BY i.item_id, i.name, i.category
+        	HAVING NVL(SUM(od.subtotal), 0) > 0  -- Only show items that had MyKasih sales in this year
+        	ORDER BY mykasih_revenue DESC, i.name;
+
+    	v_total_years NUMBER := 0;
+    	v_suppliers NUMBER;
+    	v_items NUMBER;
+    	v_sup_revenue NUMBER;
+    	v_year_revenue NUMBER;
+    	v_grand_revenue NUMBER := 0;
+BEGIN
+    	IF p_year IS NOT NULL AND p_year NOT BETWEEN 2020 AND 2026 THEN
+        	RAISE_APPLICATION_ERROR(-20341, 'The trading history runs from 2020 to 2026. Year ' || p_year || ' is outside it.');
+    	END IF;
+
+    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
+    	IF p_year IS NULL THEN
+        	DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MULTI-YEAR MYKASIH WELFARE SUBSIDY REPORT (ALL YEARS)');
+    	ELSE
+        	DBMS_OUTPUT.PUT_LINE('88 SPEEDMART   MYKASIH WELFARE SUBSIDY REPORT FOR YEAR ' || p_year);
+    	END IF;
+    	DBMS_OUTPUT.PUT_LINE('Tracking sales of essential goods purchased using MyKasih government funds.');
+    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
+
+    	FOR y IN c_year(p_year) LOOP
+        	v_total_years := v_total_years + 1;
+        	v_suppliers := 0;
+        	v_items := 0;
+        	v_year_revenue := 0;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10) || '========================================================================================');
+        DBMS_OUTPUT.PUT_LINE('>> SUBSIDY AUDIT FOR YEAR: ' || y.order_year);
+        DBMS_OUTPUT.PUT_LINE('========================================================================================');
+
+        FOR s IN c_supplier LOOP
+            	v_sup_revenue := 0;
+
+            	DECLARE
+                	v_printed_header BOOLEAN := FALSE;
+            	BEGIN
+                	FOR i IN c_item(s.supplier_id, y.order_year) LOOP
+                    		IF NOT v_printed_header THEN
+                        		v_suppliers := v_suppliers + 1;
+                        		DBMS_OUTPUT.PUT_LINE(CHR(10) || 'Supplier: ' || s.company_name || '   [Contact: ' || s.contact_no || ']');
+                        		DBMS_OUTPUT.PUT_LINE('  ' || RPAD('Product Name', 30) || 
+                                             RPAD('Category', 24) || 
+                                             LPAD('Total Stock', 12) || 
+                                             LPAD('Sold (MK)', 12) || 
+                                             LPAD('Subsidy (RM)', 18));
+                        		DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 98, '-'));
+                        		v_printed_header := TRUE;
+                    		END IF;
+
+                    		v_items := v_items + 1;
+                    		v_sup_revenue := v_sup_revenue + i.mykasih_revenue;
+
+                    		DBMS_OUTPUT.PUT_LINE('    ' || RPAD(SUBSTR(i.name, 1, 28), 30) ||
+                                         RPAD(i.category, 24) ||
+                                         LPAD(i.total_stock, 12) ||
+                                         LPAD(i.mykasih_units_sold, 12) ||
+                                         LPAD(TO_CHAR(i.mykasih_revenue, '999,990.00'), 18));
+                	END LOOP;
+
+                	IF v_printed_header THEN
+                    		DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', 98, '-'));
+                    		DBMS_OUTPUT.PUT_LINE(LPAD('Supplier MyKasih Total: RM ' || TO_CHAR(v_sup_revenue, '999,990.00'), 98));
+                    		v_year_revenue := v_year_revenue + v_sup_revenue;
+                	END IF;
+            	END;
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('-', 105, '-'));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.order_year || ' SUMMARY -> ACTIVE SUPPLIERS: ' || v_suppliers || 
+                             '   ITEMS SOLD: ' || v_items || 
+                             '   TOTAL CLAIM: RM ' || TO_CHAR(v_year_revenue, '9,999,990.00'));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 105, '-'));
+
+        v_grand_revenue := v_grand_revenue + v_year_revenue;
+    	END LOOP;
+
+    	DBMS_OUTPUT.PUT_LINE(CHR(10) || RPAD('=', 105, '='));
+    	IF v_total_years = 0 THEN
+        	DBMS_OUTPUT.PUT_LINE('No MyKasih transaction data found for the selected criteria.');
+    	ELSE
+        	DBMS_OUTPUT.PUT_LINE('GRAND TOTAL MYKASIH SUBSIDY CLAIM ACROSS ' || v_total_years || ' YEAR(S): RM ' || TO_CHAR(v_grand_revenue, '99,999,990.00'));
+    	END IF;
+    	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
+END rpt_mykasih_subsidy;
+/
+
+EXEC rpt_mykasih_subsidy();
+
