@@ -20,14 +20,14 @@ CREATE OR REPLACE VIEW v_delivery_performance AS
 
 
 SET LINESIZE 160
-SET PAGESIZE 110
-
+SET PAGESIZE 105
+SET SERVEROUTPUT ON SIZE UNLIMITED
 
 CLEAR COLUMNS
 CLEAR BREAKS
 CLEAR COMPUTES
  
-TTITLE CENTER '88 – SPEEDMART DELIVERY COMPANY PERFORMANCE BY YEAR' SKIP 1 -
+TTITLE CENTER '88 SPEEDMART: DELIVERY COMPANY PERFORMANCE BY YEAR' SKIP 1 -
        CENTER '===================================================' SKIP 2
 BTITLE CENTER 'Strategic review -  prepared for the contract renewal meeting'
  
@@ -121,7 +121,7 @@ CLEAR COLUMNS
 CLEAR BREAKS
 CLEAR COMPUTES
  
-TTITLE CENTER '88 SPEEDMART – LOW STOCK ALERT AND REORDER LIST' SKIP 1 -
+TTITLE CENTER '88 SPEEDMART: LOW STOCK ALERT AND REORDER LIST' SKIP 1 -
        CENTER '===============================================' SKIP 2
 BTITLE CENTER 'Operational   -   run at the start of every trading day'
  
@@ -204,6 +204,9 @@ EXCEPTION
 
 END fn_reorder_quantity;
 /
+
+EXEC prc_restock_item('BR001', 'IT003', 50); 
+
 
 
 CREATE OR REPLACE PROCEDURE prc_restock_item (
@@ -547,6 +550,8 @@ EXCEPTION
 END prc_dispatch_delivery;
 /
 
+EXEC prc_dispatch_delivery('ORD012613', 'DC001', 'Ali bin Ahmad', '012-885 9506', '123 Jalan Ampang, Kuala Lumpur'); 
+
 
 -- Trigger 1:  Automatic Delivery Fee Trigger
 
@@ -838,6 +843,8 @@ BEGIN
 END rpt_delivery_fulfilment;
 /
 
+EXEC rpt_delivery_fulfilment();
+
 
 -- Report 2: MyKasih Subsidy Report
 
@@ -979,4 +986,7 @@ BEGIN
     	DBMS_OUTPUT.PUT_LINE(RPAD('=', 105, '='));
 END rpt_mykasih_subsidy;
 /
+
+EXEC rpt_mykasih_subsidy();
+
 
