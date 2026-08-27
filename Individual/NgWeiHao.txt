@@ -314,9 +314,6 @@ SET WRAP ON
 
 
 
-
-
-
 -- Procedure 1 (add order)
 
 CREATE OR REPLACE PROCEDURE prc_place_order (
@@ -1005,6 +1002,7 @@ END prc_place_order;
 /
 
 
+
 -- Procedure 2 (search item )
 CREATE OR REPLACE PROCEDURE prc_search_items (
     p_branch_id       IN Branch.branch_id%TYPE,
@@ -1228,6 +1226,7 @@ END prc_search_items;
 
 SET SERVEROUTPUT ON SIZE UNLIMITED;
 EXEC prc_search_items('BR001','','Y');
+EXEC prc_search_items('BR001','','N');
 
 
 
@@ -1259,6 +1258,7 @@ BEGIN
     END IF;
 END;
 /
+
 
 -- Trigger 2 Automatic Member Points Award After Order Completion 
 CREATE OR REPLACE TRIGGER trg_award_member_points
@@ -1323,7 +1323,90 @@ BEGIN
 END;
 /
 
-    
+
+
+set linesize 250
+--1. make order
+SET SERVEROUTPUT ON;
+VARIABLE v_order_no VARCHAR2(20);
+BEGIN
+    prc_place_order(
+        p_customer_id    => 'CUS00001',
+        p_branch_id      => 'BR001',
+        p_employee_id    => 'EMP003',
+        p_item_ids       => SYS.ODCIVARCHAR2LIST('IT001'),
+        p_quantities     => SYS.ODCINUMBERLIST(5),
+        p_order_type     => 'Walk-In',
+        p_service_type   => 'Pickup',
+        p_payment_method => 'Cash',
+        p_mykasih        => 'N',
+        p_redemption_id  => NULL,
+        p_order_no       => :v_order_no
+    );
+END;
+/
+
+--2. check member and member point bfr payment(trigger 2)
+SELECT
+    C.customer_id,
+    M.member_id,
+    M.name,
+    M.membership_type,
+    M.point_rate,
+    M.points_balance,
+    M.status
+FROM Customer C
+JOIN Member M
+    ON C.member_id = M.member_id
+WHERE M.member_id = 'MB00001';
+
+--3. check status bfr payment (trigger 1)
+SELECT
+    O.order_no,
+    O.subtotal_amount,
+    O.discount_amount,
+    O.points_earned,
+    O.order_status,
+    P.payment_status
+FROM Orders O
+JOIN Payment P
+    ON O.order_no = P.order_no
+WHERE O.order_no = :v_order_no;
+
+--4. change payment to paid
+UPDATE Payment
+SET payment_status = 'Paid'
+WHERE order_no = :v_order_no;
+
+COMMIT;
+
+--5. check status after payment (trigger 1)
+SELECT
+    O.order_no,
+    O.subtotal_amount,
+    O.discount_amount,
+    O.points_earned,
+    O.order_status,
+    P.payment_status
+FROM Orders O
+JOIN Payment P
+    ON O.order_no = P.order_no
+WHERE O.order_no = :v_order_no;
+
+--6. check member and member point after payment(trigger 2)
+SELECT
+    C.customer_id,
+    M.member_id,
+    M.name,
+    M.membership_type,
+    M.point_rate,
+    M.points_balance,
+    M.status
+FROM Customer C
+JOIN Member M
+    ON C.member_id = M.member_id
+WHERE M.member_id = 'MB00001';
+
 
 
 -- REPORT 1
@@ -1777,12 +1860,6 @@ EXCEPTION
 END report_branch_sales;
 /
 
-SET SERVEROUTPUT ON SIZE UNLIMITED;
-EXEC report_branch_sales(2026);
-
-
-
-EXEC report_branch_sales();
 
 SET SERVEROUTPUT ON SIZE UNLIMITED;
 EXEC report_branch_sales(2026);
