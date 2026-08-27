@@ -207,9 +207,9 @@ CREATE OR REPLACE FUNCTION fn_sla_priority (
 ) RETURN VARCHAR2
 IS
 BEGIN
-    IF p_days_waiting > 3 OR p_refund_value >= 100 THEN
+    IF p_refund_value >= 100 THEN
         RETURN 'P1-URGENT';
-    ELSIF p_days_waiting > 1 OR p_membership = 'VIP' THEN
+    ELSIF p_days_waiting > 3 OR p_membership = 'VIP' THEN
         RETURN 'P2-HIGH';
     ELSE
         RETURN 'P3-NORMAL';
