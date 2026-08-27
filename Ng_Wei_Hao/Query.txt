@@ -1,3 +1,13 @@
+--additional view (Refund View — By Order)
+CREATE OR REPLACE VIEW v_refund_by_order AS
+SELECT
+    order_no,
+    ROUND(SUM(refund_amount), 2) AS refund_amount
+FROM Return_Request
+WHERE status = 'Refunded'
+GROUP BY order_no;
+
+
 -- View 1
 CREATE OR REPLACE VIEW v_branch_monthly_revenue AS
 SELECT
@@ -142,14 +152,7 @@ GROUP BY
     B.name,
     I.category;
 
---additional view (Refund View — By Order)
-CREATE OR REPLACE VIEW v_refund_by_order AS
-SELECT
-    order_no,
-    ROUND(SUM(refund_amount), 2) AS refund_amount
-FROM Return_Request
-WHERE status = 'Refunded'
-GROUP BY order_no;
+
 
 
 
