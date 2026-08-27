@@ -208,16 +208,16 @@ SET TAB OFF
 SET LINESIZE 135
 SET PAGESIZE 90
 
-COLUMN category     FORMAT A26       HEADING 'Product Category'
-COLUMN reason       FORMAT A28       HEADING 'Reason Given by the Customer'
-COLUMN fault_type   FORMAT A17       HEADING 'Fault Type'
-COLUMN branches_hit FORMAT 999       HEADING 'Branches|Affected'
-COLUMN cases        FORMAT 9,999     HEADING 'Cases'
-COLUMN units        FORMAT 9,999     HEADING 'Units'
+COLUMN category FORMAT A26 HEADING 'Product Category'
+COLUMN reason FORMAT A28 HEADING 'Reason Given by the Customer'
+COLUMN fault_type FORMAT A17 HEADING 'Fault Type'
+COLUMN branches_hit FORMAT 999 HEADING 'Branches|Affected'
+COLUMN cases FORMAT 9,999 HEADING 'Cases'
+COLUMN units FORMAT 9,999 HEADING 'Units'
 COLUMN refund_value FORMAT 99,990.00 HEADING 'Refunded|RM'
-COLUMN avg_refund   FORMAT 990.00    HEADING 'Avg per|Case RM'
-COLUMN pct_cases    FORMAT 990.9     HEADING '% of|Returns'
-COLUMN pending      FORMAT 999       HEADING 'Still|Pending'
+COLUMN avg_refund FORMAT 990.00 HEADING 'Avg per|Case RM'
+COLUMN pct_cases FORMAT 990.9 HEADING '% of|Returns'
+COLUMN pending FORMAT 999 HEADING 'Still|Pending'
 
 TTITLE CENTER '88 SPEEDMART SDN BHD - RETURN REASON BY PRODUCT CATEGORY' SKIP 1 -
        CENTER '========================================================' SKIP 2
@@ -226,7 +226,7 @@ BREAK ON category SKIP 1 ON REPORT
 COMPUTE SUM LABEL 'Category total' OF cases units refund_value ON category
 COMPUTE SUM LABEL 'ALL CATEGORIES' OF cases units refund_value ON REPORT
 
-SELECT i.category,
+SELECT v.category,
        rr.reason,
        CASE WHEN rr.reason = 'Changed mind after purchase'
             THEN 'Customer choice'
@@ -240,12 +240,12 @@ SELECT i.category,
              / COUNT(*), 2) AS avg_refund,
        ROUND(COUNT(*) * 100 / (SELECT COUNT(*) FROM Return_Request), 1) AS pct_cases,
        SUM(CASE WHEN rr.status = 'Requested' THEN 1 ELSE 0 END) AS pending
-FROM   Return_Request rr
-JOIN   Item   i ON i.item_id   = rr.item_id
-JOIN   Orders o ON o.order_no  = rr.order_no
-JOIN   Branch b ON b.branch_id = o.branch_id
-GROUP  BY i.category, rr.reason
-ORDER  BY i.category, refund_value DESC;
+FROM   vw_item_return_analysis v
+JOIN   Return_Request rr ON rr.item_id  = v.item_id
+JOIN   Orders o          ON o.order_no  = rr.order_no
+JOIN   Branch b          ON b.branch_id = o.branch_id
+GROUP  BY v.category, rr.reason
+ORDER  BY v.category, refund_value DESC;
 
 
 

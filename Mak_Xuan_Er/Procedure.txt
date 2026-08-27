@@ -1,0 +1,202 @@
+-- Procedure 1: Return Processing
+
+CREATE OR REPLACE FUNCTION fn_calc_refund (
+    p_order_no IN Orders.order_no%TYPE,
+    p_item_id  IN Item.item_id%TYPE,
+    p_quantity IN NUMBER,
+    p_reason   IN Return_Request.reason%TYPE
+) RETURN NUMBER
+IS
+    v_unit_price Order_Detail.unit_price%TYPE;
+    v_line_total Order_Detail.subtotal%TYPE;
+    v_refund     NUMBER(10,2);
+BEGIN
+    SELECT unit_price, subtotal
+    INTO v_unit_price, v_line_total
+    FROM Order_Detail
+    WHERE order_no = p_order_no
+    AND item_id  = p_item_id;
+
+    IF p_reason = 'Changed mind after purchase' THEN
+        v_refund := p_quantity * v_unit_price * 0.80;   -- 20% restocking fee
+    ELSE
+        v_refund := p_quantity * v_unit_price;          -- shop / supplier fault
+    END IF;
+
+    RETURN ROUND(LEAST(v_refund, v_line_total), 2);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(-20045,
+            'Item ' || p_item_id || ' was never bought on order ' || p_order_no || '.');
+END fn_calc_refund;
+/
+
+
+CREATE OR REPLACE PROCEDURE prc_process_return (
+    p_order_no IN Orders.order_no%TYPE,
+    p_item_id  IN Item.item_id%TYPE,
+    p_reason   IN Return_Request.reason%TYPE,
+    p_quantity IN Return_Request.return_quantity%TYPE,
+    p_reviewer IN Employee.employee_id%TYPE,
+    p_decision IN VARCHAR2 DEFAULT 'Approved'
+) AS
+    v_emp_name     Employee.name%TYPE;
+    v_emp_position Employee.position%TYPE;
+    v_emp_status   Employee.status%TYPE;
+    v_item_name    Item.name%TYPE;
+    v_return_id    Return_Request.return_id%TYPE;
+    v_refund       NUMBER(10,2);
+BEGIN
+    SELECT e.name, e.position, e.status
+    INTO   v_emp_name, v_emp_position, v_emp_status
+    FROM   Employee e
+    WHERE  e.employee_id = p_reviewer;
+
+    SELECT i.name INTO v_item_name
+    FROM   Item i
+    WHERE  i.item_id = p_item_id;
+
+    IF p_decision NOT IN ('Requested', 'Approved', 'Rejected', 'Refunded') THEN
+        RAISE_APPLICATION_ERROR(-20040,
+            'Decision must be Requested, Approved, Rejected or Refunded - got "' || p_decision || '".');
+    ELSIF NVL(p_quantity, 0) <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20041, 'Return quantity must be at least one unit.');
+    ELSIF v_emp_position NOT IN ('Supervisor', 'Manager') OR v_emp_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20042,
+            v_emp_name || ' is a ' || v_emp_position || ' (' || v_emp_status ||
+            ') and cannot approve a refund. Please call a Supervisor or Manager.');
+    END IF;
+
+    v_return_id := 'RTN' || LPAD(return_seq.NEXTVAL, 6, '0');
+    v_refund    := fn_calc_refund(p_order_no, p_item_id, p_quantity, p_reason);
+
+    INSERT INTO Return_Request (return_id, reason, request_date, status,
+                                refund_amount, remarks, return_quantity,
+                                order_no, item_id, reviewed_by)
+    VALUES (v_return_id, p_reason, SYSDATE, p_decision, v_refund,
+            'Lodged at counter by ' || v_emp_name ||
+            CASE WHEN p_decision <> 'Requested'
+                 THEN ' | ' || p_decision || ' on ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI')
+            END,
+            p_quantity, p_order_no, p_item_id, p_reviewer);
+
+    IF p_decision = 'Refunded' THEN
+        UPDATE Payment
+        SET    payment_status = 'Refunded'
+        WHERE  order_no = p_order_no AND payment_status = 'Paid';
+    END IF;
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 62, '='));
+    DBMS_OUTPUT.PUT_LINE(LPAD('88 SPEEDMART - RETURN SLIP', 44));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 62, '='));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Return ID',   18) || ': ' || v_return_id);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Order No',    18) || ': ' || p_order_no);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Item',        18) || ': ' || v_item_name || ' (' || p_item_id || ')');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Quantity',    18) || ': ' || p_quantity);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Reason',      18) || ': ' || p_reason);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Refund',      18) || ': RM ' || TO_CHAR(v_refund, 'FM9,999,990.00'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Decision',    18) || ': ' || p_decision);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Reviewed by', 18) || ': ' || v_emp_name || ' (' || v_emp_position || ')');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 62, '='));
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20043,
+            'Employee ' || p_reviewer || ' or item ' || p_item_id || ' does not exist.');
+    WHEN DUP_VAL_ON_INDEX THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20044,
+            'Item ' || p_item_id || ' on order ' || p_order_no || ' already has a return request on file.');
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END prc_process_return;
+/
+
+EXEC prc_process_return('ORD012615', 'IT011', 'Damaged packaging', 12, 'EMP001', 'Requested');
+
+EXEC prc_process_return('ORD012618', 'IT020', 'Changed mind after purchase', 2, 'EMP002', 'Refunded');
+
+
+-- Procedure 2: Customer Item Rating Submission
+
+CREATE OR REPLACE PROCEDURE prc_rate_item (
+    p_order_no IN Orders.order_no%TYPE,
+    p_item_id  IN Item.item_id%TYPE,
+    p_score    IN Rating.score%TYPE,
+    p_comments IN Rating.comments%TYPE DEFAULT NULL
+) AS
+    e_orphan_line EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_orphan_line, -2291);
+
+    e_order_open  EXCEPTION;                      
+    v_status    Orders.order_status%TYPE;
+    v_item_name Item.name%TYPE;
+    v_rating_id Rating.rating_id%TYPE;
+    v_avg       NUMBER(3,2);
+    v_count     NUMBER;
+BEGIN
+    SELECT o.order_status, i.name
+    INTO   v_status, v_item_name
+    FROM   Orders o, Item i
+    WHERE  o.order_no = p_order_no
+    AND    i.item_id  = p_item_id;
+
+    IF p_score IS NULL OR p_score NOT BETWEEN 1 AND 5 THEN
+        RAISE_APPLICATION_ERROR(-20046,
+            'A rating must be a whole number from 1 to 5 - got "' || p_score || '".');
+    ELSIF p_score <= 2 AND p_comments IS NULL THEN
+        RAISE_APPLICATION_ERROR(-20047,
+            'A rating of 1 or 2 star must come with a comment so the buyer can act on it.');
+    ELSIF v_status <> 'Completed' THEN
+        RAISE e_order_open;                       
+    END IF;
+
+    v_rating_id := 'RT' || LPAD(rating_seq.NEXTVAL, 5, '0');
+
+    INSERT INTO Rating (rating_id, score, comments, rating_date, order_no, item_id)
+    VALUES (v_rating_id, p_score, p_comments, SYSDATE, p_order_no, p_item_id);
+
+    COMMIT;
+
+    SELECT ROUND(AVG(score), 2), COUNT(*)
+    INTO   v_avg, v_count
+    FROM   Rating
+    WHERE  item_id = p_item_id;
+
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', 62, '-'));
+    DBMS_OUTPUT.PUT_LINE('THANK YOU FOR RATING ' || UPPER(v_item_name));
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', 62, '-'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Rating ID', 16) || ': ' || v_rating_id);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Your score', 16) || ': ' ||
+                         RPAD('*', p_score, '*') || RPAD('.', 5 - p_score, '.') ||
+                         '  (' || p_score || '/5)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Your comment', 16) || ': ' || NVL(p_comments, '(none given)'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('New average', 16) || ': ' ||
+                         TO_CHAR(v_avg, 'FM90.00') || ' from ' || v_count || ' rating(s)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', 62, '-'));
+
+EXCEPTION
+    WHEN e_order_open THEN
+        DBMS_OUTPUT.PUT_LINE('CANNOT RATE YET : order ' || p_order_no || ' is ' ||
+            v_status || '. You may rate an item once the order is completed.');
+    WHEN e_orphan_line THEN
+        DBMS_OUTPUT.PUT_LINE('INVALID LINE : item ' || p_item_id ||
+            ' does not appear on order ' || p_order_no || '.');
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('ALREADY RATED : you have already rated item ' || p_item_id ||
+            ' on order ' || p_order_no || '. One rating per purchase.');
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('NOT FOUND : order ' || p_order_no || ' or item ' ||
+            p_item_id || ' does not exist.');
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('UNEXPECTED ERROR ' || SQLCODE || ' : ' || SQLERRM);
+END prc_rate_item;
+/
+
+
+EXEC prc_rate_item('ORD012615', 'IT013', 4, 'Good value, tins all intact.');

@@ -1,0 +1,91 @@
+-- Trigger 1: Validate Return
+
+CREATE OR REPLACE TRIGGER trg_validate_return
+BEFORE INSERT ON Return_Request
+FOR EACH ROW
+DECLARE
+    v_qty     Order_Detail.quantity%TYPE;
+    v_line    Order_Detail.subtotal%TYPE;
+    v_ordered Orders.order_date_time%TYPE;
+    v_status  Orders.order_status%TYPE;
+BEGIN
+    SELECT od.quantity, od.subtotal, o.order_date_time, o.order_status
+    INTO   v_qty, v_line, v_ordered, v_status
+    FROM   Order_Detail od JOIN Orders o ON o.order_no = od.order_no
+    WHERE  od.order_no = :NEW.order_no AND od.item_id = :NEW.item_id;
+
+    IF v_status <> 'Completed' THEN
+        RAISE_APPLICATION_ERROR(-20107,
+            'Only a completed order can be returned. Order ' || :NEW.order_no ||
+            ' is ' || v_status || '.');
+    END IF;
+
+    IF NVL(:NEW.request_date, SYSDATE) > CAST(v_ordered AS DATE) + 7 THEN
+        RAISE_APPLICATION_ERROR(-20108,
+            'The seven day return period for order ' || :NEW.order_no || ' has passed.');
+    END IF;
+
+    IF :NEW.return_quantity > v_qty THEN
+        RAISE_APPLICATION_ERROR(-20109,
+            'Only ' || v_qty || ' unit(s) of item ' || :NEW.item_id ||
+            ' were bought on order ' || :NEW.order_no || '.');
+    END IF;
+
+    IF NVL(:NEW.refund_amount, 0) > v_line THEN
+        RAISE_APPLICATION_ERROR(-20110,
+            'The refund cannot be more than the RM' || v_line || ' paid for the line.');
+    END IF;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(-20112,
+            'Item ' || :NEW.item_id || ' does not appear on order ' || :NEW.order_no || '.');
+END;
+/
+
+
+-- Trigger 2 : Refund restores stock
+
+CREATE OR REPLACE TRIGGER trg_refund_restores_stock
+AFTER UPDATE OF payment_status ON Payment
+FOR EACH ROW
+WHEN (NEW.payment_status = 'Refunded' AND OLD.payment_status <> 'Refunded')
+DECLARE
+    v_branch Orders.branch_id%TYPE;
+    v_lines  NUMBER := 0;
+BEGIN
+    SELECT branch_id INTO v_branch FROM Orders WHERE order_no = :NEW.order_no;
+
+    FOR r IN (SELECT rr.item_id, rr.return_quantity, rr.reason, i.name AS item_name
+              FROM   Return_Request rr JOIN Item i ON i.item_id = rr.item_id
+              WHERE  rr.order_no = :NEW.order_no
+              AND    rr.status = 'Refunded') LOOP
+        v_lines := v_lines + 1;
+
+        IF r.reason IN ('Changed mind after purchase', 'Wrong item delivered') THEN
+            UPDATE Inventory SET quantity = quantity + r.return_quantity
+            WHERE  branch_id = v_branch AND item_id = r.item_id;
+            DBMS_OUTPUT.PUT_LINE('BACK ON SHELF : ' || r.return_quantity || ' x ' ||
+                                 r.item_name || ' at branch ' || v_branch ||
+                                 ' (' || r.reason || ').');
+
+        ELSIF r.reason = 'Quantity short delivered' THEN
+            DBMS_OUTPUT.PUT_LINE('SHORT DELIVERY : ' || r.return_quantity || ' x ' ||
+                                 r.item_name || ' never reached the customer and never ' ||
+                                 'came back. Stock at branch ' || v_branch || ' unchanged.');
+
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('WRITTEN OFF : ' || r.return_quantity || ' x ' ||
+                                 r.item_name || ' at branch ' || v_branch ||
+                                 ' (' || r.reason || '). Not fit to sell again.');
+        END IF;
+    END LOOP;
+
+    IF v_lines = 0 THEN
+        FOR line IN (SELECT item_id, quantity FROM Order_Detail
+                     WHERE order_no = :NEW.order_no) LOOP
+            UPDATE Inventory SET quantity = quantity + line.quantity
+            WHERE  branch_id = v_branch AND item_id = line.item_id;
+        END LOOP;
+    END IF;
+END;
+/
