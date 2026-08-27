@@ -1,0 +1,1041 @@
+-- REPORT 1
+
+CREATE OR REPLACE PROCEDURE report_branch_sales(
+    p_year IN NUMBER DEFAULT NULL
+)
+IS
+    -- Available year range
+    v_min_year NUMBER;
+    v_max_year NUMBER;
+
+    -- Report counters
+    v_year_count         NUMBER := 0;
+    v_branch_count       NUMBER;
+    v_branch_month_count NUMBER;
+
+    -- Branch yearly totals
+    v_branch_orders      NUMBER;
+    v_branch_gross       NUMBER;
+    v_branch_discount    NUMBER;
+    v_branch_refund      NUMBER;
+    v_branch_net         NUMBER;
+
+    -- Best / weakest month for each branch
+    v_month_best         DATE;
+    v_month_best_net     NUMBER;
+    v_month_weak         DATE;
+    v_month_weak_net     NUMBER;
+
+    -- Year totals
+    v_year_orders        NUMBER;
+    v_year_gross         NUMBER;
+    v_year_discount      NUMBER;
+    v_year_refund        NUMBER;
+    v_year_net           NUMBER;
+
+    -- Grand totals for multi-year report
+    v_grand_orders       NUMBER := 0;
+    v_grand_gross        NUMBER := 0;
+    v_grand_discount     NUMBER := 0;
+    v_grand_refund       NUMBER := 0;
+    v_grand_net          NUMBER := 0;
+
+    -- Strongest / weakest branch-month for each year
+    v_year_best_branch_id    Branch.branch_id%TYPE;
+    v_year_best_branch_name  Branch.name%TYPE;
+    v_year_best_month        DATE;
+    v_year_best_net          NUMBER;
+
+    v_year_weak_branch_id    Branch.branch_id%TYPE;
+    v_year_weak_branch_name  Branch.name%TYPE;
+    v_year_weak_month        DATE;
+    v_year_weak_net          NUMBER;
+
+    -- Custom exception
+    e_no_report_data EXCEPTION;
+
+    -- LEVEL 1: YEAR
+    CURSOR c_year (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT sales_year
+        FROM v_branch_monthly_revenue
+        WHERE cp_year IS NULL
+           OR sales_year = cp_year
+        ORDER BY sales_year DESC;
+
+    -- LEVEL 2: BRANCH
+    CURSOR c_branch (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT
+            branch_id,
+            branch_name
+        FROM v_branch_monthly_revenue
+        WHERE sales_year = cp_year
+        ORDER BY branch_id;
+
+    -- LEVEL 3: MONTH
+    CURSOR c_month (
+        cp_year      NUMBER,
+        cp_branch_id Branch.branch_id%TYPE
+    ) IS
+        SELECT
+            sales_month,
+            total_orders,
+            total_customers,
+            gross_sales,
+            voucher_discount,
+            refund_amount,
+            net_sales,
+            avg_net_sales_per_order
+        FROM v_branch_monthly_revenue
+        WHERE sales_year = cp_year
+          AND branch_id = cp_branch_id
+        ORDER BY sales_month;
+
+BEGIN
+    -- Find available branch revenue history
+    SELECT
+        MIN(sales_year),
+        MAX(sales_year)
+    INTO
+        v_min_year,
+        v_max_year
+    FROM v_branch_monthly_revenue;
+
+    -- No valid branch revenue data
+    IF v_min_year IS NULL THEN
+        RAISE e_no_report_data;
+    END IF;
+
+    -- Validate input year
+    IF p_year IS NOT NULL THEN
+        IF p_year <> TRUNC(p_year) THEN
+            RAISE_APPLICATION_ERROR(
+                -20461,
+                'Year must be entered as a whole number, for example 2026.'
+            );
+        END IF;
+
+        IF p_year < v_min_year OR p_year > v_max_year THEN
+            RAISE_APPLICATION_ERROR(
+                -20462,
+                'Year ' || p_year ||
+                ' is outside the available branch sales history (' ||
+                v_min_year || ' to ' || v_max_year || ').'
+            );
+        END IF;
+    END IF;
+
+    -- Report title
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+    IF p_year IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - MULTI-YEAR BRANCH REVENUE TREND REPORT');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ANNUAL BRANCH REVENUE TREND REPORT FOR ' || p_year);
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('Generated: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+    -- LEVEL 1 LOOP: YEAR
+    FOR y IN c_year(p_year) LOOP
+
+        v_year_count := v_year_count + 1;
+        v_branch_count := 0;
+
+        v_year_orders := 0;
+        v_year_gross := 0;
+        v_year_discount := 0;
+        v_year_refund := 0;
+        v_year_net := 0;
+
+        v_year_best_branch_id := NULL;
+        v_year_best_branch_name := NULL;
+        v_year_best_month := NULL;
+        v_year_best_net := NULL;
+
+        v_year_weak_branch_id := NULL;
+        v_year_weak_branch_name := NULL;
+        v_year_weak_month := NULL;
+        v_year_weak_net := NULL;
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR: ' || y.sales_year);
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+        -- LEVEL 2 LOOP: BRANCH
+        FOR b IN c_branch(y.sales_year) LOOP
+
+            v_branch_count := v_branch_count + 1;
+            v_branch_month_count := 0;
+
+            v_branch_orders := 0;
+            v_branch_gross := 0;
+            v_branch_discount := 0;
+            v_branch_refund := 0;
+            v_branch_net := 0;
+
+            v_month_best := NULL;
+            v_month_best_net := NULL;
+            v_month_weak := NULL;
+            v_month_weak_net := NULL;
+
+            -- Branch heading
+            DBMS_OUTPUT.PUT_LINE(CHR(10));
+            DBMS_OUTPUT.PUT_LINE('BRANCH: ' || b.branch_id || ' - ' || b.branch_name);
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Month', 13) ||
+                LPAD('Orders', 9) ||
+                LPAD('Customers', 12) ||
+                LPAD('Gross RM', 17) ||
+                LPAD('Voucher RM', 16) ||
+                LPAD('Refund RM', 16) ||
+                LPAD('Net Sales RM', 17) ||
+                LPAD('Avg Net Sale', 17)
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+
+            -- LEVEL 3 LOOP: MONTH
+            FOR m IN c_month(y.sales_year, b.branch_id) LOOP
+
+                v_branch_month_count := v_branch_month_count + 1;
+
+                -- Accumulate branch totals
+                v_branch_orders := v_branch_orders + m.total_orders;
+                v_branch_gross := v_branch_gross + m.gross_sales;
+                v_branch_discount := v_branch_discount + m.voucher_discount;
+                v_branch_refund := v_branch_refund + m.refund_amount;
+                v_branch_net := v_branch_net + m.net_sales;
+
+                -- Determine best month
+                IF v_month_best_net IS NULL
+                   OR m.net_sales > v_month_best_net THEN
+
+                    v_month_best_net := m.net_sales;
+                    v_month_best := m.sales_month;
+
+                END IF;
+
+                -- Determine weakest month
+                IF v_month_weak_net IS NULL
+                   OR m.net_sales < v_month_weak_net THEN
+
+                    v_month_weak_net := m.net_sales;
+                    v_month_weak := m.sales_month;
+                END IF;
+
+                -- Determine strongest branch-month of the year
+                IF v_year_best_net IS NULL
+                   OR m.net_sales > v_year_best_net THEN
+
+                    v_year_best_net := m.net_sales;
+                    v_year_best_month := m.sales_month;
+                    v_year_best_branch_id := b.branch_id;
+                    v_year_best_branch_name := b.branch_name;
+                END IF;
+
+                -- Determine weakest branch-month of the year
+                IF v_year_weak_net IS NULL
+                   OR m.net_sales < v_year_weak_net THEN
+
+                    v_year_weak_net := m.net_sales;
+                    v_year_weak_month := m.sales_month;
+                    v_year_weak_branch_id := b.branch_id;
+                    v_year_weak_branch_name := b.branch_name;
+                END IF;
+
+                -- Monthly branch detail
+                DBMS_OUTPUT.PUT_LINE(
+                    RPAD(TO_CHAR(m.sales_month, 'MON-YYYY'), 13) ||
+                    LPAD(m.total_orders, 9) ||
+                    LPAD(m.total_customers, 12) ||
+                    LPAD(TO_CHAR(m.gross_sales, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(m.voucher_discount, 'FM999,999,990.00'), 16) ||
+                    LPAD(TO_CHAR(m.refund_amount, 'FM999,999,990.00'), 16) ||
+                    LPAD(TO_CHAR(m.net_sales, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(m.avg_net_sales_per_order, 'FM999,990.00'), 17)
+                );
+            END LOOP;
+
+            -- Branch annual summary
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+            DBMS_OUTPUT.PUT_LINE('BRANCH YEAR SUMMARY');
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Months with sales', 28) || ': ' || v_branch_month_count
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Total orders', 28) || ': ' || v_branch_orders
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Gross sales', 28) ||
+                ': RM ' || TO_CHAR(v_branch_gross, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Voucher discounts', 28) ||
+                ': RM ' || TO_CHAR(v_branch_discount, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Refunds', 28) ||
+                ': RM ' || TO_CHAR(v_branch_refund, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Net sales', 28) ||
+                ': RM ' || TO_CHAR(v_branch_net, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Average monthly net sales', 28) ||
+                ': RM ' ||
+                TO_CHAR(
+                    v_branch_net / NULLIF(v_branch_month_count, 0),
+                    'FM999,999,990.00'
+                )
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Best month', 28) ||
+                ': ' || TO_CHAR(v_month_best, 'MON-YYYY') ||
+                ' (RM ' || TO_CHAR(v_month_best_net, 'FM999,999,990.00') || ')'
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Weakest month', 28) ||
+                ': ' || TO_CHAR(v_month_weak, 'MON-YYYY') ||
+                ' (RM ' || TO_CHAR(v_month_weak_net, 'FM999,999,990.00') || ')'
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 120, '-'));
+
+            -- Add branch totals into year totals
+            v_year_orders := v_year_orders + v_branch_orders;
+            v_year_gross := v_year_gross + v_branch_gross;
+            v_year_discount := v_year_discount + v_branch_discount;
+            v_year_refund := v_year_refund + v_branch_refund;
+            v_year_net := v_year_net + v_branch_net;
+        END LOOP;
+
+        -- Year summary
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Branches analysed', 28) || ': ' || v_branch_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total orders', 28) || ': ' || v_year_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross sales', 28) ||
+            ': RM ' || TO_CHAR(v_year_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 28) ||
+            ': RM ' || TO_CHAR(v_year_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 28) ||
+            ': RM ' || TO_CHAR(v_year_refund, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net sales', 28) ||
+            ': RM ' || TO_CHAR(v_year_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Strongest branch-month', 28) ||
+            ': ' || v_year_best_branch_id ||
+            ' - ' || v_year_best_branch_name ||
+            ' | ' || TO_CHAR(v_year_best_month, 'MON-YYYY') ||
+            ' | RM ' || TO_CHAR(v_year_best_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Weakest branch-month', 28) ||
+            ': ' || v_year_weak_branch_id ||
+            ' - ' || v_year_weak_branch_name ||
+            ' | ' || TO_CHAR(v_year_weak_month, 'MON-YYYY') ||
+            ' | RM ' || TO_CHAR(v_year_weak_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+        -- Grand totals
+        v_grand_orders := v_grand_orders + v_year_orders;
+        v_grand_gross := v_grand_gross + v_year_gross;
+        v_grand_discount := v_grand_discount + v_year_discount;
+        v_grand_refund := v_grand_refund + v_year_refund;
+        v_grand_net := v_grand_net + v_year_net;
+
+    END LOOP;
+
+    -- No matching year
+    IF v_year_count = 0 THEN
+        RAISE e_no_report_data;
+    END IF;
+
+    -- Show grand summary only for multi-year report
+    IF p_year IS NULL THEN
+
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+        DBMS_OUTPUT.PUT_LINE('FINAL MULTI-YEAR REPORT SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Years analysed', 28) || ': ' || v_year_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total orders', 28) || ': ' || v_grand_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross sales', 28) ||
+            ': RM ' || TO_CHAR(v_grand_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 28) ||
+            ': RM ' || TO_CHAR(v_grand_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 28) ||
+            ': RM ' || TO_CHAR(v_grand_refund, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net sales', 28) ||
+            ': RM ' || TO_CHAR(v_grand_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 120, '='));
+
+    END IF;
+
+EXCEPTION
+    -- Custom exception
+    WHEN e_no_report_data THEN
+        RAISE_APPLICATION_ERROR(
+            -20463,
+            'No completed and paid branch revenue data was found for the selected year.'
+        );
+
+    -- Unexpected database error
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('=== BRANCH REVENUE REPORT FAILED ===');
+        DBMS_OUTPUT.PUT_LINE('Error Code    : ' || SQLCODE);
+        DBMS_OUTPUT.PUT_LINE('Error Message : ' || SQLERRM);
+        RAISE;
+
+END report_branch_sales;
+/
+
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+EXEC report_branch_sales(2026);
+EXEC report_branch_sales();
+
+
+
+
+-- REPORT 2
+
+CREATE OR REPLACE PROCEDURE report_annual_myKasih_category (
+    p_year IN NUMBER DEFAULT NULL
+)
+IS
+    -- Available year range
+    v_min_year NUMBER;
+    v_max_year NUMBER;
+
+    -- Counters
+    v_year_count      NUMBER := 0;
+    v_category_count  NUMBER;
+    v_branch_count    NUMBER;
+
+    -- Category totals
+    v_cat_orders      NUMBER;
+    v_cat_units       NUMBER;
+    v_cat_gross       NUMBER;
+    v_cat_discount    NUMBER;
+    v_cat_refund      NUMBER;
+    v_cat_net         NUMBER;
+
+    -- Year totals
+    v_year_orders      NUMBER;
+    v_year_customers   NUMBER;
+    v_year_units       NUMBER;
+    v_year_gross       NUMBER;
+    v_year_discount    NUMBER;
+    v_year_refund      NUMBER;
+    v_year_net         NUMBER;
+
+    -- Strongest / weakest category within each year
+    v_best_category      Item.category%TYPE;
+    v_best_category_net  NUMBER;
+    v_weak_category      Item.category%TYPE;
+    v_weak_category_net  NUMBER;
+
+    -- Grand totals across all years
+    v_grand_orders      NUMBER := 0;
+    v_grand_units       NUMBER := 0;
+    v_grand_gross       NUMBER := 0;
+    v_grand_discount    NUMBER := 0;
+    v_grand_refund      NUMBER := 0;
+    v_grand_net         NUMBER := 0;
+
+    -- Strongest / weakest category across all years
+    v_all_best_category      Item.category%TYPE;
+    v_all_best_category_net  NUMBER;
+    v_all_weak_category      Item.category%TYPE;
+    v_all_weak_category_net  NUMBER;
+
+    -- Custom exception
+    e_no_mykasih_data EXCEPTION;
+
+    -- LEVEL 1: YEAR
+    CURSOR c_year (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT EXTRACT(YEAR FROM sales_month) AS sales_year
+        FROM v_mykasih_branch_category
+        WHERE cp_year IS NULL
+           OR EXTRACT(YEAR FROM sales_month) = cp_year
+        ORDER BY sales_year DESC;
+
+    -- LEVEL 2: CATEGORY
+    CURSOR c_category (
+        cp_year NUMBER
+    ) IS
+        SELECT DISTINCT category
+        FROM v_mykasih_branch_category
+        WHERE EXTRACT(YEAR FROM sales_month) = cp_year
+        ORDER BY category;
+
+    -- LEVEL 3: BRANCH
+    CURSOR c_branch (
+        cp_year     NUMBER,
+        cp_category Item.category%TYPE
+    ) IS
+        SELECT
+            branch_id,
+            branch_name,
+            SUM(mykasih_orders) AS category_orders,
+            SUM(total_units) AS total_units,
+            ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
+            ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(refund_amount), 2) AS refund_amount,
+            ROUND(SUM(net_mykasih_sales), 2) AS net_sales,
+            COUNT(DISTINCT sales_month) AS months_active
+        FROM v_mykasih_branch_category
+        WHERE EXTRACT(YEAR FROM sales_month) = cp_year
+          AND category = cp_category
+        GROUP BY branch_id, branch_name
+        ORDER BY branch_id;
+
+    -- Category totals for one year
+    CURSOR c_year_category (
+        cp_year NUMBER
+    ) IS
+        SELECT
+            category,
+            SUM(total_units) AS total_units,
+            ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
+            ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(refund_amount), 2) AS refund_amount,
+            ROUND(SUM(net_mykasih_sales), 2) AS net_sales
+        FROM v_mykasih_branch_category
+        WHERE EXTRACT(YEAR FROM sales_month) = cp_year
+        GROUP BY category
+        ORDER BY net_sales DESC;
+
+    -- Category totals across all years
+    CURSOR c_all_category IS
+        SELECT
+            category,
+            SUM(total_units) AS total_units,
+            ROUND(SUM(gross_mykasih_sales), 2) AS gross_sales,
+            ROUND(SUM(voucher_discount), 2) AS voucher_discount,
+            ROUND(SUM(refund_amount), 2) AS refund_amount,
+            ROUND(SUM(net_mykasih_sales), 2) AS net_sales
+        FROM v_mykasih_branch_category
+        GROUP BY category
+        ORDER BY net_sales DESC;
+
+BEGIN
+    -- Determine available MyKasih year range
+    SELECT
+        MIN(EXTRACT(YEAR FROM sales_month)),
+        MAX(EXTRACT(YEAR FROM sales_month))
+    INTO
+        v_min_year,
+        v_max_year
+    FROM v_mykasih_branch_category;
+
+    -- No MyKasih data
+    IF v_min_year IS NULL THEN
+        RAISE e_no_mykasih_data;
+    END IF;
+
+    -- Validate year parameter
+    IF p_year IS NOT NULL THEN
+
+        IF p_year <> TRUNC(p_year) THEN
+            RAISE_APPLICATION_ERROR(
+                -20471,
+                'Year must be entered as a whole number, for example 2026.'
+            );
+        END IF;
+
+        IF p_year < v_min_year OR p_year > v_max_year THEN
+            RAISE_APPLICATION_ERROR(
+                -20472,
+                'Year ' || p_year ||
+                ' is outside the available MyKasih transaction history (' ||
+                v_min_year || ' to ' || v_max_year || ').'
+            );
+        END IF;
+
+    END IF;
+
+    -- Report title
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+
+    IF p_year IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - MULTI-YEAR MYKASIH CATEGORY CONTRIBUTION REPORT');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ANNUAL MYKASIH CATEGORY CONTRIBUTION REPORT FOR ' || p_year);
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('Generated: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+
+    -- LEVEL 1 LOOP: YEAR
+    FOR y IN c_year(p_year) LOOP
+
+        v_year_count := v_year_count + 1;
+        v_category_count := 0;
+
+        v_year_units := 0;
+        v_year_gross := 0;
+        v_year_discount := 0;
+        v_year_refund := 0;
+        v_year_net := 0;
+
+        v_best_category := NULL;
+        v_best_category_net := NULL;
+        v_weak_category := NULL;
+        v_weak_category_net := NULL;
+
+        -- Unique MyKasih orders and customers for year
+        SELECT
+            COUNT(DISTINCT O.order_no),
+            COUNT(DISTINCT O.customer_id)
+        INTO
+            v_year_orders,
+            v_year_customers
+        FROM Orders O
+        JOIN Payment P
+            ON O.order_no = P.order_no
+        JOIN Customer C
+            ON O.customer_id = C.customer_id
+        WHERE EXTRACT(YEAR FROM CAST(O.order_date_time AS DATE)) = y.sales_year
+          AND O.order_status = 'Completed'
+          AND P.payment_status IN ('Paid', 'Refunded')
+          AND O.is_mykasih_purchase = 'Y'
+          AND P.payment_method = 'MyKasih'
+          AND C.ic_number IS NOT NULL;
+
+        -- Year header
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR: ' || y.sales_year);
+        DBMS_OUTPUT.PUT_LINE('Unique MyKasih Orders    : ' || v_year_orders);
+        DBMS_OUTPUT.PUT_LINE('Unique MyKasih Customers : ' || v_year_customers);
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+
+        -- LEVEL 2 LOOP: CATEGORY
+        FOR c IN c_category(y.sales_year) LOOP
+
+            v_category_count := v_category_count + 1;
+            v_branch_count := 0;
+
+            v_cat_orders := 0;
+            v_cat_units := 0;
+            v_cat_gross := 0;
+            v_cat_discount := 0;
+            v_cat_refund := 0;
+            v_cat_net := 0;
+
+            -- Category header
+            DBMS_OUTPUT.PUT_LINE(CHR(10));
+            DBMS_OUTPUT.PUT_LINE('CATEGORY: ' || c.category);
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Branch ID', 12) ||
+                RPAD('Branch', 32) ||
+                LPAD('Months', 9) ||
+                LPAD('Orders', 9) ||
+                LPAD('Units', 9) ||
+                LPAD('Gross RM', 17) ||
+                LPAD('Voucher RM', 17) ||
+                LPAD('Refund RM', 17) ||
+                LPAD('Net RM', 17)
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+            -- LEVEL 3 LOOP: BRANCH
+            FOR b IN c_branch(y.sales_year, c.category) LOOP
+
+                v_branch_count := v_branch_count + 1;
+
+                v_cat_orders := v_cat_orders + b.category_orders;
+                v_cat_units := v_cat_units + b.total_units;
+                v_cat_gross := v_cat_gross + b.gross_sales;
+                v_cat_discount := v_cat_discount + b.voucher_discount;
+                v_cat_refund := v_cat_refund + b.refund_amount;
+                v_cat_net := v_cat_net + b.net_sales;
+
+                -- Branch contribution detail
+                DBMS_OUTPUT.PUT_LINE(
+                    RPAD(b.branch_id, 12) ||
+                    RPAD(SUBSTR(b.branch_name, 1, 30), 32) ||
+                    LPAD(b.months_active, 9) ||
+                    LPAD(b.category_orders, 9) ||
+                    LPAD(b.total_units, 9) ||
+                    LPAD(TO_CHAR(b.gross_sales, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(b.voucher_discount, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(b.refund_amount, 'FM999,999,990.00'), 17) ||
+                    LPAD(TO_CHAR(b.net_sales, 'FM999,999,990.00'), 17)
+                );
+
+            END LOOP;
+
+            -- Category year summary
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+            DBMS_OUTPUT.PUT_LINE('CATEGORY YEAR SUMMARY');
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Branches contributing', 30) || ': ' || v_branch_count
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Orders containing category', 30) || ': ' || v_cat_orders
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Total units', 30) || ': ' || v_cat_units
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Gross MyKasih sales', 30) ||
+                ': RM ' || TO_CHAR(v_cat_gross, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Voucher discounts', 30) ||
+                ': RM ' || TO_CHAR(v_cat_discount, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Refunds', 30) ||
+                ': RM ' || TO_CHAR(v_cat_refund, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD('Net MyKasih sales', 30) ||
+                ': RM ' || TO_CHAR(v_cat_net, 'FM999,999,990.00')
+            );
+
+            DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+            -- Determine strongest category of year
+            IF v_best_category_net IS NULL
+               OR v_cat_net > v_best_category_net THEN
+
+                v_best_category := c.category;
+                v_best_category_net := v_cat_net;
+
+            END IF;
+
+            -- Determine weakest category of year
+            IF v_weak_category_net IS NULL
+               OR v_cat_net < v_weak_category_net THEN
+
+                v_weak_category := c.category;
+                v_weak_category_net := v_cat_net;
+
+            END IF;
+
+            -- Add category totals into year totals
+            v_year_units := v_year_units + v_cat_units;
+            v_year_gross := v_year_gross + v_cat_gross;
+            v_year_discount := v_year_discount + v_cat_discount;
+            v_year_refund := v_year_refund + v_cat_refund;
+            v_year_net := v_year_net + v_cat_net;
+
+        END LOOP;
+
+        -- Year MyKasih sales by product category
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' MYKASIH SALES BY PRODUCT CATEGORY');
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Category', 35) ||
+            LPAD('Units', 12) ||
+            LPAD('Gross RM', 20) ||
+            LPAD('Voucher RM', 20) ||
+            LPAD('Refund RM', 20) ||
+            LPAD('Net RM', 20)
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+        FOR yc IN c_year_category(y.sales_year) LOOP
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(SUBSTR(yc.category, 1, 33), 35) ||
+                LPAD(yc.total_units, 12) ||
+                LPAD(TO_CHAR(yc.gross_sales, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(yc.voucher_discount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(yc.refund_amount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(yc.net_sales, 'FM999,999,990.00'), 20)
+            );
+
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+        -- Year MyKasih summary
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+        DBMS_OUTPUT.PUT_LINE('YEAR ' || y.sales_year || ' MYKASIH SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Categories analysed', 30) || ': ' || v_category_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Unique MyKasih orders', 30) || ': ' || v_year_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Unique MyKasih customers', 30) || ': ' || v_year_customers
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total units', 30) || ': ' || v_year_units
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_year_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 30) ||
+            ': RM ' || TO_CHAR(v_year_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 30) ||
+            ': RM ' || TO_CHAR(v_year_refund, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_year_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Strongest category', 30) ||
+            ': ' || v_best_category ||
+            ' | RM ' || TO_CHAR(v_best_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Weakest category', 30) ||
+            ': ' || v_weak_category ||
+            ' | RM ' || TO_CHAR(v_weak_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+
+        -- Add year into all-year totals
+        v_grand_orders := v_grand_orders + v_year_orders;
+        v_grand_units := v_grand_units + v_year_units;
+        v_grand_gross := v_grand_gross + v_year_gross;
+        v_grand_discount := v_grand_discount + v_year_discount;
+        v_grand_refund := v_grand_refund + v_year_refund;
+        v_grand_net := v_grand_net + v_year_net;
+
+    END LOOP;
+
+    -- No matching year
+    IF v_year_count = 0 THEN
+        RAISE e_no_mykasih_data;
+    END IF;
+
+    -- FINAL MULTI-YEAR SECTION
+    IF p_year IS NULL THEN
+
+        v_all_best_category := NULL;
+        v_all_best_category_net := NULL;
+
+        v_all_weak_category := NULL;
+        v_all_weak_category_net := NULL;
+
+        -- Determine strongest / weakest category across all years
+        FOR ac IN c_all_category LOOP
+
+            IF v_all_best_category_net IS NULL
+               OR ac.net_sales > v_all_best_category_net THEN
+
+                v_all_best_category := ac.category;
+                v_all_best_category_net := ac.net_sales;
+
+            END IF;
+
+            IF v_all_weak_category_net IS NULL
+               OR ac.net_sales < v_all_weak_category_net THEN
+
+                v_all_weak_category := ac.category;
+                v_all_weak_category_net := ac.net_sales;
+
+            END IF;
+
+        END LOOP;
+
+        -- ALL-YEAR MYKASIH SALES BY PRODUCT CATEGORY
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+
+        DBMS_OUTPUT.PUT_LINE(
+            'ALL-YEAR MYKASIH SALES BY PRODUCT CATEGORY'
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Category', 35) ||
+            LPAD('Units', 12) ||
+            LPAD('Gross RM', 20) ||
+            LPAD('Voucher RM', 20) ||
+            LPAD('Refund RM', 20) ||
+            LPAD('Net RM', 20)
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+        FOR ac IN c_all_category LOOP
+
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(SUBSTR(ac.category, 1, 33), 35) ||
+                LPAD(ac.total_units, 12) ||
+                LPAD(TO_CHAR(ac.gross_sales, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(ac.voucher_discount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(ac.refund_amount, 'FM999,999,990.00'), 20) ||
+                LPAD(TO_CHAR(ac.net_sales, 'FM999,999,990.00'), 20)
+            );
+
+        END LOOP;
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', 140, '-'));
+
+        -- Final multi-year summary
+        DBMS_OUTPUT.PUT_LINE(CHR(10));
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+        DBMS_OUTPUT.PUT_LINE('FINAL MULTI-YEAR MYKASIH SUMMARY');
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Years analysed', 30) || ': ' || v_year_count
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total MyKasih orders', 30) || ': ' || v_grand_orders
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Total units', 30) || ': ' || v_grand_units
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Gross MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_grand_gross, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Voucher discounts', 30) ||
+            ': RM ' || TO_CHAR(v_grand_discount, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Refunds', 30) ||
+            ': RM ' || TO_CHAR(v_grand_refund, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Net MyKasih sales', 30) ||
+            ': RM ' || TO_CHAR(v_grand_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Strongest category', 30) ||
+            ': ' || v_all_best_category ||
+            ' | RM ' || TO_CHAR(v_all_best_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Weakest category', 30) ||
+            ': ' || v_all_weak_category ||
+            ' | RM ' || TO_CHAR(v_all_weak_category_net, 'FM999,999,990.00')
+        );
+
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', 140, '='));
+
+    END IF;
+
+EXCEPTION
+
+    -- No valid MyKasih report data
+    WHEN e_no_mykasih_data THEN
+        RAISE_APPLICATION_ERROR(
+            -20061,
+            'No completed and paid or refunded MyKasih transaction data was found for the selected year.'
+        );
+
+    -- Unexpected database error
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('=== MYKASIH REPORT FAILED ===');
+        DBMS_OUTPUT.PUT_LINE('Error Code    : ' || SQLCODE);
+        DBMS_OUTPUT.PUT_LINE('Error Message : ' || SQLERRM);
+        RAISE;
+
+END report_annual_myKasih_category;
+/
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+EXEC report_annual_myKasih_category(2026);
+EXEC report_annual_myKasih_category();
+

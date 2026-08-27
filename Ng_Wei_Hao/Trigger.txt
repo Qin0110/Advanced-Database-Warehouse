@@ -1,0 +1,182 @@
+-- Trigger 1 (Automatic Order Completion After Successful Payment)
+CREATE OR REPLACE TRIGGER trg_payment_completes_order
+AFTER UPDATE OF payment_status ON Payment
+FOR EACH ROW
+WHEN (NEW.payment_status = 'Paid' AND OLD.payment_status <> 'Paid')
+DECLARE
+    v_order_status Orders.order_status%TYPE;
+BEGIN
+    SELECT order_status
+    INTO v_order_status
+    FROM Orders
+    WHERE order_no = :NEW.order_no;
+
+    IF v_order_status = 'Cancelled' THEN
+        RAISE_APPLICATION_ERROR(
+            -20481,
+            'Payment cannot be completed because order ' ||
+            :NEW.order_no || ' has already been cancelled.'
+        );
+    END IF;
+
+    IF v_order_status = 'Processing' THEN
+        UPDATE Orders
+        SET order_status = 'Completed'
+        WHERE order_no = :NEW.order_no;
+    END IF;
+END;
+/
+
+
+-- Trigger 2 Automatic Member Points Award After Order Completion 
+CREATE OR REPLACE TRIGGER trg_award_member_points
+BEFORE UPDATE OF order_status ON Orders
+FOR EACH ROW
+WHEN (NEW.order_status = 'Completed' AND OLD.order_status <> 'Completed')
+DECLARE
+    v_member_id       Customer.member_id%TYPE;
+    v_membership_type 	Member.membership_type%TYPE;
+    v_point_rate      Member.point_rate%TYPE;
+    v_member_status   Member.status%TYPE;
+    v_base_points     NUMBER;
+    v_points_earned   NUMBER;
+BEGIN
+    -- Find membership linked to the customer
+    SELECT member_id
+    INTO v_member_id
+    FROM Customer
+    WHERE customer_id = :NEW.customer_id;
+
+    -- Non-member customer
+    IF v_member_id IS NULL THEN
+        :NEW.points_earned := 0;
+        RETURN;
+    END IF;
+
+    -- Get member type
+    SELECT
+        membership_type,
+        point_rate,
+        status
+    INTO
+        v_membership_type,
+        v_point_rate,
+        v_member_status
+    FROM Member
+    WHERE member_id = v_member_id;
+
+    IF v_member_status <> 'Active' THEN
+        :NEW.points_earned := 0;
+        RETURN;
+    END IF;
+
+    -- Base points are based on net merchandise spending
+    v_base_points := FLOOR(
+        :NEW.subtotal_amount -
+        :NEW.discount_amount
+    );
+
+    -- Normal = x1.00, VIP = x2.00
+    v_points_earned := FLOOR(
+        v_base_points * v_point_rate
+    );
+
+    -- Record points earned by this order
+    :NEW.points_earned := v_points_earned;
+
+    UPDATE Member
+    SET points_balance =
+        points_balance + v_points_earned
+    WHERE member_id = v_member_id;
+END;
+/
+
+
+
+
+
+
+
+-- run Procedure.txt to create order proc first (test both trigger)
+
+set linesize 250
+--1. make order
+SET SERVEROUTPUT ON;
+VARIABLE v_order_no VARCHAR2(20);
+BEGIN
+    prc_place_order(
+        p_customer_id    => 'CUS00001',
+        p_branch_id      => 'BR001',
+        p_employee_id    => 'EMP003',
+        p_item_ids       => SYS.ODCIVARCHAR2LIST('IT001'),
+        p_quantities     => SYS.ODCINUMBERLIST(5),
+        p_order_type     => 'Walk-In',
+        p_service_type   => 'Pickup',
+        p_payment_method => 'Cash',
+        p_mykasih        => 'N',
+        p_redemption_id  => NULL,
+        p_order_no       => :v_order_no
+    );
+END;
+/
+
+--2. check member and member point bfr payment(trigger 2)
+SELECT
+    C.customer_id,
+    M.member_id,
+    M.name,
+    M.membership_type,
+    M.point_rate,
+    M.points_balance,
+    M.status
+FROM Customer C
+JOIN Member M
+    ON C.member_id = M.member_id
+WHERE M.member_id = 'MB00001';
+
+--3. check status bfr payment (trigger 1)
+SELECT
+    O.order_no,
+    O.subtotal_amount,
+    O.discount_amount,
+    O.points_earned,
+    O.order_status,
+    P.payment_status
+FROM Orders O
+JOIN Payment P
+    ON O.order_no = P.order_no
+WHERE O.order_no = :v_order_no;
+
+--4. change payment to paid
+UPDATE Payment
+SET payment_status = 'Paid'
+WHERE order_no = :v_order_no;
+
+COMMIT;
+
+--5. check status after payment (trigger 1)
+SELECT
+    O.order_no,
+    O.subtotal_amount,
+    O.discount_amount,
+    O.points_earned,
+    O.order_status,
+    P.payment_status
+FROM Orders O
+JOIN Payment P
+    ON O.order_no = P.order_no
+WHERE O.order_no = :v_order_no;
+
+--6. check member and member point after payment(trigger 2)
+SELECT
+    C.customer_id,
+    M.member_id,
+    M.name,
+    M.membership_type,
+    M.point_rate,
+    M.points_balance,
+    M.status
+FROM Customer C
+JOIN Member M
+    ON C.member_id = M.member_id
+WHERE M.member_id = 'MB00001';

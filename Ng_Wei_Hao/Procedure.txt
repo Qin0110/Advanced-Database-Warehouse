@@ -1,0 +1,942 @@
+-- Procedure 1 (add order)
+
+CREATE OR REPLACE PROCEDURE prc_place_order (
+    p_customer_id      IN Customer.customer_id%TYPE,
+    p_branch_id        IN Branch.branch_id%TYPE,
+    p_employee_id      IN Employee.employee_id%TYPE,
+
+    p_item_ids         IN SYS.ODCIVARCHAR2LIST,
+    p_quantities       IN SYS.ODCINUMBERLIST,
+
+    p_order_type       IN Orders.order_type%TYPE,
+    p_service_type     IN Orders.service_type%TYPE,
+    p_payment_method   IN Payment.payment_method%TYPE,
+
+    p_mykasih          IN CHAR DEFAULT 'N',
+    p_redemption_id    IN Reward_Redemption.redemption_id%TYPE
+                           DEFAULT NULL,
+
+    p_order_no         OUT Orders.order_no%TYPE
+)
+IS
+    -- Customer
+    v_customer_ic       Customer.ic_number%TYPE;
+    v_customer_member   Customer.member_id%TYPE;
+
+    -- Branch
+    v_branch_name       Branch.name%TYPE;
+    v_branch_status     Branch.status%TYPE;
+    v_open_time         Branch.open_time%TYPE;
+    v_close_time        Branch.close_time%TYPE;
+
+    -- Employee
+    v_emp_name          Employee.name%TYPE;
+    v_emp_status        Employee.status%TYPE;
+    v_emp_branch        Employee.branch_id%TYPE;
+
+    -- Item / Inventory
+    v_item_name         Item.name%TYPE;
+    v_item_status       Item.status%TYPE;
+    v_item_price        Item.unit_price%TYPE;
+    v_mykasih_eligible  Item.is_mykasih_eligible%TYPE;
+    v_stock             Inventory.quantity%TYPE;
+
+    -- Order calculation
+    v_item_count        NUMBER;
+    v_subtotal          NUMBER(10,2) := 0;
+    v_discount          NUMBER(10,2) := 0;
+    v_total             NUMBER(10,2) := 0;
+
+    -- Voucher
+    v_red_member        Reward_Redemption.member_id%TYPE;
+    v_red_status        Reward_Redemption.status%TYPE;
+    v_expiry_date       Reward_Redemption.expiry_date%TYPE;
+
+    v_reward_name       Reward.name%TYPE;
+    v_reward_status     Reward.status%TYPE;
+    v_reward_value      Reward.value%TYPE;
+
+    -- Payment
+    v_payment_id        Payment.payment_id%TYPE;
+
+BEGIN
+    -- VALIDATE ITEM COLLECTIONS 
+    BEGIN
+        v_item_count := p_item_ids.COUNT;
+
+        IF v_item_count = 0 THEN
+            RAISE_APPLICATION_ERROR(
+                -20062,
+                'The shopping basket cannot be empty.'
+            );
+        END IF;
+
+        IF p_quantities.COUNT <> p_item_ids.COUNT THEN
+            RAISE_APPLICATION_ERROR(
+                -20063,
+                'The number of item IDs must match the number of quantities.'
+            );
+        END IF;
+
+    EXCEPTION
+        WHEN COLLECTION_IS_NULL THEN
+            RAISE_APPLICATION_ERROR(
+                -20401,
+                'The shopping basket cannot be empty.'
+            );
+    END;
+
+    -- VALIDATE ORDER TYPE
+    IF p_order_type NOT IN ('Online', 'Walk-In') THEN
+        RAISE_APPLICATION_ERROR(
+            -20403,
+            'Order type must be Online or Walk-In.'
+        );
+    END IF;
+
+    -- VALIDATE SERVICE TYPE
+    IF p_service_type NOT IN ('Pickup', 'Delivery') THEN
+        RAISE_APPLICATION_ERROR(
+            -20404,
+            'Service type must be Pickup or Delivery.'
+        );
+    END IF;
+
+    -- Walk-In cannot use delivery
+    IF p_order_type = 'Walk-In'
+       AND p_service_type = 'Delivery' THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20405,
+            'Walk-In orders cannot use Delivery service.'
+        );
+
+    END IF;
+
+    -- VALIDATE PAYMENT METHOD
+    IF p_payment_method NOT IN (
+        'Cash',
+        'Card',
+        'E-Wallet',
+        'MyKasih',
+        'Online Banking'
+    ) THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20406,
+            'Invalid payment method.'
+        );
+
+    END IF;
+
+    -- VALIDATE MYKASIH OPTION
+    IF UPPER(p_mykasih) NOT IN ('Y', 'N') THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20407,
+            'MyKasih option must be Y or N.'
+        );
+
+    END IF;
+
+    -- VALIDATE CUSTOMER
+    BEGIN
+
+        SELECT
+            ic_number,
+            member_id
+
+        INTO
+            v_customer_ic,
+            v_customer_member
+
+        FROM Customer
+
+        WHERE customer_id = p_customer_id;
+
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20060,
+                'Customer ' || p_customer_id ||
+                ' does not exist.'
+            );
+    END;
+
+    -- VALIDATE BRANCH
+    BEGIN
+
+        SELECT
+            name,
+            status,
+            open_time,
+            close_time
+
+        INTO
+            v_branch_name,
+            v_branch_status,
+            v_open_time,
+            v_close_time
+
+        FROM Branch
+
+        WHERE branch_id = p_branch_id;
+
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20409,
+                'Branch ' || p_branch_id ||
+                ' does not exist.'
+            );
+    END;
+
+    IF v_branch_status <> 'Active' THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20410,
+            v_branch_name || ' is currently ' ||
+            v_branch_status ||
+            ' and cannot accept new orders.'
+        );
+
+    END IF;
+
+    -- BUSINESS OPERATING DAY / TIME
+    IF TO_CHAR(
+           SYSDATE,
+           'DY',
+           'NLS_DATE_LANGUAGE=ENGLISH'
+       ) = 'SUN' THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20411,
+            'Orders cannot be processed on Sunday.'
+        );
+
+    END IF;
+
+    IF TO_CHAR(SYSDATE, 'HH24:MI') < v_open_time
+       OR
+       TO_CHAR(SYSDATE, 'HH24:MI') >= v_close_time THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20412,
+            v_branch_name ||
+            ' is currently outside its operating hours (' ||
+            v_open_time || ' - ' ||
+            v_close_time || ').'
+        );
+
+    END IF;
+
+    -- VALIDATE EMPLOYEE
+    BEGIN
+        SELECT
+            name,
+            status,
+            branch_id
+        INTO
+            v_emp_name,
+            v_emp_status,
+            v_emp_branch
+        FROM Employee
+        WHERE employee_id = p_employee_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(
+                -20413,
+                'Employee ' || p_employee_id ||
+                ' does not exist.'
+            );
+    END;
+
+    IF v_emp_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20414,
+            'Employee ' || p_employee_id ||
+            ' - ' || v_emp_name ||
+            ' is inactive and cannot process an order.'
+        );
+    END IF;
+
+    -- Employee can only process order at own branch
+    IF v_emp_branch <> p_branch_id THEN
+        RAISE_APPLICATION_ERROR(
+            -20415,
+            'Employee ' || p_employee_id ||
+            ' is assigned to branch ' ||
+            v_emp_branch ||
+            ' and cannot process an order for branch ' ||
+            p_branch_id || '.'
+        );
+    END IF;
+
+    -- MYKASIH CUSTOMER VALIDATION
+    IF UPPER(p_mykasih) = 'Y'
+       AND v_customer_ic IS NULL THEN
+        RAISE_APPLICATION_ERROR(
+            -20416,
+            'Customer ' || p_customer_id ||
+            ' must present an IC for a MyKasih purchase.'
+        );
+    END IF;
+
+    -- MyKasih order must uses MyKasih payment method.
+    IF UPPER(p_mykasih) = 'Y'
+       AND p_payment_method <> 'MyKasih' THEN
+        RAISE_APPLICATION_ERROR(
+            -20417,
+            'A MyKasih order must use MyKasih as the payment method.'
+        );
+    END IF;
+
+    IF UPPER(p_mykasih) = 'N'
+       AND p_payment_method = 'MyKasih' THEN
+        RAISE_APPLICATION_ERROR(
+            -20418,
+            'MyKasih payment cannot be used for a non-MyKasih order.'
+        );
+    END IF;
+
+    -- VALIDATE EVERY ITEM + CALCULATE SUBTOTAL
+    FOR i IN 1 .. p_item_ids.COUNT LOOP
+        -- Quantity
+        IF p_quantities(i) IS NULL
+           OR p_quantities(i) <= 0 THEN
+            RAISE_APPLICATION_ERROR(
+                -20419,
+                'Quantity for item ' ||
+                p_item_ids(i) ||
+                ' must be greater than zero.'
+            );
+        END IF;
+
+        -- Do not allow same item twice
+        IF i > 1 THEN
+            FOR j IN 1 .. i - 1 LOOP
+                IF p_item_ids(i) = p_item_ids(j) THEN
+                    RAISE_APPLICATION_ERROR(
+                        -20420,
+                        'Item ' ||
+                        p_item_ids(i) ||
+                        ' appears more than once in the basket.'
+                    );
+                END IF;
+            END LOOP;
+        END IF;
+
+        -- Check Item
+        BEGIN
+            SELECT
+                name,
+                status,
+                unit_price,
+                is_mykasih_eligible
+            INTO
+                v_item_name,
+                v_item_status,
+                v_item_price,
+                v_mykasih_eligible
+            FROM Item
+            WHERE item_id = p_item_ids(i);
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(
+                    -20421,
+                    'Item ' || p_item_ids(i) ||
+                    ' does not exist.'
+                );
+        END;
+
+        IF v_item_status <> 'Active' THEN
+            RAISE_APPLICATION_ERROR(
+                -20422,
+                v_item_name ||
+                ' is inactive and cannot be ordered.'
+            );
+        END IF;
+
+        -- MyKasih item validation
+        IF UPPER(p_mykasih) = 'Y'
+           AND v_mykasih_eligible <> 'Y' THEN
+            RAISE_APPLICATION_ERROR(
+                -20423,
+                v_item_name ||
+                ' is not eligible for MyKasih purchase.'
+            );
+        END IF;
+
+        -- Check Inventory
+        BEGIN
+            SELECT quantity
+            INTO v_stock
+            FROM Inventory
+            WHERE branch_id = p_branch_id
+              AND item_id = p_item_ids(i)
+            FOR UPDATE;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(
+                    -20424,
+                    v_item_name ||
+                    ' is not stocked at branch ' ||
+                    p_branch_id || '.'
+                );
+        END;
+
+        IF v_stock < p_quantities(i) THEN
+            RAISE_APPLICATION_ERROR(
+                -20425,
+                'Insufficient stock for ' ||
+                v_item_name ||
+                '. Available: ' ||
+                v_stock ||
+                ', requested: ' ||
+                p_quantities(i) || '.'
+            );
+        END IF;
+
+        -- Order subtotal
+        v_subtotal :=
+            v_subtotal +
+            (p_quantities(i) * v_item_price);
+
+    END LOOP;
+
+    -- OPTIONAL VOUCHER VALIDATION
+    IF p_redemption_id IS NOT NULL THEN
+        BEGIN
+            SELECT
+                RR.member_id,
+                RR.status,
+                RR.expiry_date,
+                R.name,
+                R.status,
+                R.value
+            INTO
+                v_red_member,
+                v_red_status,
+                v_expiry_date,
+                v_reward_name,
+                v_reward_status,
+                v_reward_value
+            FROM Reward_Redemption RR
+            JOIN Reward R
+                ON RR.reward_id = R.reward_id
+            WHERE RR.redemption_id =
+                  p_redemption_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(
+                    -20426,
+                    'Redemption ' ||
+                    p_redemption_id ||
+                    ' does not exist.'
+                );
+        END;
+
+        -- Only member owning redemption can use it
+        IF v_customer_member IS NULL
+           OR
+           v_customer_member <> v_red_member THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20427,
+                'Redemption ' ||
+                p_redemption_id ||
+                ' does not belong to this customer.'
+            );
+        END IF;
+
+        IF v_red_status <> 'Active' THEN
+            RAISE_APPLICATION_ERROR(
+                -20428,
+                'Redemption ' ||
+                p_redemption_id ||
+                ' is ' ||
+                v_red_status ||
+                ' and cannot be used.'
+            );
+        END IF;
+
+        IF v_expiry_date IS NOT NULL
+           AND v_expiry_date < TRUNC(SYSDATE) THEN
+
+            RAISE_APPLICATION_ERROR(
+                -20429,
+                'Redemption ' ||
+                p_redemption_id ||
+                ' expired on ' ||
+                TO_CHAR(
+                    v_expiry_date,
+                    'DD-MON-YYYY'
+                ) || '.'
+            );
+        END IF;
+
+        IF v_reward_status <> 'Active' THEN
+            RAISE_APPLICATION_ERROR(
+                -20430,
+                'Reward ' ||
+                v_reward_name ||
+                ' is no longer active.'
+            );
+        END IF;
+
+        v_discount := v_reward_value;
+
+        IF v_discount > v_subtotal THEN
+            RAISE_APPLICATION_ERROR(
+                -20431,
+                'Voucher value RM ' ||
+                TO_CHAR(v_discount, 'FM9990.00') ||
+                ' exceeds the order subtotal RM ' ||
+                TO_CHAR(v_subtotal, 'FM9990.00') || '.'
+            );
+        END IF;
+    END IF;
+
+    -- CALCULATE CURRENT TOTAL
+    v_total := v_subtotal - v_discount;
+
+    -- MYKASIH RM100 PURCHASE LIMIT
+    IF UPPER(p_mykasih) = 'Y'
+    AND v_total > 100 THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20105,
+            'MyKasih purchase amount cannot exceed RM100.00. ' ||
+            'Current amount: RM ' ||
+            TO_CHAR(v_total, 'FM9990.00') || '.'
+        );
+
+    END IF;
+
+    -- For Delivery orders the delivery fee is calculated later
+    -- when the Delivery_Request is created.
+
+    -- GENERATE ORDER NUMBER
+    p_order_no :=
+        'ORD' ||
+        TO_CHAR(
+            order_seq.NEXTVAL,
+            'FM000000'
+        );
+
+    -- INSERT ORDER HEADER
+    INSERT INTO Orders (
+        order_no,
+        order_date_time,
+        order_type,
+        service_type,
+        subtotal_amount,
+        total_amount,
+        points_earned,
+        discount_amount,
+        order_status,
+        is_mykasih_purchase,
+        redemption_id,
+        customer_id,
+        branch_id,
+        handled_by
+    )
+    VALUES (
+        p_order_no,
+        SYSTIMESTAMP,
+        p_order_type,
+        p_service_type,
+        v_subtotal,
+        v_total,
+        0,
+        v_discount,
+        'Processing',
+        UPPER(p_mykasih),
+        p_redemption_id,
+        p_customer_id,
+        p_branch_id,
+        p_employee_id
+    );
+
+    -- INSERT ORDER DETAILS + REDUCE INVENTORY
+    FOR i IN 1 .. p_item_ids.COUNT LOOP
+        SELECT
+            name,
+            unit_price
+        INTO
+            v_item_name,
+            v_item_price
+        FROM Item
+        WHERE item_id = p_item_ids(i);
+
+        INSERT INTO Order_Detail (
+            order_no,
+            item_id,
+            subtotal,
+            quantity,
+            unit_price
+        )
+        VALUES (
+            p_order_no,
+            p_item_ids(i),
+            p_quantities(i) * v_item_price,
+            p_quantities(i),
+            v_item_price
+        );
+
+        -- Inventory immediately updated
+        UPDATE Inventory
+        SET quantity =
+            quantity - p_quantities(i)
+        WHERE branch_id = p_branch_id
+          AND item_id = p_item_ids(i);
+    END LOOP;
+
+    -- USE VOUCHER
+    IF p_redemption_id IS NOT NULL THEN
+        UPDATE Reward_Redemption
+        SET status = 'Used'
+        WHERE redemption_id =
+              p_redemption_id;
+    END IF;
+
+    -- CREATE ONE PAYMENT RECORD
+    v_payment_id :=
+        'PAY' ||
+        TO_CHAR(
+            payment_seq.NEXTVAL,
+            'FM000000'
+        );
+
+    INSERT INTO Payment (
+        payment_id,
+        payment_method,
+        payment_date_time,
+        reference_no,
+        payment_status,
+        order_no
+    )
+    VALUES (
+        v_payment_id,
+        p_payment_method,
+        SYSTIMESTAMP,
+        NULL,
+        'Pending',
+        p_order_no
+    );
+
+    COMMIT;
+
+    -- ORDER CONFIRMATION MESSAGE
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 72, '='));
+    DBMS_OUTPUT.PUT_LINE('88 SPEEDMART - ORDER PLACEMENT CONFIRMATION');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 72, '='));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Order No', 20) ||': ' || p_order_no);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Branch', 20) ||': ' || p_branch_id ||' - ' || v_branch_name);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Customer', 20) ||': ' || p_customer_id);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Handled By', 20) ||': ' || p_employee_id ||' - ' || v_emp_name);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Items', 20) ||': ' || p_item_ids.COUNT);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Subtotal', 20) ||': RM ' ||TO_CHAR(v_subtotal,'FM999,990.00'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Voucher Discount', 20) ||': RM ' ||TO_CHAR(v_discount,'FM999,990.00'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Current Total', 20) ||': RM ' ||TO_CHAR(v_total,'FM999,990.00'));
+
+    IF p_service_type = 'Delivery' THEN
+        DBMS_OUTPUT.PUT_LINE(
+            'NOTE: Delivery fee will be added when the delivery request is dispatched.'
+        );
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(RPAD('Payment', 20) ||': ' ||p_payment_method ||' (Pending)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Order Status', 20) ||': Processing');
+    DBMS_OUTPUT.PUT_LINE(RPAD('MyKasih', 20) ||': ' || UPPER(p_mykasih));
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', 72, '='));
+
+EXCEPTION
+    -- Duplicate order/redemption/order-detail
+    WHEN DUP_VAL_ON_INDEX THEN
+        ROLLBACK;
+        p_order_no := NULL;
+
+        RAISE_APPLICATION_ERROR(
+            -20432,
+            'Duplicate data detected.'
+        );
+
+    -- Unexpected error
+    WHEN OTHERS THEN
+        ROLLBACK;
+        p_order_no := NULL;
+
+        DBMS_OUTPUT.PUT_LINE(
+            '=== ORDER PLACEMENT FAILED ==='
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Code    : ' || SQLCODE
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Message : ' || SQLERRM
+        );
+        RAISE;
+
+END prc_place_order;
+/
+
+
+--1. make order
+SET SERVEROUTPUT ON;
+VARIABLE v_order_no VARCHAR2(20);
+BEGIN
+    prc_place_order(
+        p_customer_id    => 'CUS00001',
+        p_branch_id      => 'BR001',
+        p_employee_id    => 'EMP003',
+        p_item_ids       => SYS.ODCIVARCHAR2LIST('IT001'),
+        p_quantities     => SYS.ODCINUMBERLIST(5),
+        p_order_type     => 'Walk-In',
+        p_service_type   => 'Pickup',
+        p_payment_method => 'Cash',
+        p_mykasih        => 'N',
+        p_redemption_id  => NULL,
+        p_order_no       => :v_order_no
+    );
+END;
+/
+
+
+
+
+
+
+
+
+
+
+
+-- Procedure 2 (search item )
+CREATE OR REPLACE PROCEDURE prc_search_items (
+    p_branch_id       IN Branch.branch_id%TYPE,
+    p_keyword         IN VARCHAR2 DEFAULT NULL,
+    p_mykasih_only    IN CHAR DEFAULT 'N'
+)
+IS
+    v_branch_name     Branch.name%TYPE;
+    v_branch_status   Branch.status%TYPE;
+    v_found           NUMBER := 0;
+    e_no_items_found  EXCEPTION;
+
+    CURSOR c_item IS
+        SELECT
+            I.item_id,
+            I.name AS item_name,
+            I.category,
+            I.unit_price,
+            INV.quantity,
+            I.is_mykasih_eligible
+        FROM Branch B
+        JOIN Inventory INV
+            ON B.branch_id =
+               INV.branch_id
+        JOIN Item I
+            ON INV.item_id =
+               I.item_id
+        WHERE B.branch_id =
+              p_branch_id
+          AND (
+                p_keyword IS NULL
+                OR
+                UPPER(I.name) LIKE
+                    '%' ||
+                    UPPER(TRIM(p_keyword)) ||
+                    '%'
+              )
+          AND I.status = 'Active'
+          AND INV.quantity > 0
+          AND (
+                UPPER(p_mykasih_only) = 'N'
+                OR
+                I.is_mykasih_eligible = 'Y'
+              )
+        ORDER BY I.name;
+
+BEGIN
+    -- VALIDATE Y/N
+    IF UPPER(p_mykasih_only)
+       NOT IN ('Y', 'N') THEN
+
+        RAISE_APPLICATION_ERROR(
+            -20441,
+            'MyKasih search option must be Y or N.'
+        );
+    END IF;
+
+    -- VALIDATE BRANCH
+    BEGIN
+        SELECT
+            name,
+            status
+        INTO
+            v_branch_name,
+            v_branch_status
+        FROM Branch
+        WHERE branch_id =
+              p_branch_id;
+    EXCEPTION
+
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(
+                -20442,
+                'Branch ' ||
+                p_branch_id ||
+                ' does not exist.'
+            );
+    END;
+
+    IF v_branch_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(
+            -20443,
+            v_branch_name ||
+            ' is currently ' ||
+            v_branch_status ||
+            ' and is unavailable for item search.'
+        );
+    END IF;
+
+    -- OUTPUT HEADER
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('=', 115, '=')
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        '88 SPEEDMART - ADVANCED ITEM SEARCH'
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        'Branch       : ' ||
+        p_branch_id ||
+        ' - ' ||
+        v_branch_name
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        'Search       : ' ||
+        NVL(
+            p_keyword,
+            'All Items'
+        )
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        'MyKasih Only : ' ||
+        UPPER(p_mykasih_only)
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('=', 115, '=')
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('Item ID', 10) ||
+        RPAD('Item Name', 42) ||
+        RPAD('Category', 30) ||
+        LPAD('Price RM', 12) ||
+        LPAD('Stock', 10) ||
+        LPAD('MK', 6)
+    );
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('-', 115, '-')
+    );
+
+    -- CURSOR
+    FOR item_rec IN c_item LOOP
+        v_found :=
+            v_found + 1;
+        DBMS_OUTPUT.PUT_LINE(
+
+            RPAD(
+                item_rec.item_id,
+                10
+            ) ||
+
+            RPAD(
+                SUBSTR(
+                    item_rec.item_name,
+                    1,
+                    40
+                ),
+                42
+            ) ||
+
+            RPAD(
+                SUBSTR(
+                    item_rec.category,
+                    1,
+                    28
+                ),
+                30
+            ) ||
+
+            LPAD(
+                TO_CHAR(
+                    item_rec.unit_price,
+                    'FM9990.00'
+                ),
+                12
+            ) ||
+
+            LPAD(
+                item_rec.quantity,
+                10
+            ) ||
+
+            LPAD(
+                item_rec.is_mykasih_eligible,
+                6
+            )
+        );
+    END LOOP;
+
+    -- When NO RESULT
+    IF v_found = 0 THEN
+        RAISE e_no_items_found;
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('-', 115, '-')
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Total matching item(s): ' ||
+        v_found
+    );
+
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('=', 115, '=')
+    );
+
+EXCEPTION
+    WHEN e_no_items_found THEN
+        RAISE_APPLICATION_ERROR(
+            -20444,
+            'No available items matched the selected branch, keyword and MyKasih option.'
+        );
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE(
+            '=== ITEM SEARCH FAILED ==='
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Code    : ' ||
+            SQLCODE
+        );
+
+        DBMS_OUTPUT.PUT_LINE(
+            'Error Message : ' ||
+            SQLERRM
+        );
+        RAISE;
+END prc_search_items;
+/
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+EXEC prc_search_items('BR001','','Y');
+EXEC prc_search_items('BR001','','N');

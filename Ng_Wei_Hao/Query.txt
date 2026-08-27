@@ -1,0 +1,305 @@
+-- View 1
+CREATE OR REPLACE VIEW v_branch_monthly_revenue AS
+SELECT
+    EXTRACT(YEAR FROM O.order_date_time) AS sales_year,
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM') AS sales_month,
+    B.branch_id,
+    B.name AS branch_name,
+    COUNT(O.order_no) AS total_orders,
+    COUNT(DISTINCT O.customer_id) AS total_customers,
+    ROUND(SUM(O.subtotal_amount), 2) AS gross_sales,
+    ROUND(SUM(
+        CASE
+            WHEN R.reward_type = 'Discount' THEN O.discount_amount
+            ELSE 0
+        END
+    ), 2) AS voucher_discount,
+    ROUND(SUM(
+        CASE
+            WHEN P.payment_status = 'Refunded' THEN NVL(RBO.refund_amount, 0)
+            ELSE 0
+        END
+    ), 2) AS refund_amount,
+    ROUND(SUM(
+        O.subtotal_amount
+        - CASE
+            WHEN R.reward_type = 'Discount' THEN O.discount_amount
+            ELSE 0
+          END
+        - CASE
+            WHEN P.payment_status = 'Refunded' THEN NVL(RBO.refund_amount, 0)
+            ELSE 0
+          END
+    ), 2) AS net_sales,
+    ROUND(AVG(
+        O.subtotal_amount
+        - CASE
+            WHEN R.reward_type = 'Discount' THEN O.discount_amount
+            ELSE 0
+          END
+        - CASE
+            WHEN P.payment_status = 'Refunded' THEN NVL(RBO.refund_amount, 0)
+            ELSE 0
+          END
+    ), 2) AS avg_net_sales_per_order
+FROM Branch B
+JOIN Orders O
+    ON B.branch_id = O.branch_id
+JOIN Payment P
+    ON O.order_no = P.order_no
+LEFT JOIN Reward_Redemption RR
+    ON O.redemption_id = RR.redemption_id
+LEFT JOIN Reward R
+    ON RR.reward_id = R.reward_id
+LEFT JOIN v_refund_by_order RBO
+    ON O.order_no = RBO.order_no
+WHERE O.order_status = 'Completed'
+AND P.payment_status IN ('Paid', 'Refunded')
+GROUP BY
+    EXTRACT(YEAR FROM O.order_date_time),
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM'),
+    B.branch_id,
+    B.name;
+
+-- View 2
+CREATE OR REPLACE VIEW v_mykasih_branch_category AS
+SELECT
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM') AS sales_month,
+    B.branch_id,
+    B.name AS branch_name,
+    I.category,
+    COUNT(DISTINCT O.order_no) AS mykasih_orders,
+    COUNT(DISTINCT C.customer_id) AS mykasih_customers,
+    COUNT(DISTINCT I.item_id) AS different_items,
+    SUM(OD.quantity) AS total_units,
+    ROUND(SUM(OD.subtotal), 2) AS gross_mykasih_sales,
+    ROUND(
+        SUM(
+            CASE
+                WHEN R.reward_type = 'Discount'
+                    AND O.subtotal_amount > 0
+                THEN (OD.subtotal / O.subtotal_amount) * O.discount_amount
+                ELSE 0
+            END
+        ),
+        2
+    ) AS voucher_discount,
+    ROUND(
+        SUM(
+            CASE
+                WHEN P.payment_status = 'Refunded'
+                THEN NVL(RTN.refund_amount, 0)
+                ELSE 0
+            END
+        ),
+        2
+    ) AS refund_amount,
+    ROUND(
+        SUM(
+            OD.subtotal -
+            CASE
+                WHEN R.reward_type = 'Discount'
+                    AND O.subtotal_amount > 0
+                THEN (OD.subtotal / O.subtotal_amount) * O.discount_amount
+                ELSE 0
+            END -
+            CASE
+                WHEN P.payment_status = 'Refunded'
+                THEN NVL(RTN.refund_amount, 0)
+                ELSE 0
+            END
+        ),
+        2
+    ) AS net_mykasih_sales
+FROM Branch B
+JOIN Orders O
+    ON B.branch_id = O.branch_id
+JOIN Customer C
+    ON O.customer_id = C.customer_id
+JOIN Payment P
+    ON O.order_no = P.order_no
+JOIN Order_Detail OD
+    ON O.order_no = OD.order_no
+JOIN Item I
+    ON OD.item_id = I.item_id
+LEFT JOIN Reward_Redemption RR
+    ON O.redemption_id = RR.redemption_id
+LEFT JOIN Reward R
+    ON RR.reward_id = R.reward_id
+LEFT JOIN Return_Request RTN
+    ON O.order_no = RTN.order_no
+    AND OD.item_id = RTN.item_id
+    AND RTN.status = 'Refunded'
+WHERE O.order_status = 'Completed'
+  AND P.payment_status IN ('Paid', 'Refunded')
+  AND O.is_mykasih_purchase = 'Y'
+  AND P.payment_method = 'MyKasih'
+  AND C.ic_number IS NOT NULL
+  AND I.is_mykasih_eligible = 'Y'
+GROUP BY
+    TRUNC(CAST(O.order_date_time AS DATE), 'MM'),
+    B.branch_id,
+    B.name,
+    I.category;
+
+--additional view (Refund View — By Order)
+CREATE OR REPLACE VIEW v_refund_by_order AS
+SELECT
+    order_no,
+    ROUND(SUM(refund_amount), 2) AS refund_amount
+FROM Return_Request
+WHERE status = 'Refunded'
+GROUP BY order_no;
+
+
+
+
+-- Query 1 
+SET LINESIZE 145
+SET PAGESIZE 100
+SET FEEDBACK OFF
+SET TAB OFF
+SET WRAP OFF
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+
+TTITLE CENTER '88 SPEEDMART - MONTHLY BRANCH SALES PERFORMANCE' SKIP 1 -
+       CENTER '=================================================' SKIP 2
+
+
+COLUMN sales_year               HEADING 'Year'           FORMAT 9999
+COLUMN sales_period             HEADING 'Month'          FORMAT A10
+COLUMN branch_name              HEADING 'Branch'         FORMAT A30
+COLUMN total_orders             HEADING 'Orders'         FORMAT 9,999
+COLUMN total_customers          HEADING 'Customers'      FORMAT 9,999
+COLUMN gross_sales              HEADING 'Gross Sales'    FORMAT 9,999,999.99
+COLUMN voucher_discount         HEADING 'Voucher'        FORMAT 999,999.99
+COLUMN refund_amount            HEADING 'Refund'         FORMAT 999,999.99
+COLUMN net_sales                HEADING 'Net Sales'      FORMAT 9,999,999.99
+COLUMN avg_net_sales_per_order  HEADING 'Avg Net Sales'  FORMAT 99,999.99
+COLUMN branch_rank              HEADING 'Rank'           FORMAT 99
+
+BREAK ON sales_year SKIP 2 ON sales_period SKIP 1
+COMPUTE SUM LABEL 'Year Total' OF total_orders gross_sales voucher_discount refund_amount net_sales ON sales_year
+SELECT
+    sales_year,
+    TO_CHAR(
+        sales_month,
+        'MON-YYYY'
+    ) AS sales_period,
+    branch_name,
+    total_orders,
+    total_customers,
+    gross_sales,
+    voucher_discount,
+    refund_amount,
+    net_sales,
+    avg_net_sales_per_order,
+    RANK() OVER (
+        PARTITION BY sales_month
+        ORDER BY net_sales DESC
+    ) AS branch_rank
+FROM v_branch_monthly_revenue
+ORDER BY
+    sales_year DESC,
+    sales_month,
+    branch_rank;
+
+
+CLEAR BREAKS
+CLEAR COMPUTES
+CLEAR COLUMNS
+
+TTITLE OFF
+SET FEEDBACK ON
+SET WRAP ON
+
+
+
+-- Query 2
+
+SET LINESIZE 170
+SET PAGESIZE 100
+SET FEEDBACK OFF
+SET TAB OFF
+SET WRAP OFF
+
+CLEAR COLUMNS
+CLEAR BREAKS
+CLEAR COMPUTES
+
+TTITLE CENTER '88 SPEEDMART - MYKASIH SALES SUMMARY BY BRANCH' SKIP 1 -
+       CENTER '================================================' SKIP 2
+
+COLUMN sales_period         HEADING 'Month'       FORMAT A9
+COLUMN branch_name          HEADING 'Branch'      FORMAT A28
+COLUMN category             HEADING 'Category'    FORMAT A27
+COLUMN mykasih_orders       HEADING 'Orders'      FORMAT 9,999
+COLUMN mykasih_customers    HEADING 'Customers'   FORMAT 9,999
+COLUMN total_units          HEADING 'Units'       FORMAT 9,999
+COLUMN gross_mykasih_sales  HEADING 'Gross RM'    FORMAT 999,990.00
+COLUMN voucher_discount     HEADING 'Voucher RM'  FORMAT 999,990.00
+COLUMN refund_amount        HEADING 'Refund RM'   FORMAT 999,990.00
+COLUMN net_mykasih_sales    HEADING 'Net RM'      FORMAT 999,990.00
+COLUMN category_share_pct   HEADING 'Share %'     FORMAT 990.9
+COLUMN category_rank        HEADING 'Rank'        FORMAT 99
+COLUMN demand_status        HEADING 'Demand'      FORMAT A13
+
+BREAK ON sales_period SKIP 1 ON branch_name SKIP 1
+
+COMPUTE SUM LABEL 'Branch Total' OF total_units gross_mykasih_sales voucher_discount refund_amount net_mykasih_sales ON branch_name
+
+WITH mykasih_analysis AS (
+    SELECT
+        V.*,
+        DENSE_RANK() OVER (
+            PARTITION BY V.sales_month, V.branch_id
+            ORDER BY V.net_mykasih_sales DESC
+        ) AS category_rank,
+        ROUND(
+            V.net_mykasih_sales * 100 /
+            NULLIF(
+                SUM(V.net_mykasih_sales) OVER (
+                    PARTITION BY V.sales_month, V.branch_id
+                ),
+                0
+            ),
+            1
+        ) AS category_share_pct
+    FROM v_mykasih_branch_category V
+)
+SELECT
+    TO_CHAR(sales_month, 'MON-YYYY') AS sales_period,
+    branch_name,
+    category,
+    mykasih_orders,
+    mykasih_customers,
+    total_units,
+    gross_mykasih_sales,
+    voucher_discount,
+    refund_amount,
+    net_mykasih_sales,
+    category_share_pct,
+    category_rank,
+    CASE
+        WHEN category_rank = 1 THEN 'Top Demand'
+        WHEN category_share_pct >= 25 THEN 'High Demand'
+        WHEN category_share_pct >= 10 THEN 'Moderate'
+        ELSE 'Low Demand'
+    END AS demand_status
+FROM mykasih_analysis
+ORDER BY
+    sales_month DESC,
+    branch_name,
+    category_rank,
+    net_mykasih_sales DESC;
+
+CLEAR BREAKS
+CLEAR COMPUTES
+CLEAR COLUMNS
+
+TTITLE OFF
+SET FEEDBACK ON
+SET WRAP ON
