@@ -15,7 +15,6 @@ CREATE OR REPLACE PROCEDURE rpt_delivery_fulfilment (
         WHERE year = cp_year
         ORDER BY no_jobs_taken DESC;
 
-    -- MODIFIED CURSOR: Selects only the Top 3 based on average_rating
     CURSOR c_rider (cp_company Delivery_Company.delivery_company_id%TYPE, cp_year NUMBER) IS
         SELECT * FROM (
             SELECT c.name,
