@@ -1,0 +1,395 @@
+-- Procedure 1 (Points eligible not checked because verify in trigger)
+CREATE OR REPLACE PROCEDURE proc_redeem_reward (
+    p_member_id IN VARCHAR2,
+    p_reward_id IN VARCHAR2,
+    p_quantity  IN NUMBER DEFAULT 1
+) IS
+    v_member_name     Member.name%TYPE;
+    v_reward_name     Reward.name%TYPE;
+    v_points_required Reward.points_required%TYPE;
+    v_redemption_id   Reward_Redemption.redemption_id%TYPE;
+ 
+    v_cost            NUMBER;
+    v_issue_date      DATE := SYSDATE;
+    v_expiry_date     Reward_Redemption.expiry_date%TYPE;
+    v_balance_after   Member.points_balance%TYPE;
+BEGIN
+    IF p_quantity IS NULL OR p_quantity < 1 THEN
+        RAISE_APPLICATION_ERROR(-20020,
+            'Redemption quantity must be at least 1.');
+    END IF;
+ 
+    BEGIN
+        SELECT name INTO v_member_name
+        FROM   Member WHERE member_id = p_member_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20021,
+                'Member ' || p_member_id || ' does not exist.');
+    END;
+ 
+    BEGIN
+        SELECT name, points_required INTO v_reward_name, v_points_required
+        FROM   Reward WHERE reward_id = p_reward_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20023,
+                'Reward ' || p_reward_id || ' does not exist.');
+    END;
+ 
+    v_cost := v_points_required * p_quantity;
+    v_redemption_id := 'RD' || TO_CHAR(redemption_seq.NEXTVAL, 'FM00000');
+ 
+    -- trg_redeem_reward runs during this INSERT. It checks the member is
+    -- Active (-20111), the reward is Active (-20104), the stock covers the
+    -- quantity (-20105) and the balance covers the cost (-20106), fills in
+    -- expiry_date, then deducts the points and the stock.
+    INSERT INTO Reward_Redemption (
+        redemption_id, quantity_redeemed, point_spent,
+        issue_date, expiry_date, status, member_id, reward_id
+    ) VALUES (
+        v_redemption_id, p_quantity, v_cost,
+        v_issue_date, NULL, 'Active', p_member_id, p_reward_id
+    );
+ 
+    SELECT rr.expiry_date, m.points_balance
+    INTO   v_expiry_date, v_balance_after
+    FROM   Reward_Redemption rr
+           JOIN Member m ON m.member_id = rr.member_id
+    WHERE  rr.redemption_id = v_redemption_id;
+ 
+    DBMS_OUTPUT.PUT_LINE('=== REDEMPTION SUCCESSFUL ===');
+    DBMS_OUTPUT.PUT_LINE('Redemption ID    : ' || v_redemption_id);
+    DBMS_OUTPUT.PUT_LINE('Member           : ' || p_member_id || ' - ' || v_member_name);
+    DBMS_OUTPUT.PUT_LINE('Reward           : ' || p_reward_id || ' - ' || v_reward_name);
+    DBMS_OUTPUT.PUT_LINE('Quantity         : ' || p_quantity);
+    DBMS_OUTPUT.PUT_LINE('Points spent     : ' || v_cost);
+    DBMS_OUTPUT.PUT_LINE('Balance left     : ' || v_balance_after);
+    DBMS_OUTPUT.PUT_LINE('Issued  / Expiry : ' ||
+        TO_CHAR(v_issue_date,  'DD-Mon-YYYY') || ' / ' ||
+        TO_CHAR(v_expiry_date, 'DD-Mon-YYYY'));
+
+END;
+/
+
+-- Procedure 2
+CREATE OR REPLACE PROCEDURE proc_upgrade_member_to_vip (
+    p_member_id IN VARCHAR2,
+    p_months    IN NUMBER DEFAULT 12,
+    p_pay_now   IN CHAR   DEFAULT 'Y'
+) IS
+    v_member_name   Member.name%TYPE;
+    v_member_status Member.status%TYPE;
+    v_current_type  Member.membership_type%TYPE;
+    v_current_end   Member_Subscription.end_date%TYPE;
+    v_start_date    DATE;
+    v_end_date      DATE;
+    v_pay_status    Member_Subscription.payment_status%TYPE;
+    v_subscription_id Member_Subscription.subscription_id%TYPE;
+    v_new_type      Member.membership_type%TYPE;
+    v_new_rate      Member.point_rate%TYPE;
+    v_is_renewal    BOOLEAN := FALSE;
+BEGIN
+    IF p_months IS NULL OR p_months < 1 THEN
+        RAISE_APPLICATION_ERROR(-20024,
+            'Subscription length must be at least 1 month.');
+    END IF;
+ 
+    IF p_pay_now IS NULL OR UPPER(p_pay_now) NOT IN ('Y', 'N') THEN
+        RAISE_APPLICATION_ERROR(-20025,
+            'p_pay_now must be Y (paid now) or N (leave as Pending).');
+    END IF;
+ 
+    v_pay_status := CASE WHEN UPPER(p_pay_now) = 'Y' THEN 'Paid' ELSE 'Pending' END;
+ 
+    BEGIN
+        SELECT name, status, membership_type
+        INTO   v_member_name, v_member_status, v_current_type
+        FROM   Member
+        WHERE  member_id = p_member_id
+        FOR UPDATE;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20026,
+                'Member ' || p_member_id || ' does not exist.');
+    END;
+ 
+    IF v_member_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20027,
+            'Member ' || p_member_id || ' (' || v_member_name ||
+            ') is Inactive and cannot be upgraded.');
+    END IF;
+ 
+    SELECT MAX(end_date)
+    INTO   v_current_end
+    FROM   Member_Subscription
+    WHERE  member_id = p_member_id
+    AND    payment_status = 'Paid'
+    AND    end_date > SYSDATE;
+ 
+    IF v_current_end IS NOT NULL THEN
+        v_is_renewal := TRUE;
+        v_start_date := v_current_end;
+    ELSE
+        v_start_date := TRUNC(SYSDATE);
+    END IF;
+ 
+    v_end_date := ADD_MONTHS(v_start_date, p_months);
+ 
+    v_subscription_id := 'SUB' || TO_CHAR(subscription_seq.NEXTVAL, 'FM00000');
+ 
+    INSERT INTO Member_Subscription (
+        subscription_id, start_date, end_date,
+        fee_amount, payment_status, member_id
+    ) VALUES (
+        v_subscription_id, v_start_date, v_end_date,
+        12.00, v_pay_status, p_member_id
+    );
+	
+    SELECT membership_type, point_rate
+    INTO   v_new_type, v_new_rate
+    FROM   Member
+    WHERE  member_id = p_member_id;
+ 
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('=== ' ||
+        CASE WHEN v_is_renewal THEN 'VIP RENEWAL' ELSE 'VIP UPGRADE' END ||
+        ' SUCCESSFUL ===');
+    DBMS_OUTPUT.PUT_LINE('Subscription ID : ' || v_subscription_id);
+    DBMS_OUTPUT.PUT_LINE('Member          : ' || p_member_id || ' - ' || v_member_name);
+    DBMS_OUTPUT.PUT_LINE('Term            : ' ||
+        TO_CHAR(v_start_date, 'DD-Mon-YYYY') || ' to ' ||
+        TO_CHAR(v_end_date,   'DD-Mon-YYYY') || '  (' || p_months || ' month(s))');
+    DBMS_OUTPUT.PUT_LINE('Fee             : RM 12.00');
+    DBMS_OUTPUT.PUT_LINE('Payment status  : ' || v_pay_status);
+    DBMS_OUTPUT.PUT_LINE('Membership      : ' || v_current_type || ' -> ' || v_new_type);
+    DBMS_OUTPUT.PUT_LINE('Point rate      : ' || TO_CHAR(v_new_rate, 'FM90.00') || ' x');
+ 
+    IF v_pay_status = 'Pending' THEN
+        DBMS_OUTPUT.PUT_LINE('NOTE: still Pending, so the member stays ' ||
+            v_new_type || '. Call proc_confirm_subscription_payment(''' ||
+            v_subscription_id || ''') once the RM12 is collected.');
+    END IF;
+END;
+/
+ 
+
+-- Procedure 3
+CREATE OR REPLACE PROCEDURE proc_confirm_subscription (
+    p_subscription_id IN VARCHAR2
+) IS
+    v_member_id  Member_Subscription.member_id%TYPE;
+    v_pay_status Member_Subscription.payment_status%TYPE;
+    v_end_date   Member_Subscription.end_date%TYPE;
+    v_new_type   Member.membership_type%TYPE;
+BEGIN
+    BEGIN
+        SELECT member_id, payment_status, end_date
+        INTO   v_member_id, v_pay_status, v_end_date
+        FROM   Member_Subscription
+        WHERE  subscription_id = p_subscription_id
+        FOR UPDATE;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20028,
+                'Subscription ' || p_subscription_id || ' does not exist.');
+    END;
+ 
+    IF v_pay_status = 'Paid' THEN
+        RAISE_APPLICATION_ERROR(-20029,
+            'Subscription ' || p_subscription_id || ' is already paid.');
+    ELSIF v_pay_status <> 'Pending' THEN
+        RAISE_APPLICATION_ERROR(-20030,
+            'Subscription ' || p_subscription_id || ' is ' || v_pay_status ||
+            ' and can no longer be paid.');
+    END IF;
+ 
+    UPDATE Member_Subscription
+    SET    payment_status = 'Paid'
+    WHERE  subscription_id = p_subscription_id;
+ 
+    SELECT membership_type INTO v_new_type
+    FROM   Member WHERE member_id = v_member_id;
+ 
+    DBMS_OUTPUT.PUT_LINE('=== PAYMENT CONFIRMED ===');
+    DBMS_OUTPUT.PUT_LINE('Subscription    : ' || p_subscription_id);
+    DBMS_OUTPUT.PUT_LINE('Member          : ' || v_member_id);
+    DBMS_OUTPUT.PUT_LINE('Membership now  : ' || v_new_type ||
+        ' (valid to ' || TO_CHAR(v_end_date, 'DD-MON-YYYY') || ')');
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('=== PAYMENT CONFIRMATION FAILED ===');
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+        RAISE;
+END;
+/
+
+-- Procedure 4
+CREATE OR REPLACE PROCEDURE proc_add_new_member (
+    p_name           IN VARCHAR2,
+    p_age            IN NUMBER,
+    p_gender         IN VARCHAR2,
+    p_phone_no       IN VARCHAR2,
+    p_email          IN VARCHAR2 DEFAULT NULL,
+    p_ic_number      IN VARCHAR2 DEFAULT NULL,
+    p_customer_id    IN VARCHAR2 DEFAULT NULL,
+    p_opening_points IN NUMBER   DEFAULT 0
+) IS
+    v_name    Member.name%TYPE;
+    v_gender  Member.gender%TYPE;
+    v_phone   Member.phone_no%TYPE;
+    v_email   Member.email%TYPE;
+    v_ic      Customer.ic_number%TYPE;
+    v_member_id        Member.member_id%TYPE;
+    v_customer_id_used Customer.customer_id%TYPE;
+ 
+    v_dummy           NUMBER;
+    v_existing_member Customer.member_id%TYPE;
+    v_existing_ic     Customer.ic_number%TYPE;
+    v_linked_existing BOOLEAN := FALSE;
+BEGIN
+    v_name   := TRIM(p_name);
+    v_gender := INITCAP(TRIM(p_gender));
+    v_phone  := TRIM(p_phone_no);
+    v_email  := LOWER(TRIM(p_email));
+    v_ic     := TRIM(p_ic_number);
+ 
+    IF v_name IS NULL OR LENGTH(v_name) < 2 THEN
+        RAISE_APPLICATION_ERROR(-20501,
+            'Member name is required and must be at least 2 characters.');
+    END IF;
+ 
+    IF p_age IS NULL OR p_age < 12 OR p_age >= 130 THEN
+        RAISE_APPLICATION_ERROR(-20502,
+            'Age must be between 12 and 129. Members under 12 cannot register.');
+    END IF;
+ 
+    IF v_gender NOT IN ('Male', 'Female') THEN
+        RAISE_APPLICATION_ERROR(-20503,
+            'Gender must be Male or Female.');
+    END IF;
+ 
+    IF v_phone IS NULL OR LENGTH(v_phone) < 9 THEN
+        RAISE_APPLICATION_ERROR(-20504,
+            'A contact number is required, e.g. 012-345 6789.');
+    END IF;
+ 
+    IF v_email IS NOT NULL AND v_email NOT LIKE '%@%.%' THEN
+        RAISE_APPLICATION_ERROR(-20505,
+            'Email address is not in a valid format: ' || v_email);
+    END IF;
+ 
+    IF p_opening_points IS NULL OR p_opening_points < 0 THEN
+        RAISE_APPLICATION_ERROR(-20506,
+            'Opening points balance cannot be negative.');
+    END IF;
+ 
+    IF v_ic IS NOT NULL
+       AND NOT REGEXP_LIKE(v_ic, '^[0-9]{6}-[0-9]{2}-[0-9]{4}$') THEN
+        RAISE_APPLICATION_ERROR(-20507,
+            'IC number must be in the format 020428-06-1071.');
+    END IF;
+ 
+    IF v_email IS NOT NULL THEN
+		SELECT COUNT(*) INTO v_dummy
+		FROM   Member
+		WHERE  LOWER(email) = v_email;
+
+		IF v_dummy > 0 THEN
+			RAISE_APPLICATION_ERROR(-20508,
+				'Email ' || v_email || ' is already registered to another member.');
+		END IF;
+	END IF;
+ 
+    IF v_ic IS NOT NULL THEN
+		SELECT COUNT(*) INTO v_dummy
+		FROM   Customer
+		WHERE  ic_number = v_ic
+		AND   (p_customer_id IS NULL OR customer_id <> p_customer_id);
+
+		IF v_dummy > 0 THEN
+			RAISE_APPLICATION_ERROR(-20509,
+				'IC number ' || v_ic || ' already belongs to another customer.');
+		END IF;
+	END IF;
+ 
+    IF p_customer_id IS NOT NULL THEN
+        BEGIN
+            SELECT member_id, ic_number
+            INTO   v_existing_member, v_existing_ic
+            FROM   Customer
+            WHERE  customer_id = p_customer_id
+            FOR UPDATE;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(-20510,
+                    'Customer ' || p_customer_id || ' does not exist.');
+        END;
+ 
+        IF v_existing_member IS NOT NULL THEN
+            RAISE_APPLICATION_ERROR(-20511,
+                'Customer ' || p_customer_id ||
+                ' is already linked to member ' || v_existing_member || '.');
+        END IF;
+ 
+        v_linked_existing := TRUE;
+    END IF;
+ 
+    SAVEPOINT sp_before_registration;
+ 
+    v_member_id := 'MB' || TO_CHAR(member_seq.NEXTVAL, 'FM00000');
+ 
+    INSERT INTO Member (
+        member_id, name, age, gender, phone_no, email,
+        points_balance, membership_type, point_rate, status
+    ) VALUES (
+        v_member_id, v_name, p_age, v_gender, v_phone, v_email,
+        NVL(p_opening_points, 0), 'Normal', 1.00, 'Active'
+    );
+ 
+    IF v_linked_existing THEN
+        UPDATE Customer
+        SET    member_id = v_member_id,
+               ic_number = NVL(ic_number, v_ic)
+        WHERE  customer_id = p_customer_id;
+ 
+        v_customer_id_used := p_customer_id;
+    ELSE
+        v_customer_id_used := 'CUS' || TO_CHAR(customer_seq.NEXTVAL, 'FM00000');
+ 
+        INSERT INTO Customer (customer_id, ic_number, member_id)
+        VALUES (v_customer_id_used, v_ic, v_member_id);
+    END IF;
+ 
+    COMMIT;
+ 
+    DBMS_OUTPUT.PUT_LINE('=== MEMBER REGISTERED ===');
+    DBMS_OUTPUT.PUT_LINE('Member ID    : ' || v_member_id);
+    DBMS_OUTPUT.PUT_LINE('Customer ID  : ' || v_customer_id_used ||
+        CASE WHEN v_linked_existing
+             THEN '  (existing walk-in customer, history preserved)'
+             ELSE '  (newly created)' END);
+    DBMS_OUTPUT.PUT_LINE('Name         : ' || v_name);
+    DBMS_OUTPUT.PUT_LINE('Age / Gender : ' || p_age || ' / ' || v_gender);
+    DBMS_OUTPUT.PUT_LINE('Phone        : ' || v_phone);
+    DBMS_OUTPUT.PUT_LINE('Email        : ' || NVL(v_email, '(none given)'));
+    DBMS_OUTPUT.PUT_LINE('IC number    : ' || NVL(v_ic, '(none given)'));
+    DBMS_OUTPUT.PUT_LINE('Opening pts  : ' || NVL(p_opening_points, 0));
+    DBMS_OUTPUT.PUT_LINE('Tier         : Normal (1.00x points)');
+    DBMS_OUTPUT.PUT_LINE('Registered   : ' || TO_CHAR(SYSDATE, 'DD-Mon-YYYY HH24:MI'));
+ 
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        ROLLBACK TO sp_before_registration;
+        DBMS_OUTPUT.PUT_LINE('=== REGISTRATION FAILED ===');
+        DBMS_OUTPUT.PUT_LINE('That email or IC number is already on file.');
+        RAISE;
+    WHEN OTHERS THEN
+        ROLLBACK TO sp_before_registration;
+        DBMS_OUTPUT.PUT_LINE('=== REGISTRATION FAILED ===');
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+        RAISE;
+END;
+/

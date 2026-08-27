@@ -1,0 +1,150 @@
+CREATE OR REPLACE VIEW v_order_revenue AS
+SELECT o.order_no,
+       o.order_date_time,
+       EXTRACT(YEAR FROM o.order_date_time) AS order_year,
+       TO_CHAR(o.order_date_time, 'YYYY-MM') AS order_month,
+       o.order_type,
+       o.service_type,
+       o.branch_id,
+       b.name AS branch_name,
+       o.customer_id,
+       c.member_id,
+       CASE WHEN c.member_id IS NULL
+            THEN 'Non-Member' ELSE 'Member' END AS customer_class,
+       NVL(m.membership_type, 'None') AS membership_type,
+       o.subtotal_amount,
+       o.discount_amount,
+       o.subtotal_amount - o.discount_amount AS net_sales,
+       NVL(dr.delivery_fee, 0) AS delivery_fee,
+       o.points_earned,
+       o.redemption_id
+FROM   Orders o
+       JOIN Branch b  ON b.branch_id   = o.branch_id
+       JOIN Customer c  ON c.customer_id = o.customer_id
+       LEFT JOIN Member m  ON m.member_id  = c.member_id
+       LEFT JOIN Delivery_Request dr ON dr.order_no = o.order_no
+WHERE  o.order_status = 'Completed';
+
+
+CREATE OR REPLACE VIEW v_order_basket AS
+SELECT od.order_no,
+       COUNT(DISTINCT od.item_id) AS line_count,
+       SUM(od.quantity) AS units_sold,
+       COUNT(DISTINCT i.category) AS category_count,
+       ROUND(SUM(i.unit_weight_kg * od.quantity), 3)  AS basket_weight_kg
+FROM   Order_Detail od
+       JOIN Item i ON i.item_id = od.item_id
+GROUP  BY od.order_no;
+
+CREATE OR REPLACE VIEW v_loyalty_sales AS
+SELECT order_year,
+       SUM(CASE WHEN customer_class = 'Member'     THEN net_sales END) AS member_revenue,
+       SUM(CASE WHEN customer_class = 'Non-Member' THEN net_sales END) AS nonmember_revenue,
+       COUNT(CASE WHEN customer_class = 'Member'     THEN 1 END)       AS member_orders,
+       COUNT(CASE WHEN customer_class = 'Non-Member' THEN 1 END)       AS nonmember_orders,
+       COUNT(DISTINCT member_id)                                       AS active_members,
+       SUM(points_earned)                                              AS points_issued,
+       SUM(discount_amount)                                            AS discount_given
+FROM   v_order_revenue
+GROUP  BY order_year;
+
+
+CREATE OR REPLACE VIEW v_loyalty_redeemed AS
+SELECT EXTRACT(YEAR FROM rr.issue_date)                  AS order_year,
+       COUNT(*)                                          AS vouchers_issued,
+       SUM(rr.point_spent)                               AS points_redeemed,
+       SUM(r.value * rr.quantity_redeemed)               AS reward_cost_rm,
+       COUNT(CASE WHEN rr.status = 'Used'    THEN 1 END) AS vouchers_used,
+       COUNT(CASE WHEN rr.status = 'Expired' THEN 1 END) AS vouchers_expired
+FROM   Reward_Redemption rr
+       JOIN Reward r ON r.reward_id = rr.reward_id
+GROUP  BY EXTRACT(YEAR FROM rr.issue_date);
+
+
+CREATE OR REPLACE VIEW v_loyalty_subs AS
+SELECT EXTRACT(YEAR FROM start_date)                              AS order_year,
+       SUM(CASE WHEN payment_status = 'Paid' THEN fee_amount END) AS subscription_rm,
+       COUNT(CASE WHEN payment_status = 'Paid' THEN 1 END)        AS paid_subscriptions
+FROM   Member_Subscription
+GROUP  BY EXTRACT(YEAR FROM start_date);
+
+
+-- Queries
+-- Query 1
+SET LINESIZE 250
+SET PAGESIZE 100
+
+COLUMN CHANNEL FORMAT A10;
+COLUMN YR HEADING "YEAR" FORMAT 9999;
+COLUMN ORDERS FORMAT 99999;
+COLUMN net_sales FORMAT $999999.99;
+COLUMN pct_of_year HEADING "PREFERENCES(%)" FORMAT 99.99;
+COLUMN growth_pct HEADING "GROWTH(%)" FORMAT 99.99;
+COLUMN delivery_fee_charged FORMAT $99999.99;
+COLUMN pct_member_orders HEADING "MEMBER(%)" FORMAT 99.99;
+
+SELECT CASE WHEN ROW_NUMBER() OVER (PARTITION BY r.order_type
+                                    ORDER BY r.order_year) = 1
+            THEN r.order_type END  AS channel,
+       r.order_year AS YR,
+       COUNT(*) AS orders,
+       ROUND(SUM(r.net_sales), 2) AS NET_SALES,
+       ROUND(100 * RATIO_TO_REPORT(SUM(r.net_sales))
+                   OVER (PARTITION BY r.order_year), 1) AS pct_of_year,
+       ROUND(100 * (SUM(r.net_sales)
+             - LAG(SUM(r.net_sales)) OVER (PARTITION BY r.order_type
+                                           ORDER BY r.order_year))
+             / NULLIF(LAG(SUM(r.net_sales)) OVER (PARTITION BY r.order_type
+                                           ORDER BY r.order_year), 0), 1) AS growth_pct,
+       ROUND(AVG(r.net_sales), 2) AS avg_basket_value,
+       ROUND(AVG(bk.units_sold), 1) AS avg_units,
+       ROUND(AVG(bk.basket_weight_kg), 2) AS avg_weight_kg,
+       ROUND(SUM(r.delivery_fee), 2) AS delivery_fee_charged,
+       ROUND(SUM(r.discount_amount), 2) AS discount_given,
+       SUM(r.points_earned) AS points_issued,
+       ROUND(100 * COUNT(CASE WHEN r.customer_class = 'Member'
+                              THEN 1 END) / COUNT(*), 1) AS pct_member_orders
+FROM   v_order_revenue r
+       JOIN v_order_basket bk ON bk.order_no = r.order_no
+GROUP  BY r.order_type, r.order_year
+ORDER  BY r.order_type, r.order_year;
+
+
+-- Query 2
+SET LINESIZE 250
+SET PAGESIZE 100
+COLUMN year                FORMAT 9999
+COLUMN members             FORMAT 9999
+COLUMN mem_spent           FORMAT $99999.99
+COLUMN non_mem_spent       FORMAT $99999.99
+COLUMN mem_order_avg       FORMAT $999.99
+COLUMN normal_order_avg    FORMAT $999.99
+COLUMN pct                 HEADING 'DIFF(%)'  FORMAT 99.99
+COLUMN redemption_rate_pct HEADING 'REDEEM(%)'
+COLUMN reward_cost_rm      FORMAT $999.99
+COLUMN subscription_rm     FORMAT $999.99
+COLUMN earnings            HEADING "Earns From Loyalty System (RM)" FORMAT $9999.99
+
+SELECT s.order_year                                                  AS year,
+       s.active_members                                              AS members,
+       ROUND(s.member_revenue, 2)                                    AS mem_spent,
+       ROUND(s.nonmember_revenue, 2)                                 AS non_mem_spent,
+       ROUND(s.member_revenue    / NULLIF(s.member_orders, 0), 2)    AS mem_order_avg,
+       ROUND(s.nonmember_revenue / NULLIF(s.nonmember_orders, 0), 2) AS normal_order_avg,
+       ROUND(100 * ((s.member_revenue    / NULLIF(s.member_orders, 0))
+                  - (s.nonmember_revenue / NULLIF(s.nonmember_orders, 0)))
+             / NULLIF(s.nonmember_revenue / NULLIF(s.nonmember_orders, 0), 0), 1) AS pct,
+       s.points_issued,
+       NVL(d.points_redeemed, 0)                                     AS points_redeemed,
+       ROUND(100 * NVL(d.points_redeemed, 0)
+             / NULLIF(s.points_issued, 0), 1)                        AS redemption_rate_pct,
+       NVL(d.vouchers_issued, 0)                                     AS vouchers_issued,
+       ROUND(100 * NVL(d.vouchers_expired, 0)
+             / NULLIF(d.vouchers_issued, 0), 1)                      AS "UNUSED(%)",
+       ROUND(NVL(d.reward_cost_rm, 0), 2)                            AS reward_cost_rm,
+       ROUND(NVL(u.subscription_rm, 0), 2)                           AS subscription_rm,
+       ROUND(NVL(u.subscription_rm, 0) - NVL(d.reward_cost_rm, 0), 2) AS earnings
+FROM   v_loyalty_sales s
+       LEFT JOIN v_loyalty_redeemed d ON d.order_year = s.order_year
+       LEFT JOIN v_loyalty_subs     u ON u.order_year = s.order_year
+ORDER  BY s.order_year;

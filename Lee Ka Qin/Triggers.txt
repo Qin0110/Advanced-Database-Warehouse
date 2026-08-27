@@ -1,0 +1,100 @@
+-- Trigger
+CREATE OR REPLACE TRIGGER trg_award_points
+BEFORE UPDATE OF order_status ON Orders
+FOR EACH ROW
+WHEN (NEW.order_status = 'Completed' AND OLD.order_status <> 'Completed')
+DECLARE
+    v_member Member.member_id%TYPE;
+    v_rate   Member.point_rate%TYPE;
+    v_points NUMBER;
+BEGIN
+    SELECT member_id INTO v_member FROM Customer WHERE customer_id = :NEW.customer_id;
+    IF v_member IS NULL THEN
+        :NEW.points_earned := 0;
+        RETURN;
+    END IF;
+
+    SELECT point_rate INTO v_rate FROM Member WHERE member_id = v_member;
+    v_points := FLOOR(:NEW.subtotal_amount - :NEW.discount_amount) * v_rate;
+    :NEW.points_earned := v_points;
+
+    UPDATE Member SET points_balance = points_balance + v_points
+    WHERE  member_id = v_member;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_redeem_reward
+BEFORE INSERT ON Reward_Redemption
+FOR EACH ROW
+DECLARE
+    v_required Reward.points_required%TYPE;
+    v_stock    Reward.quantity%TYPE;
+    v_status   Reward.status%TYPE;
+    v_balance  Member.points_balance%TYPE;
+    v_mstatus  Member.status%TYPE;
+    v_cost     NUMBER;
+BEGIN
+    SELECT points_balance, status INTO v_balance, v_mstatus
+    FROM   Member WHERE member_id = :NEW.member_id FOR UPDATE;
+
+    IF v_mstatus <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20112,
+            'Member ' || :NEW.member_id || ' is not active and cannot redeem a reward.');
+    END IF;
+
+    SELECT points_required, quantity, status INTO v_required, v_stock, v_status
+    FROM   Reward WHERE reward_id = :NEW.reward_id FOR UPDATE;
+
+    IF v_status <> 'Active' THEN
+        RAISE_APPLICATION_ERROR(-20113, 'Reward ' || :NEW.reward_id || ' is no longer offered.');
+    END IF;
+    IF v_stock < :NEW.quantity_redeemed THEN
+        RAISE_APPLICATION_ERROR(-20114,
+            'Reward ' || :NEW.reward_id || ' is out of stock. ' || v_stock || ' left.');
+    END IF;
+
+    v_cost := v_required * :NEW.quantity_redeemed;
+    IF :NEW.point_spent IS NULL OR :NEW.point_spent = 0 THEN
+        :NEW.point_spent := v_cost;
+    END IF;
+    IF :NEW.expiry_date IS NULL THEN
+        :NEW.expiry_date := ADD_MONTHS(NVL(:NEW.issue_date, SYSDATE), 12);
+    END IF;
+
+    IF v_balance < v_cost THEN
+        RAISE_APPLICATION_ERROR(-20115,
+            'Member ' || :NEW.member_id || ' has ' || v_balance ||
+            ' points but the reward costs ' || v_cost || '.');
+    END IF;
+
+    UPDATE Member SET points_balance = points_balance - v_cost
+    WHERE  member_id = :NEW.member_id;
+    UPDATE Reward SET quantity = quantity - :NEW.quantity_redeemed
+    WHERE  reward_id = :NEW.reward_id;
+END;
+/
+
+CREATE OR REPLACE TRIGGER trg_subscription_vip
+AFTER INSERT OR UPDATE OF payment_status, end_date ON Member_Subscription
+BEGIN
+    UPDATE Member m
+    SET    m.membership_type =
+           CASE WHEN EXISTS (SELECT 1 FROM Member_Subscription s
+                             WHERE s.member_id = m.member_id
+                             AND   s.payment_status = 'Paid'
+                             AND   s.end_date > SYSDATE)
+                THEN 'VIP' ELSE 'Normal' END,
+           m.point_rate =
+           CASE WHEN EXISTS (SELECT 1 FROM Member_Subscription s
+                             WHERE s.member_id = m.member_id
+                             AND   s.payment_status = 'Paid'
+                             AND   s.end_date > SYSDATE)
+                THEN 2.00 ELSE 1.00 END
+    WHERE  m.membership_type <>
+           CASE WHEN EXISTS (SELECT 1 FROM Member_Subscription s
+                             WHERE s.member_id = m.member_id
+                             AND   s.payment_status = 'Paid'
+                             AND   s.end_date > SYSDATE)
+                THEN 'VIP' ELSE 'Normal' END;
+END;
+/

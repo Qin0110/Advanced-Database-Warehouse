@@ -1,0 +1,691 @@
+CREATE OR REPLACE VIEW v_order_revenue AS
+SELECT o.order_no,
+       o.order_date_time,
+       EXTRACT(YEAR FROM o.order_date_time) AS order_year,
+       TO_CHAR(o.order_date_time, 'YYYY-MM') AS order_month,
+       o.order_type,
+       o.service_type,
+       o.branch_id,
+       b.name AS branch_name,
+       o.customer_id,
+       c.member_id,
+       CASE WHEN c.member_id IS NULL
+            THEN 'Non-Member' ELSE 'Member' END AS customer_class,
+       NVL(m.membership_type, 'None') AS membership_type,
+       o.subtotal_amount,
+       o.discount_amount,
+       o.subtotal_amount - o.discount_amount AS net_sales,
+       NVL(dr.delivery_fee, 0) AS delivery_fee,
+       o.points_earned,
+       o.redemption_id
+FROM   Orders o
+       JOIN Branch b  ON b.branch_id   = o.branch_id
+       JOIN Customer c  ON c.customer_id = o.customer_id
+       LEFT JOIN Member m  ON m.member_id  = c.member_id
+       LEFT JOIN Delivery_Request dr ON dr.order_no = o.order_no
+WHERE  o.order_status = 'Completed';
+
+
+CREATE OR REPLACE VIEW v_order_basket AS
+SELECT od.order_no,
+       COUNT(DISTINCT od.item_id) AS line_count,
+       SUM(od.quantity) AS units_sold,
+       COUNT(DISTINCT i.category) AS category_count,
+       ROUND(SUM(i.unit_weight_kg * od.quantity), 3)  AS basket_weight_kg
+FROM   Order_Detail od
+       JOIN Item i ON i.item_id = od.item_id
+GROUP  BY od.order_no;
+
+CREATE OR REPLACE VIEW v_member_value AS
+SELECT r.member_id,
+       COUNT(*)                    AS total_orders,
+       SUM(r.net_sales)            AS lifetime_spend,
+       SUM(r.points_earned)        AS lifetime_points_earned,
+       MAX(r.order_date_time)      AS last_order_date
+FROM   v_order_revenue r
+WHERE  r.member_id IS NOT NULL
+GROUP  BY r.member_id;
+
+CREATE OR REPLACE VIEW v_member_home_branch AS
+SELECT member_id, branch_id, branch_name, orders_at_branch
+FROM  (SELECT r.member_id,
+              r.branch_id,
+              r.branch_name,
+              COUNT(*) AS orders_at_branch,
+              ROW_NUMBER() OVER (PARTITION BY r.member_id
+                                 ORDER BY COUNT(*) DESC, r.branch_id) AS rn
+       FROM   v_order_revenue r
+       WHERE  r.member_id IS NOT NULL
+       GROUP  BY r.member_id, r.branch_id, r.branch_name)
+WHERE rn = 1;
+
+
+-- Report
+SET SERVEROUTPUT ON;
+SET LINESIZE 250;
+SET PAGESIZE 100;
+ 
+CREATE OR REPLACE PROCEDURE report_channel_revenue (
+    p_date_from IN DATE     DEFAULT NULL,
+    p_date_to   IN DATE     DEFAULT NULL,
+    p_branch_id IN VARCHAR2 DEFAULT NULL
+) IS
+    c_width  CONSTANT NUMBER := 112;
+ 
+    v_from   DATE;
+    v_to     DATE;
+    v_branch_label VARCHAR2(120);
+ 
+    -- branch level accumulators (reset on every control break)
+    v_b_on_ord NUMBER;  v_b_on_rev NUMBER;
+    v_b_wi_ord NUMBER;  v_b_wi_rev NUMBER;
+    v_b_fee    NUMBER;
+ 
+    -- report level accumulators
+    v_g_on_ord NUMBER := 0;  v_g_on_rev NUMBER := 0;
+    v_g_wi_ord NUMBER := 0;  v_g_wi_rev NUMBER := 0;
+    v_g_fee    NUMBER := 0;
+    v_branches NUMBER := 0;
+ 
+    -- COMPANY BASELINE - every branch, ignoring p_branch_id, so a single
+    -- branch report can still say "you are X% of the company".
+    v_co_on_ord NUMBER := 0;  v_co_on_rev NUMBER := 0;
+    v_co_wi_ord NUMBER := 0;  v_co_wi_rev NUMBER := 0;
+    v_co_staff   NUMBER := 0;   -- all active employees
+    v_co_counter NUMBER := 0;   -- active employees who can serve a counter
+    v_co_load    NUMBER := 0;   -- company walk-in orders per counter head
+ 
+    -- per branch staffing
+    v_b_staff    NUMBER;
+    v_b_counter  NUMBER;
+    v_b_load     NUMBER;
+    v_load_index NUMBER;
+    v_verdict    VARCHAR2(40);
+ 
+    CURSOR c_branch (cp_from DATE, cp_to DATE, cp_branch VARCHAR2) IS
+        SELECT r.branch_id,
+               r.branch_name,
+               SUM(r.net_sales) AS branch_revenue
+        FROM   v_order_revenue r
+        WHERE  r.order_date_time >= cp_from
+        AND    r.order_date_time <  cp_to + 1
+        AND   (cp_branch IS NULL OR r.branch_id = cp_branch)
+        GROUP  BY r.branch_id, r.branch_name
+        ORDER  BY SUM(r.net_sales) DESC;
+ 
+    CURSOR c_month (cp_branch VARCHAR2, cp_from DATE, cp_to DATE) IS
+        SELECT r.order_month,
+               COUNT(CASE WHEN r.order_type = 'Online'  THEN 1 END) AS on_ord,
+               NVL(SUM(CASE WHEN r.order_type = 'Online'  THEN r.net_sales END), 0) AS on_rev,
+               COUNT(CASE WHEN r.order_type = 'Walk-In' THEN 1 END) AS wi_ord,
+               NVL(SUM(CASE WHEN r.order_type = 'Walk-In' THEN r.net_sales END), 0) AS wi_rev,
+               SUM(r.net_sales) AS tot_rev,
+               SUM(r.delivery_fee) AS fee
+        FROM   v_order_revenue r
+        WHERE  r.branch_id = cp_branch
+        AND    r.order_date_time >= cp_from
+        AND    r.order_date_time <  cp_to + 1
+        GROUP  BY r.order_month
+        ORDER  BY r.order_month;
+ 
+    CURSOR c_staff (cp_branch VARCHAR2, cp_to DATE) IS
+        SELECT e.position,
+               COUNT(*)      AS head_count,
+               AVG(e.salary) AS avg_salary
+        FROM   Employee e
+        WHERE  e.branch_id = cp_branch
+        AND    e.status    = 'Active'
+        AND    e.hire_date <= cp_to
+        GROUP  BY e.position
+        ORDER  BY CASE e.position
+                       WHEN 'Manager'     THEN 1
+                       WHEN 'Supervisor'  THEN 2
+                       WHEN 'Cashier'     THEN 3
+                       ELSE 4 END;
+ 
+    CURSOR c_channel (cp_from DATE, cp_to DATE, cp_branch VARCHAR2) IS
+        SELECT r.order_type,
+               COUNT(*) AS orders,
+               SUM(r.net_sales) AS revenue,
+               AVG(r.net_sales) AS avg_basket,
+               SUM(r.delivery_fee) AS fee,
+               AVG(bk.basket_weight_kg) AS avg_weight,
+               AVG(bk.units_sold) AS avg_units
+        FROM   v_order_revenue r
+               JOIN v_order_basket bk ON bk.order_no = r.order_no
+        WHERE  r.order_date_time >= cp_from
+        AND    r.order_date_time <  cp_to + 1
+        AND   (cp_branch IS NULL OR r.branch_id = cp_branch)
+        GROUP  BY r.order_type
+        ORDER  BY r.order_type;
+ 
+    FUNCTION money (p_val NUMBER, p_width NUMBER DEFAULT 13) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN LPAD(TO_CHAR(NVL(p_val, 0), 'FM999,999,990.00'), p_width);
+    END money;
+ 
+    FUNCTION num (p_val NUMBER, p_width NUMBER DEFAULT 8) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN LPAD(TO_CHAR(NVL(p_val, 0), 'FM999,999,990'), p_width);
+    END num;
+ 
+    FUNCTION pct (p_num NUMBER, p_den NUMBER, p_width NUMBER DEFAULT 8) RETURN VARCHAR2 IS
+    BEGIN
+        IF NVL(p_den, 0) = 0 THEN
+            RETURN LPAD('-', p_width);
+        END IF;
+        RETURN LPAD(TO_CHAR(ROUND(100 * p_num / p_den, 1), 'FM990.0') || '%', p_width);
+    END pct;
+ 
+BEGIN
+    IF p_date_from IS NULL OR p_date_to IS NULL THEN
+        SELECT NVL(p_date_from, TRUNC(MIN(order_date_time))),
+               NVL(p_date_to,   TRUNC(MAX(order_date_time)))
+        INTO   v_from, v_to
+        FROM   v_order_revenue;
+    ELSE
+        v_from := TRUNC(p_date_from);
+        v_to   := TRUNC(p_date_to);
+    END IF;
+ 
+    IF v_from > v_to THEN
+        RAISE_APPLICATION_ERROR(-20401,
+            'Report start date must not be later than the end date.');
+    END IF;
+ 
+    IF p_branch_id IS NULL THEN
+        v_branch_label := 'ALL BRANCHES';
+    ELSE
+        BEGIN
+            SELECT p_branch_id || ' - ' || name INTO v_branch_label
+            FROM   Branch WHERE branch_id = p_branch_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(-20402,
+                    'Branch ' || p_branch_id || ' does not exist.');
+        END;
+    END IF;
+ 
+    SELECT COUNT(CASE WHEN order_type = 'Online'  THEN 1 END),
+           NVL(SUM(CASE WHEN order_type = 'Online'  THEN net_sales END), 0),
+           COUNT(CASE WHEN order_type = 'Walk-In' THEN 1 END),
+           NVL(SUM(CASE WHEN order_type = 'Walk-In' THEN net_sales END), 0)
+    INTO   v_co_on_ord, v_co_on_rev, v_co_wi_ord, v_co_wi_rev
+    FROM   v_order_revenue
+    WHERE  order_date_time >= v_from
+    AND    order_date_time <  v_to + 1;
+ 
+    SELECT COUNT(*),
+           COUNT(CASE WHEN position IN ('Cashier','Supervisor','Manager') THEN 1 END)
+    INTO   v_co_staff, v_co_counter
+    FROM   Employee
+    WHERE  status = 'Active'
+    AND    hire_date <= v_to;
+ 
+    v_co_load := v_co_wi_ord / NULLIF(v_co_counter, 0);
+
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+    DBMS_OUTPUT.PUT_LINE('SPEEDMART - CHANNEL REVENUE AND STAFFING REPORT   (Online vs Walk-In)');
+    DBMS_OUTPUT.PUT_LINE('Period  : ' || TO_CHAR(v_from, 'DD-Mon-YYYY') ||
+                         '  to  '     || TO_CHAR(v_to,   'DD-Mon-YYYY'));
+    DBMS_OUTPUT.PUT_LINE('Branch  : ' || v_branch_label);
+    DBMS_OUTPUT.PUT_LINE('Printed : ' || TO_CHAR(SYSDATE, 'DD-Mon-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE('Note    : revenue is merchandise net of discount; delivery fees are shown separately.');
+    DBMS_OUTPUT.PUT_LINE('Company : ' || v_co_staff || ' active staff, ' ||
+        v_co_counter || ' able to serve a counter, ' ||
+        TO_CHAR(v_co_wi_ord, 'FM999,999,990') || ' walk-in orders  ->  company average ' ||
+        TO_CHAR(ROUND(v_co_load, 1), 'FM999,990.0') || ' walk-in orders per counter head.');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+
+    FOR b IN c_branch(v_from, v_to, p_branch_id) LOOP
+ 
+        v_branches := v_branches + 1;
+        v_b_on_ord := 0;  v_b_on_rev := 0;
+        v_b_wi_ord := 0;  v_b_wi_rev := 0;
+        v_b_fee    := 0;
+ 
+        DBMS_OUTPUT.PUT_LINE(' ');
+        DBMS_OUTPUT.PUT_LINE('BRANCH ' || b.branch_id || ' - ' || b.branch_name);
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('Month', 9)      || LPAD('Onl Ord', 8)   || LPAD('Online Rev', 14) ||
+            LPAD('Wlk Ord', 9)    || LPAD('Walk-In Rev', 15) ||
+            LPAD('Total Rev', 15) || LPAD('Online %', 10) ||
+            LPAD('Deliv Fee', 14) || LPAD('Avg Basket', 14));
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+ 
+        FOR m IN c_month(b.branch_id, v_from, v_to) LOOP
+ 
+            DBMS_OUTPUT.PUT_LINE(
+                RPAD(m.order_month, 9) ||
+                num(m.on_ord, 8)       || money(m.on_rev, 14) ||
+                num(m.wi_ord, 9)       || money(m.wi_rev, 15) ||
+                money(m.tot_rev, 15)   || pct(m.on_rev, m.tot_rev, 10) ||
+                money(m.fee, 14)       ||
+                money(m.tot_rev / NULLIF(m.on_ord + m.wi_ord, 0), 14));
+ 
+            v_b_on_ord := v_b_on_ord + m.on_ord;
+            v_b_on_rev := v_b_on_rev + m.on_rev;
+            v_b_wi_ord := v_b_wi_ord + m.wi_ord;
+            v_b_wi_rev := v_b_wi_rev + m.wi_rev;
+            v_b_fee    := v_b_fee    + m.fee;
+        END LOOP;
+ 
+        -- CONTROL BREAK: branch subtotal
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD('SUBTOTAL', 9)         ||
+            num(v_b_on_ord, 8)          || money(v_b_on_rev, 14) ||
+            num(v_b_wi_ord, 9)          || money(v_b_wi_rev, 15) ||
+            money(v_b_on_rev + v_b_wi_rev, 15) ||
+            pct(v_b_on_rev, v_b_on_rev + v_b_wi_rev, 10) ||
+            money(v_b_fee, 14)          ||
+            money((v_b_on_rev + v_b_wi_rev)
+                  / NULLIF(v_b_on_ord + v_b_wi_ord, 0), 14));
+ 
+        DBMS_OUTPUT.PUT_LINE(' ');
+        DBMS_OUTPUT.PUT_LINE('  SHARE OF COMPANY (' || v_branch_label || ' measured against all branches)');
+        DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', c_width - 2, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            '  ' || RPAD('Channel', 12) || LPAD('Branch Ord', 12) ||
+            LPAD('Company Ord', 14) || LPAD('Ord Share', 12) ||
+            LPAD('Branch Rev', 16) || LPAD('Company Rev', 18) || LPAD('Rev Share', 12));
+        DBMS_OUTPUT.PUT_LINE(
+            '  ' || RPAD('Online', 12)  || num(v_b_on_ord, 12) ||
+            num(v_co_on_ord, 14)        || pct(v_b_on_ord, v_co_on_ord, 12) ||
+            money(v_b_on_rev, 16)       || money(v_co_on_rev, 18) ||
+            pct(v_b_on_rev, v_co_on_rev, 12));
+        DBMS_OUTPUT.PUT_LINE(
+            '  ' || RPAD('Walk-In', 12) || num(v_b_wi_ord, 12) ||
+            num(v_co_wi_ord, 14)        || pct(v_b_wi_ord, v_co_wi_ord, 12) ||
+            money(v_b_wi_rev, 16)       || money(v_co_wi_rev, 18) ||
+            pct(v_b_wi_rev, v_co_wi_rev, 12));
+		
+        SELECT COUNT(*),
+               COUNT(CASE WHEN position IN ('Cashier','Supervisor','Manager') THEN 1 END)
+        INTO   v_b_staff, v_b_counter
+        FROM   Employee
+        WHERE  branch_id = b.branch_id
+        AND    status    = 'Active'
+        AND    hire_date <= v_to;
+ 
+        v_b_load := v_b_wi_ord / NULLIF(v_b_counter, 0);
+        v_load_index := v_b_load / NULLIF(v_co_load, 0);
+ 
+        IF v_b_counter = 0 THEN
+            v_verdict := 'NO COUNTER STAFF ON RECORD';
+        ELSIF v_load_index >= 1.20 THEN
+            v_verdict := 'UNDERSTAFFED - consider hiring';
+        ELSIF v_load_index <= 0.80 THEN
+            v_verdict := 'OVERSTAFFED - capacity to spare';
+        ELSE
+            v_verdict := 'BALANCED';
+        END IF;
+ 
+        DBMS_OUTPUT.PUT_LINE(' ');
+        DBMS_OUTPUT.PUT_LINE('  STAFFING AT ' || b.branch_id);
+        DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', c_width - 2, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            '  ' || RPAD('Position', 16) || LPAD('Headcount', 12) ||
+            LPAD('Avg Salary', 15) || LPAD('Serves Counter', 17));
+ 
+        FOR st IN c_staff(b.branch_id, v_to) LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                '  ' || RPAD(st.position, 16) || num(st.head_count, 12) ||
+                money(st.avg_salary, 15) ||
+                LPAD(CASE WHEN st.position IN ('Cashier','Supervisor','Manager')
+                          THEN 'Yes' ELSE 'No' END, 17));
+        END LOOP;
+ 
+        DBMS_OUTPUT.PUT_LINE('  ' || RPAD('-', c_width - 2, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            '  Total staff            : ' || v_b_staff ||
+            '  (' || TRIM(pct(v_b_staff, v_co_staff, 6)) || ' of the company''s ' ||
+            v_co_staff || ')');
+        DBMS_OUTPUT.PUT_LINE(
+            '  Counter-capable staff  : ' || v_b_counter ||
+            '  (' || TRIM(pct(v_b_counter, v_co_counter, 6)) || ' of the company''s ' ||
+            v_co_counter || ')');
+        DBMS_OUTPUT.PUT_LINE(
+            '  Walk-in orders / head  : ' ||
+            TO_CHAR(ROUND(NVL(v_b_load, 0), 1), 'FM999,990.0') ||
+            '   vs company ' || TO_CHAR(ROUND(v_co_load, 1), 'FM999,990.0') ||
+            '   (index ' || TO_CHAR(ROUND(NVL(v_load_index, 0), 2), 'FM990.00') || ')');
+        DBMS_OUTPUT.PUT_LINE('  ASSESSMENT             : ' || v_verdict);
+		DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+ 
+        v_g_on_ord := v_g_on_ord + v_b_on_ord;
+        v_g_on_rev := v_g_on_rev + v_b_on_rev;
+        v_g_wi_ord := v_g_wi_ord + v_b_wi_ord;
+        v_g_wi_rev := v_g_wi_rev + v_b_wi_rev;
+        v_g_fee    := v_g_fee    + v_b_fee;
+    END LOOP;
+ 
+    IF v_branches = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(' ');
+        DBMS_OUTPUT.PUT_LINE('No completed orders found for the selected period and branch.');
+        DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+        RETURN;
+    END IF;
+ 
+    -- Channel summary
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+	DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+	DBMS_OUTPUT.PUT_LINE(' ');
+    DBMS_OUTPUT.PUT_LINE('CHANNEL SUMMARY ACROSS ' || v_branches || ' BRANCH(ES)');
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+    DBMS_OUTPUT.PUT_LINE(
+        RPAD('Channel', 10)      || LPAD('Orders', 9)     || LPAD('Net Revenue', 16) ||
+        LPAD('Share', 9)         || LPAD('Avg Basket', 13) ||
+        LPAD('Avg Units', 11)    || LPAD('Avg Wt(kg)', 12) || LPAD('Deliv Fee', 14));
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+ 
+    FOR ch IN c_channel(v_from, v_to, p_branch_id) LOOP
+        DBMS_OUTPUT.PUT_LINE(
+            RPAD(ch.order_type, 10) ||
+            num(ch.orders, 9)       || money(ch.revenue, 16) ||
+            pct(ch.revenue, v_g_on_rev + v_g_wi_rev, 9) ||
+            money(ch.avg_basket, 13)||
+            LPAD(TO_CHAR(ROUND(ch.avg_units, 1), 'FM990.0'), 11) ||
+            LPAD(TO_CHAR(ROUND(ch.avg_weight, 2), 'FM990.00'), 12) ||
+            money(ch.fee, 14));
+    END LOOP;
+ 
+    DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+    DBMS_OUTPUT.PUT_LINE('Delivery fees collected: RM ' ||
+        TO_CHAR(v_g_fee, 'FM999,999,990.00') || ' (' ||
+        TO_CHAR(ROUND(100 * v_g_fee / NULLIF(v_g_on_rev, 0), 1), 'FM990.0') ||
+        '% of online net revenue)');
+    DBMS_OUTPUT.PUT_LINE('Staffing rule: index above 1.20 means this branch handles at least 20% more');
+    DBMS_OUTPUT.PUT_LINE('walk-in orders per counter head than the company average, and is a hiring candidate.');
+    DBMS_OUTPUT.PUT_LINE('*** END OF REPORT ***');
+ 
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('*** REPORT FAILED: ' || SQLERRM || ' ***');
+        RAISE;
+END;
+/
+
+ 
+CREATE OR REPLACE PROCEDURE report_vip_renewal_list (
+    p_days_ahead IN NUMBER   DEFAULT 30,
+    p_branch_id  IN VARCHAR2 DEFAULT NULL,
+    p_min_spend  IN NUMBER   DEFAULT 0
+) IS
+    c_width  CONSTANT NUMBER := 104;
+    c_months CONSTANT NUMBER := 12;
+ 
+    v_branch_label VARCHAR2(120);
+    v_seq          NUMBER := 0;
+ 
+    v_shown        NUMBER;
+    v_vouchers     NUMBER;
+    v_prev_band    VARCHAR2(10) := NULL;   -- control break on priority band
+ 
+    v_total_members  NUMBER := 0;
+    v_total_recent   NUMBER := 0;
+    v_total_points   NUMBER := 0;
+    v_high           NUMBER := 0;
+    v_medium         NUMBER := 0;
+    v_low            NUMBER := 0;
+    v_urgent         NUMBER := 0;
+    v_high_urgent    NUMBER := 0;
+	
+	
+    CURSOR c_expiring (cp_days NUMBER, cp_branch VARCHAR2,
+                       cp_min NUMBER, cp_months NUMBER) IS
+        SELECT m.member_id,
+               m.name,
+               m.phone_no,
+               NVL(m.email, '(no email on file)')     AS email,
+               m.points_balance,
+               s.cover_end,
+               TRUNC(s.cover_end) - TRUNC(SYSDATE)    AS days_left,
+               NVL(v.total_orders, 0)                 AS total_orders,
+               NVL(v.lifetime_spend, 0)               AS lifetime_spend,
+               v.last_order_date,
+               NVL(hb.branch_id, '-')                 AS home_branch_id,
+               NVL(hb.branch_name, '(no orders yet)') AS home_branch_name,
+               NVL(ra.recent_spend, 0)                AS recent_spend,
+               NVL(ra.recent_orders, 0)               AS recent_orders,
+               CASE WHEN NVL(ra.recent_spend, 0) >= 1000 THEN 'HIGH'
+                    WHEN NVL(ra.recent_spend, 0) >=  300 THEN 'MEDIUM'
+                    ELSE 'LOW' END                    AS priority,
+               CASE WHEN NVL(ra.recent_spend, 0) >= 1000 THEN 1
+                    WHEN NVL(ra.recent_spend, 0) >=  300 THEN 2
+                    ELSE 3 END                        AS priority_rank
+        FROM   Member m
+               JOIN (SELECT member_id, MAX(end_date) AS cover_end
+                     FROM   Member_Subscription
+                     WHERE  payment_status = 'Paid'
+                     GROUP  BY member_id) s
+                 ON s.member_id = m.member_id
+               LEFT JOIN v_member_value       v  ON v.member_id  = m.member_id
+               LEFT JOIN v_member_home_branch hb ON hb.member_id = m.member_id
+               LEFT JOIN (SELECT r.member_id,
+                                 COUNT(*)         AS recent_orders,
+                                 SUM(r.net_sales) AS recent_spend
+                          FROM   v_order_revenue r
+                          WHERE  r.member_id IS NOT NULL
+                          AND    r.order_date_time >=
+                                 ADD_MONTHS(TRUNC(SYSDATE), -cp_months)
+                          GROUP  BY r.member_id) ra
+                 ON ra.member_id = m.member_id
+        WHERE  m.status = 'Active'
+        AND    s.cover_end >= TRUNC(SYSDATE)
+        AND    s.cover_end <  TRUNC(SYSDATE) + cp_days + 1
+        AND   (cp_branch IS NULL OR hb.branch_id = cp_branch)
+        AND    NVL(v.lifetime_spend, 0) >= cp_min
+        ORDER  BY priority_rank,                 -- HIGH, then MEDIUM, then LOW
+                  days_left,                     -- soonest expiry inside the band
+                  NVL(ra.recent_spend, 0) DESC;  -- biggest spender breaks a tie
+ 
+    -- INNER CURSOR 1 - newest orders for the member in the outer row
+    CURSOR c_recent_orders (cp_member VARCHAR2, cp_months NUMBER) IS
+        SELECT r.order_no,
+               r.order_date_time,
+               r.order_type,
+               r.branch_id,
+               r.net_sales,
+               r.points_earned
+        FROM   v_order_revenue r
+        WHERE  r.member_id = cp_member
+        AND    r.order_date_time >= ADD_MONTHS(TRUNC(SYSDATE), -cp_months)
+        ORDER  BY r.order_date_time DESC;
+ 
+    -- INNER CURSOR 2 - vouchers the member still holds
+    CURSOR c_open_vouchers (cp_member VARCHAR2) IS
+        SELECT rr.redemption_id,
+               rw.name AS reward_name,
+               rr.expiry_date,
+               rr.quantity_redeemed
+        FROM   Reward_Redemption rr
+               JOIN Reward rw ON rw.reward_id = rr.reward_id
+        WHERE  rr.member_id = cp_member
+        AND    rr.status = 'Active'
+        AND    (rr.expiry_date IS NULL OR rr.expiry_date > SYSDATE)
+        ORDER  BY rr.expiry_date;
+ 
+    FUNCTION money (p_val NUMBER, p_width NUMBER DEFAULT 12) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN LPAD(TO_CHAR(NVL(p_val, 0), 'FM999,999,990.00'), p_width);
+    END money;
+ 
+BEGIN
+    IF p_days_ahead IS NULL OR p_days_ahead < 1 THEN
+        RAISE_APPLICATION_ERROR(-20403,
+            'The look-ahead window must be at least 1 day.');
+    END IF;
+ 
+    IF p_branch_id IS NULL THEN
+        v_branch_label := 'ALL BRANCHES';
+    ELSE
+        BEGIN
+            SELECT p_branch_id || ' - ' || name INTO v_branch_label
+            FROM   Branch WHERE branch_id = p_branch_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(-20404,
+                    'Branch ' || p_branch_id || ' does not exist.');
+        END;
+    END IF;
+ 
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+    DBMS_OUTPUT.PUT_LINE('SPEEDMART - VIP RENEWAL CALL LIST');
+    DBMS_OUTPUT.PUT_LINE('Window       : subscriptions expiring by ' ||
+        TO_CHAR(TRUNC(SYSDATE) + p_days_ahead, 'DD-Mon-YYYY') ||
+        '  (' || p_days_ahead || ' days)');
+    DBMS_OUTPUT.PUT_LINE('Branch       : ' || v_branch_label);
+    DBMS_OUTPUT.PUT_LINE('Min lifetime : RM ' || TO_CHAR(NVL(p_min_spend, 0), 'FM999,990.00'));
+    DBMS_OUTPUT.PUT_LINE('Printed      : ' || TO_CHAR(SYSDATE, 'DD-Mon-YYYY HH24:MI'));
+    DBMS_OUTPUT.PUT_LINE('Call order   : priority band first, then soonest expiry inside the band.');
+    DBMS_OUTPUT.PUT_LINE('Priority     : HIGH = RM1,000+ spent in the last ' || c_months ||
+        ' months, MEDIUM = RM300+, LOW = below RM300.');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+ 
+    FOR mb IN c_expiring(p_days_ahead, p_branch_id,
+                         NVL(p_min_spend, 0), c_months) LOOP
+ 
+        v_seq      := v_seq + 1;
+        v_shown    := 0;
+        v_vouchers := 0;
+ 
+        IF v_prev_band IS NULL OR mb.priority <> v_prev_band THEN
+            DBMS_OUTPUT.PUT_LINE(' ');
+            DBMS_OUTPUT.PUT_LINE(RPAD('#', c_width, '#'));
+            DBMS_OUTPUT.PUT_LINE('##  ' || RPAD(mb.priority || ' PRIORITY', 30) ||
+                CASE mb.priority
+                     WHEN 'HIGH'   THEN 'call these first, in expiry order'
+                     WHEN 'MEDIUM' THEN 'call after every HIGH member is cleared'
+                     ELSE               'call only if time allows'
+                END);
+            DBMS_OUTPUT.PUT_LINE(RPAD('#', c_width, '#'));
+            v_prev_band := mb.priority;
+        END IF;
+ 
+        IF mb.priority = 'HIGH' THEN
+            v_high := v_high + 1;
+        ELSIF mb.priority = 'MEDIUM' THEN
+            v_medium := v_medium + 1;
+        ELSE
+            v_low := v_low + 1;
+        END IF;
+ 
+        IF mb.days_left <= 7 THEN
+            v_urgent := v_urgent + 1;
+            IF mb.priority = 'HIGH' THEN
+                v_high_urgent := v_high_urgent + 1;
+            END IF;
+        END IF;
+ 
+        DBMS_OUTPUT.PUT_LINE(' ');
+        DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
+        DBMS_OUTPUT.PUT_LINE(
+            'CALL #' || LPAD(v_seq, 3, '0') || '  ' ||
+            RPAD(mb.member_id, 10) || RPAD(mb.name, 30) ||
+            RPAD(mb.priority, 8) ||
+            CASE WHEN mb.days_left <= 7 AND mb.priority = 'HIGH'
+                      THEN '** CALL FIRST - high value, expires in ' || mb.days_left || ' day(s) **'
+                 WHEN mb.days_left <= 7
+                      THEN '** URGENT - expires in ' || mb.days_left || ' day(s) **'
+            END);
+        DBMS_OUTPUT.PUT_LINE(
+            '        Contact     : ' || mb.phone_no || '   ' || mb.email);
+        DBMS_OUTPUT.PUT_LINE(
+            '        Home branch : ' || mb.home_branch_id || ' - ' || mb.home_branch_name);
+        DBMS_OUTPUT.PUT_LINE(
+            '        VIP expires : ' || TO_CHAR(mb.cover_end, 'DD-Mon-YYYY') ||
+            '   (' || mb.days_left || ' day(s) left)');
+        DBMS_OUTPUT.PUT_LINE(
+            '        Points held : ' || TO_CHAR(mb.points_balance, 'FM999,999,990') ||
+            '        Lifetime: ' || mb.total_orders || ' orders / RM ' ||
+            TO_CHAR(mb.lifetime_spend, 'FM999,999,990.00'));
+        DBMS_OUTPUT.PUT_LINE(
+            '        Last order  : ' ||
+            NVL(TO_CHAR(mb.last_order_date, 'DD-Mon-YYYY'), 'never'));
+ 
+        -- INNER LOOP 1 - detail lines
+        IF mb.recent_orders = 0 THEN
+            DBMS_OUTPUT.PUT_LINE(
+                '        Activity    : no orders in the last ' || c_months ||
+                ' months - lapsed shopper, expect a hard sell.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('        Recent orders (last ' || c_months || ' months):');
+            FOR o IN c_recent_orders(mb.member_id, c_months) LOOP
+                EXIT WHEN v_shown >= 5;
+                v_shown := v_shown + 1;
+                DBMS_OUTPUT.PUT_LINE(
+                    '            ' || RPAD(o.order_no, 12) ||
+                    RPAD(TO_CHAR(o.order_date_time, 'DD-Mon-YYYY'), 14) ||
+                    RPAD(o.order_type, 9) || RPAD(o.branch_id, 8) ||
+                    money(o.net_sales, 11) ||
+                    LPAD(TO_CHAR(o.points_earned, 'FM999,990') || ' pts', 12));
+            END LOOP;
+ 
+            IF mb.recent_orders > v_shown THEN
+                DBMS_OUTPUT.PUT_LINE(
+                    '            ... and ' || (mb.recent_orders - v_shown) ||
+                    ' more order(s) not shown');
+            END IF;
+ 
+            DBMS_OUTPUT.PUT_LINE(
+                '            ' || RPAD('SUBTOTAL', 43) ||
+                money(mb.recent_spend, 11) ||
+                '   over ' || mb.recent_orders || ' order(s)');
+        END IF;
+ 
+        -- INNER LOOP 2 - vouchers in hand
+        FOR vch IN c_open_vouchers(mb.member_id) LOOP
+            IF v_vouchers = 0 THEN
+                DBMS_OUTPUT.PUT_LINE('        Unused vouchers:');
+            END IF;
+            v_vouchers := v_vouchers + 1;
+            DBMS_OUTPUT.PUT_LINE(
+                '            ' || RPAD(vch.redemption_id, 12) ||
+                RPAD(vch.reward_name, 34) ||
+                'x' || vch.quantity_redeemed ||
+                '   expires ' ||
+                NVL(TO_CHAR(vch.expiry_date, 'DD-Mon-YYYY'), 'no expiry'));
+        END LOOP;
+ 
+        IF v_vouchers = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('        Unused vouchers: none');
+        END IF;
+ 
+        v_total_members := v_total_members + 1;
+        v_total_recent  := v_total_recent + mb.recent_spend;
+        v_total_points  := v_total_points + mb.points_balance;
+    END LOOP;
+ 
+    DBMS_OUTPUT.PUT_LINE(' ');
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+ 
+    IF v_total_members = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('No VIP subscriptions fall due in this window for the selected filters.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('SUMMARY');
+        DBMS_OUTPUT.PUT_LINE('  Members to call        : ' || v_total_members ||
+            '   (HIGH ' || v_high || ' / MEDIUM ' || v_medium || ' / LOW ' || v_low || ')');
+        DBMS_OUTPUT.PUT_LINE('  Expiring within 7 days : ' || v_urgent ||
+            '   of which HIGH priority: ' || v_high_urgent ||
+            '  <- start here (calls #001 onward)');
+        DBMS_OUTPUT.PUT_LINE('  Spend at risk (' || c_months || 'm)  : RM ' ||
+            TO_CHAR(v_total_recent, 'FM999,999,990.00'));
+        DBMS_OUTPUT.PUT_LINE('  Avg spend per member   : RM ' ||
+            TO_CHAR(ROUND(v_total_recent / v_total_members, 2), 'FM999,999,990.00'));
+        DBMS_OUTPUT.PUT_LINE('  Points held by them    : ' ||
+            TO_CHAR(v_total_points, 'FM999,999,990'));
+        DBMS_OUTPUT.PUT_LINE('  Renewal fee income if all renew : RM ' ||
+            TO_CHAR(v_total_members * 12, 'FM999,999,990.00'));
+    END IF;
+ 
+    DBMS_OUTPUT.PUT_LINE(RPAD('=', c_width, '='));
+    DBMS_OUTPUT.PUT_LINE('*** END OF REPORT ***');
+ 
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('*** REPORT FAILED: ' || SQLERRM || ' ***');
+        RAISE;
+END;
+/
