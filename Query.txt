@@ -2443,7 +2443,7 @@ EXEC rpt_pending_returns('BR003');
 
 -- Index 1
 DROP INDEX idx_orders_branch_date;
-CREATE INDEX idx_orders_branch_date ON Orders (branch_id, order_date_time);
+CREATE INDEX idx_orders_branch_date ON Orders (order_date_time);
 
 -- Index 2
 DROP INDEX idx_payment_status_method ;
@@ -4124,12 +4124,6 @@ EXCEPTION
 END report_branch_sales;
 /
 
-SET SERVEROUTPUT ON SIZE UNLIMITED;
-EXEC report_branch_sales(2026);
-
-
-
-EXEC report_branch_sales();
 
 SET SERVEROUTPUT ON SIZE UNLIMITED;
 EXEC report_branch_sales(2026);
