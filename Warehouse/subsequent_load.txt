@@ -794,13 +794,37 @@ BEGIN
             od.unit_price AS unitsellingprice,
             od.quantity AS purchasequantity,
             od.subtotal AS grosslineamount,
-            ROUND(o.discount_amount * od.subtotal / NULLIF(o.subtotal_amount, 0), 2)
-                AS allocateddiscountamount,
-            od.subtotal - ROUND(o.discount_amount * od.subtotal /
-                NULLIF(o.subtotal_amount, 0), 2) AS netlineamount,
+            CASE
+                WHEN rw.reward_type = 'Discount'
+                THEN ROUND(
+                    o.discount_amount * od.subtotal /
+                    NULLIF(o.subtotal_amount, 0),
+                    2
+                )
+                ELSE 0
+            END AS allocateddiscountamount,
+            od.subtotal
+            - CASE
+                WHEN rw.reward_type = 'Discount'
+                THEN ROUND(
+                    o.discount_amount * od.subtotal /
+                    NULLIF(o.subtotal_amount, 0),
+                    2
+                )
+                ELSE 0
+            END
+            - CASE
+                WHEN rr.status = 'Refunded'
+                THEN NVL(rr.refund_amount, 0)
+                ELSE 0
+            END AS netlineamount,
             rt.score AS ratingscore,
             NVL(rr.return_quantity, 0) AS refundquantity,
-            NVL(rr.refund_amount, 0) AS refundtotal
+            CASE
+                WHEN rr.status = 'Refunded'
+                THEN NVL(rr.refund_amount, 0)
+                ELSE 0
+            END  AS refundtotal
         FROM WAREHOUSEDATA.Order_Detail od
         JOIN WAREHOUSEDATA.Orders o
           ON o.order_no = od.order_no
@@ -829,6 +853,10 @@ BEGIN
          AND op.mykasih_purchase =
              CASE WHEN o.is_mykasih_purchase = 'Y'
                   THEN 'MyKasih Subsidised' ELSE 'Standard Purchase' END
+        LEFT JOIN WAREHOUSEDATA.Reward_Redemption red
+          ON red.redemption_id = o.redemption_id
+        LEFT JOIN WAREHOUSEDATA.Reward rw
+          ON rw.reward_id = red.reward_id
         LEFT JOIN WAREHOUSEDATA.Rating rt
           ON rt.order_no = od.order_no
          AND rt.item_id = od.item_id
@@ -1119,9 +1147,13 @@ END;
 EXEC PRC_SUBSEQUENT_LOAD(DATE '2026-08-01', DATE '2026-09-01');
 
 /* ---------- 8. Evidence / checking queries ---------- */
-SELECT * FROM ETL_REJECT_LOG
+
+/* Reject records generated during ETL */
+SELECT *
+FROM ETL_REJECT_LOG
 ORDER BY REJECT_ID;
 
+/* Check SCD2 history */
 SELECT BRANCHID, BRANCHNAME, STATUS,
        EFFECTIVESTARTDATE, EFFECTIVEENDDATE, FLAG
 FROM BRANCH_DIM
@@ -1132,6 +1164,18 @@ SELECT ITEMID, ITEMNAME, UNITPRICE,
 FROM PRODUCT_DIM
 ORDER BY ITEMID, EFFECTIVESTARTDATE;
 
+/* Dimension row counts */
+SELECT COUNT(*) AS DATE_DIM_ROWS FROM DATE_DIM;
+SELECT COUNT(*) AS BRANCH_DIM_ROWS FROM BRANCH_DIM;
+SELECT COUNT(*) AS COURIER_DIM_ROWS FROM COURIER_DIM;
+SELECT COUNT(*) AS PRODUCT_DIM_ROWS FROM PRODUCT_DIM;
+SELECT COUNT(*) AS REWARD_DIM_ROWS FROM REWARD_DIM;
+SELECT COUNT(*) AS EMPLOYEE_DIM_ROWS FROM EMPLOYEE_DIM;
+SELECT COUNT(*) AS CUSTOMER_DIM_ROWS FROM CUSTOMER_DIM;
+SELECT COUNT(*) AS ORDER_PROFILE_DIM_ROWS FROM ORDER_PROFILE_DIM;
+/* SELECT COUNT(*) AS REDEMPTION_STATUS_DIM_ROWS FROM REDEMPTION_STATUS_DIM; */
+
+/* Fact row counts */
 SELECT COUNT(*) AS SALES_FACT_ROWS FROM SALES_FACT;
 SELECT COUNT(*) AS DELIVERY_FACT_ROWS FROM DELIVERY_FACT;
 SELECT COUNT(*) AS REWARD_FACT_ROWS FROM REWARD_FACT;
