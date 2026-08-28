@@ -428,7 +428,38 @@ BEGIN
                 m.name, m.gender, 'Normal', 1.00,
                 v_start, DATE '9999-12-31', 'N');
     END LOOP;
- 
+
+    /* ========================================================
+       SET CURRENT CUSTOMER VERSION
+       ======================================================== */
+    UPDATE CUSTOMER_DIM
+    SET FLAG = 'N'
+    WHERE CUSTOMERKEY <> -1;
+
+    UPDATE CUSTOMER_DIM
+    SET FLAG = 'Y'
+    WHERE CUSTOMERKEY IN
+    (
+        SELECT CUSTOMERKEY
+        FROM
+        (
+            SELECT
+                CUSTOMERKEY,
+                ROW_NUMBER() OVER
+                (
+                    PARTITION BY CUSTOMERID
+                    ORDER BY EFFECTIVESTARTDATE DESC,
+                             CUSTOMERKEY DESC
+                ) AS rn
+            FROM CUSTOMER_DIM
+            WHERE CUSTOMERID IS NOT NULL
+              AND DATE '2026-07-20'
+                  BETWEEN EFFECTIVESTARTDATE
+                      AND EFFECTIVEENDDATE
+        )
+        WHERE rn = 1
+    );
+
     COMMIT;
 END;
 /
@@ -531,11 +562,37 @@ SELECT
     od.unit_price,
     od.quantity,
     od.subtotal,
-    ROUND(o.discount_amount * od.subtotal / NULLIF(o.subtotal_amount, 0), 2),
-    od.subtotal - ROUND(o.discount_amount * od.subtotal / NULLIF(o.subtotal_amount, 0), 2),
+    CASE
+        WHEN rw.reward_type = 'Discount'
+        THEN ROUND(
+            o.discount_amount * od.subtotal /
+            NULLIF(o.subtotal_amount, 0),
+            2
+        )
+        ELSE 0
+    END,
+    od.subtotal
+    - CASE
+        WHEN rw.reward_type = 'Discount'
+        THEN ROUND(
+            o.discount_amount * od.subtotal /
+            NULLIF(o.subtotal_amount, 0),
+            2
+        )
+        ELSE 0
+    END
+    - CASE
+        WHEN rr.status = 'Refunded'
+        THEN NVL(rr.refund_amount, 0)
+        ELSE 0
+    END,
     rt.score,
     NVL(rr.return_quantity, 0),
-    NVL(rr.refund_amount, 0)
+    CASE
+        WHEN rr.status = 'Refunded'
+        THEN NVL(rr.refund_amount, 0)
+        ELSE 0
+    END
 FROM        WAREHOUSEDATA.Order_Detail od
 JOIN        WAREHOUSEDATA.Orders o ON o.order_no = od.order_no
 JOIN        DATE_DIM d ON d.CAL_DATE = TRUNC(CAST(o.order_date_time AS DATE))
@@ -552,7 +609,10 @@ JOIN        ORDER_PROFILE_DIM op ON op.order_type = o.order_type
                                 AND op.order_status = o.order_status
                                 AND op.mykasih_purchase = CASE WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised' ELSE 'Standard Purchase' END
 LEFT JOIN   WAREHOUSEDATA.Rating rt ON rt.order_no = od.order_no AND rt.item_id = od.item_id
-LEFT JOIN   WAREHOUSEDATA.Return_Request rr ON rr.order_no = od.order_no AND rr.item_id = od.item_id;
+LEFT JOIN   WAREHOUSEDATA.Return_Request rr ON rr.order_no = od.order_no AND rr.item_id = od.item_id
+LEFT JOIN WAREHOUSEDATA.Reward_Redemption red ON red.redemption_id = o.redemption_id
+LEFT JOIN WAREHOUSEDATA.Reward rw ON rw.reward_id = red.reward_id;
+
 
 
 INSERT INTO DELIVERY_FACT (
