@@ -1,0 +1,352 @@
+/* ============================================================
+   DUPLICATE DATA TEST FOR TASK 2(b)
+
+   Scenario:
+   - The July subsequent load (01-Jul-2026 to 20-Jul-2026)
+     has ALREADY been loaded into the warehouse.
+   - This test simulates receiving:
+         5 duplicate SALES records
+         5 duplicate DELIVERY records
+   - The test checks the incoming records against the existing
+     fact tables.
+   - Duplicate records are written into ETL_REJECT_LOG.
+   - Nothing from these test staging tables is inserted into
+     SALES_FACT or DELIVERY_FACT, so analytics are not changed.
+
+   Duplicate business grains:
+       SALES    : ORDER_NO + ITEM_ID
+       DELIVERY : ORDER_NO
+   ============================================================ */
+
+SET SERVEROUTPUT ON;
+
+
+/* ============================================================
+   1. CREATE RAW STAGING TABLES
+   ============================================================ */
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE ETL_DUP_SALES_STAGE';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN
+            RAISE;
+        END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE ETL_DUP_DELIVERY_STAGE';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN
+            RAISE;
+        END IF;
+END;
+/
+
+CREATE TABLE ETL_DUP_SALES_STAGE (
+    STAGE_ID        NUMBER,
+    ORDER_NO        VARCHAR2(20),
+    ITEM_ID         VARCHAR2(20),
+    ORDER_DATE_TIME TIMESTAMP,
+    BATCH_FROM      DATE,
+    BATCH_TO        DATE
+);
+
+CREATE TABLE ETL_DUP_DELIVERY_STAGE (
+    STAGE_ID            NUMBER,
+    DELIVERY_REQUEST_ID VARCHAR2(20),
+    ORDER_NO            VARCHAR2(20),
+    ORDER_DATE_TIME     TIMESTAMP,
+    BATCH_FROM          DATE,
+    BATCH_TO            DATE
+);
+
+
+/* ============================================================
+   2. SIMULATE 5 DUPLICATE SALES RECORDS
+
+   These five July Order_Detail records were already loaded by
+   the July subsequent ETL. They are treated as arriving again.
+   ============================================================ */
+
+INSERT INTO ETL_DUP_SALES_STAGE (
+    STAGE_ID,
+    ORDER_NO,
+    ITEM_ID,
+    ORDER_DATE_TIME,
+    BATCH_FROM,
+    BATCH_TO
+)
+SELECT
+    ROWNUM,
+    q.order_no,
+    q.item_id,
+    q.order_date_time,
+    DATE '2026-07-01',
+    DATE '2026-07-21'
+FROM (
+    SELECT
+        od.order_no,
+        od.item_id,
+        o.order_date_time
+    FROM WAREHOUSEDATA.Order_Detail od
+    JOIN WAREHOUSEDATA.Orders o
+      ON o.order_no = od.order_no
+    WHERE o.order_date_time >= TIMESTAMP '2026-07-01 00:00:00'
+      AND o.order_date_time <  TIMESTAMP '2026-07-21 00:00:00'
+    ORDER BY o.order_date_time, od.order_no, od.item_id
+) q
+WHERE ROWNUM <= 5;
+
+COMMIT;
+
+
+/* ============================================================
+   3. SIMULATE 5 DUPLICATE DELIVERY RECORDS
+
+   These five July delivery records were already loaded by the
+   July subsequent ETL. They are treated as arriving again.
+   ============================================================ */
+
+INSERT INTO ETL_DUP_DELIVERY_STAGE (
+    STAGE_ID,
+    DELIVERY_REQUEST_ID,
+    ORDER_NO,
+    ORDER_DATE_TIME,
+    BATCH_FROM,
+    BATCH_TO
+)
+SELECT
+    ROWNUM,
+    q.delivery_request_id,
+    q.order_no,
+    q.order_date_time,
+    DATE '2026-07-01',
+    DATE '2026-07-21'
+FROM (
+    SELECT
+        dr.delivery_request_id,
+        dr.order_no,
+        o.order_date_time
+    FROM WAREHOUSEDATA.Delivery_Request dr
+    JOIN WAREHOUSEDATA.Orders o
+      ON o.order_no = dr.order_no
+    WHERE o.order_date_time >= TIMESTAMP '2026-07-01 00:00:00'
+      AND o.order_date_time <  TIMESTAMP '2026-07-21 00:00:00'
+    ORDER BY o.order_date_time, dr.order_no
+) q
+WHERE ROWNUM <= 5;
+
+COMMIT;
+
+
+/* ============================================================
+   4. VERIFY INCOMING TEST RECORDS
+   ============================================================ */
+
+SELECT COUNT(*) AS SALES_STAGE_ROWS
+FROM ETL_DUP_SALES_STAGE;
+
+SELECT COUNT(*) AS DELIVERY_STAGE_ROWS
+FROM ETL_DUP_DELIVERY_STAGE;
+
+
+/* Show the five incoming sales rows */
+SELECT
+    STAGE_ID,
+    ORDER_NO,
+    ITEM_ID,
+    ORDER_DATE_TIME
+FROM ETL_DUP_SALES_STAGE
+ORDER BY STAGE_ID;
+
+
+/* Show the five incoming delivery rows */
+SELECT
+    STAGE_ID,
+    DELIVERY_REQUEST_ID,
+    ORDER_NO,
+    ORDER_DATE_TIME
+FROM ETL_DUP_DELIVERY_STAGE
+ORDER BY STAGE_ID;
+
+
+/* ============================================================
+   5. REMOVE ONLY OLD DUPLICATE-DEMO REJECT ROWS
+
+   This makes the script repeatable during demonstration.
+   Other ETL reject records are not removed.
+   ============================================================ */
+
+DELETE FROM ETL_REJECT_LOG
+WHERE BATCH_FROM = DATE '2026-07-01'
+  AND BATCH_TO   = DATE '2026-07-21'
+  AND (
+        (SOURCE_TABLE = 'ORDER_DETAIL'
+         AND REASON LIKE 'Duplicate incoming sales record:%')
+        OR
+        (SOURCE_TABLE = 'DELIVERY_REQUEST'
+         AND REASON LIKE 'Duplicate incoming delivery record:%')
+      );
+
+COMMIT;
+
+
+/* ============================================================
+   6. REJECT 5 DUPLICATE SALES RECORDS
+
+   SALES_FACT stores PRODUCTKEY instead of ITEM_ID.
+   PRODUCT_DIM is used to resolve PRODUCTKEY back to ITEM_ID.
+
+   SOURCE_KEY stores ORDER_NO only because the current
+   ETL_REJECT_LOG.SOURCE_KEY is limited to VARCHAR2(10).
+   ITEM_ID is included in REASON.
+   ============================================================ */
+
+INSERT INTO ETL_REJECT_LOG (
+    REJECT_ID,
+    BATCH_FROM,
+    BATCH_TO,
+    SOURCE_TABLE,
+    SOURCE_KEY,
+    REASON,
+    REJECTED_AT
+)
+SELECT
+    ETL_REJECT_SEQ.NEXTVAL,
+    s.BATCH_FROM,
+    s.BATCH_TO,
+    'ORDER_DETAIL',
+    SUBSTR(s.ORDER_NO, 1, 10),
+    'Duplicate incoming sales record: ITEM_ID=' || s.ITEM_ID ||
+    '; ORDER_NO + ITEM_ID already exist in SALES_FACT',
+    SYSTIMESTAMP
+FROM ETL_DUP_SALES_STAGE s
+WHERE EXISTS (
+    SELECT 1
+    FROM SALES_FACT sf
+    JOIN PRODUCT_DIM p
+      ON p.PRODUCTKEY = sf.PRODUCTKEY
+    WHERE sf.ORDERNO = s.ORDER_NO
+      AND p.ITEMID = s.ITEM_ID
+);
+
+COMMIT;
+
+
+/* ============================================================
+   7. REJECT 5 DUPLICATE DELIVERY RECORDS
+
+   DELIVERY_FACT has one row per ORDERNO, so ORDER_NO is used
+   as the duplicate business grain.
+   ============================================================ */
+
+INSERT INTO ETL_REJECT_LOG (
+    REJECT_ID,
+    BATCH_FROM,
+    BATCH_TO,
+    SOURCE_TABLE,
+    SOURCE_KEY,
+    REASON,
+    REJECTED_AT
+)
+SELECT
+    ETL_REJECT_SEQ.NEXTVAL,
+    s.BATCH_FROM,
+    s.BATCH_TO,
+    'DELIVERY_REQUEST',
+    SUBSTR(s.ORDER_NO, 1, 10),
+    'Duplicate incoming delivery record: DELIVERY_REQUEST_ID=' ||
+    s.DELIVERY_REQUEST_ID ||
+    '; ORDER_NO already exists in DELIVERY_FACT',
+    SYSTIMESTAMP
+FROM ETL_DUP_DELIVERY_STAGE s
+WHERE EXISTS (
+    SELECT 1
+    FROM DELIVERY_FACT df
+    WHERE df.ORDERNO = s.ORDER_NO
+);
+
+COMMIT;
+
+
+/* ============================================================
+   8. VERIFY REJECT RESULTS
+
+   Expected:
+       SALES_DUP_REJECTS    = 5
+       DELIVERY_DUP_REJECTS = 5
+       TOTAL_DUP_REJECTS    = 10
+   ============================================================ */
+
+SELECT COUNT(*) AS SALES_DUP_REJECTS
+FROM ETL_REJECT_LOG
+WHERE BATCH_FROM = DATE '2026-07-01'
+  AND BATCH_TO   = DATE '2026-07-21'
+  AND SOURCE_TABLE = 'ORDER_DETAIL'
+  AND REASON LIKE 'Duplicate incoming sales record:%';
+
+
+SELECT COUNT(*) AS DELIVERY_DUP_REJECTS
+FROM ETL_REJECT_LOG
+WHERE BATCH_FROM = DATE '2026-07-01'
+  AND BATCH_TO   = DATE '2026-07-21'
+  AND SOURCE_TABLE = 'DELIVERY_REQUEST'
+  AND REASON LIKE 'Duplicate incoming delivery record:%';
+
+
+SELECT COUNT(*) AS TOTAL_DUP_REJECTS
+FROM ETL_REJECT_LOG
+WHERE BATCH_FROM = DATE '2026-07-01'
+  AND BATCH_TO   = DATE '2026-07-21'
+  AND (
+        (SOURCE_TABLE = 'ORDER_DETAIL'
+         AND REASON LIKE 'Duplicate incoming sales record:%')
+        OR
+        (SOURCE_TABLE = 'DELIVERY_REQUEST'
+         AND REASON LIKE 'Duplicate incoming delivery record:%')
+      );
+
+
+/* Show all 10 rejected duplicate records */
+SELECT
+    REJECT_ID,
+    SOURCE_TABLE,
+    SOURCE_KEY,
+    REASON,
+    REJECTED_AT
+FROM ETL_REJECT_LOG
+WHERE BATCH_FROM = DATE '2026-07-01'
+  AND BATCH_TO   = DATE '2026-07-21'
+  AND (
+        (SOURCE_TABLE = 'ORDER_DETAIL'
+         AND REASON LIKE 'Duplicate incoming sales record:%')
+        OR
+        (SOURCE_TABLE = 'DELIVERY_REQUEST'
+         AND REASON LIKE 'Duplicate incoming delivery record:%')
+      )
+ORDER BY REJECT_ID;
+
+
+/* ============================================================
+   9. CONFIRM FACT TABLES ARE NOT CHANGED BY THIS TEST
+
+   This script performs no INSERT/MERGE into SALES_FACT or
+   DELIVERY_FACT.
+   ============================================================ */
+
+SELECT COUNT(*) AS SALES_FACT_ROWS
+FROM SALES_FACT;
+
+SELECT COUNT(*) AS DELIVERY_FACT_ROWS
+FROM DELIVERY_FACT;
+
+
+/* ============================================================
+   OPTIONAL CLEANUP AFTER SCREENSHOT / DEMONSTRATION
+   ============================================================ */
+
+-- DROP TABLE ETL_DUP_SALES_STAGE;
+-- DROP TABLE ETL_DUP_DELIVERY_STAGE;

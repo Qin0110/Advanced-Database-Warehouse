@@ -155,22 +155,22 @@ CREATE TABLE DATE_DIM(
 );
 
 CREATE TABLE BRANCH_DIM(
-	BRANCHKEY NUMBER PRIMARY KEY,
-	BRANCHID VARCHAR2(20),
-	BRANCHNAME VARCHAR2(100),
-	BRANCHAREA VARCHAR2(50),
-	BRANCHSTATE VARCHAR2(30),
-	STATUS VARCHAR2(10),
+    BRANCHKEY NUMBER PRIMARY KEY,
+    BRANCHID VARCHAR2(20),
+    BRANCHNAME VARCHAR2(100),
+    BRANCHAREA VARCHAR2(50),
+    BRANCHSTATE VARCHAR2(30),
+    STATUS VARCHAR2(10),
 	BRANCHOPENTIME VARCHAR2(10) ,
-	BRANCHCLOSETIME VARCHAR2(10),
-	EFFECTIVESTARTDATE DATE NOT NULL,
-	EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
-	FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL,
-	FOREIGN KEY (BRANCHID) REFERENCES WAREHOUSEDATA.BRANCH(BRANCH_ID)
+    BRANCHCLOSETIME VARCHAR2(10),
+    EFFECTIVESTARTDATE DATE NOT NULL,
+    EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
+    FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL,
+    FOREIGN KEY (BRANCHID) REFERENCES WAREHOUSEDATA.BRANCH(BRANCH_ID)
 );
 
 CREATE TABLE ORDER_PROFILE_DIM(
-	order_profile_key   NUMBER PRIMARY KEY,
+    order_profile_key   NUMBER PRIMARY KEY,
     order_type          VARCHAR2(20)  NOT NULL,   -- 'Online' / 'Walk-In'
     service_type        VARCHAR2(20)  NOT NULL,   -- 'Pickup' / 'Delivery'
     order_status        VARCHAR2(20)  NOT NULL,   -- 'Processing','Completed','Cancelled'
@@ -178,148 +178,152 @@ CREATE TABLE ORDER_PROFILE_DIM(
 );
 
 CREATE TABLE EMPLOYEE_DIM(
-	EMPLOYEEKEY NUMBER PRIMARY KEY,
-	EMPLOYEEID VARCHAR2(20),
-	EMPLOYEENAME VARCHAR2(100),
-	POSITION VARCHAR2(50),
-	SALARY NUMBER(8,2),
-	HIREDATE DATE NOT NULL,
-	RESIGNDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
-	EFFECTIVESTARTDATE DATE NOT NULL,
-	EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
-	FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
-	FOREIGN KEY (EMPLOYEEID) REFERENCES WAREHOUSEDATA.EMPLOYEE(EMPLOYEE_ID)
+    EMPLOYEEKEY NUMBER PRIMARY KEY,
+    EMPLOYEEID VARCHAR2(20),
+    EMPLOYEENAME VARCHAR2(100),
+    POSITION VARCHAR2(50),
+    SALARY NUMBER(8,2),
+    HIREDATE DATE NOT NULL,
+    RESIGNDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
+    EFFECTIVESTARTDATE DATE NOT NULL,
+    EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
+    FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
+    FOREIGN KEY (EMPLOYEEID) REFERENCES WAREHOUSEDATA.EMPLOYEE(EMPLOYEE_ID)
 );
 
 CREATE TABLE PRODUCT_DIM(
-	PRODUCTKEY NUMBER PRIMARY KEY,
-	ITEMID VARCHAR2(20),
-	SUPPLIERID VARCHAR2(20),
-	SUPPLIERNAME VARCHAR2(100),
-	ITEMNAME VARCHAR2(100),
-	UNITPRICE NUMBER(7,2),
-	UNITOFMEASURE VARCHAR2(20),
-	UNITWEIGHT NUMBER(7,3),
-	IS_MYKASIH_ELIGIBLE CHAR(1),
-	PRODUCTSTATUS VARCHAR2(10),
-	EFFECTIVESTARTDATE DATE NOT NULL,
-	EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
-	FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
-	FOREIGN KEY (ITEMID) REFERENCES WAREHOUSEDATA.ITEM(ITEM_ID),
-	FOREIGN KEY (SUPPLIERID) REFERENCES WAREHOUSEDATA.SUPPLIER(SUPPLIER_ID)
+    PRODUCTKEY NUMBER PRIMARY KEY,
+    ITEMID VARCHAR2(20),
+    SUPPLIERID VARCHAR2(20),
+    SUPPLIERNAME VARCHAR2(100),
+    ITEMNAME VARCHAR2(100),
+    UNITPRICE NUMBER(7,2),
+    UNITOFMEASURE VARCHAR2(20),
+    UNITWEIGHT NUMBER(7,3),
+    IS_MYKASIH_ELIGIBLE CHAR(1),
+    PRODUCTSTATUS VARCHAR2(10),
+    EFFECTIVESTARTDATE DATE NOT NULL,
+    EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
+    FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
+    FOREIGN KEY (ITEMID) REFERENCES WAREHOUSEDATA.ITEM(ITEM_ID),
+    FOREIGN KEY (SUPPLIERID) REFERENCES WAREHOUSEDATA.SUPPLIER(SUPPLIER_ID)
 );
 
 CREATE TABLE CUSTOMER_DIM(
-	CUSTOMERKEY NUMBER PRIMARY KEY,
-	CUSTOMERID VARCHAR2(20),
-	MEMBERID VARCHAR2(20),
-	NAME VARCHAR2(100),
-	GENDER VARCHAR2(10),
-	MEMBERSHIPTYPE VARCHAR2(10),
-	POINTRATE NUMBER(3,2),
-	EFFECTIVESTARTDATE DATE NOT NULL,
-	EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
-	FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
-	FOREIGN KEY (CUSTOMERID) REFERENCES WAREHOUSEDATA.CUSTOMER(CUSTOMER_ID)
+    CUSTOMERKEY NUMBER PRIMARY KEY,
+    CUSTOMERID VARCHAR2(20),
+    MEMBERID VARCHAR2(20),
+    NAME VARCHAR2(100),
+    GENDER VARCHAR2(10),
+    MEMBERSHIPTYPE VARCHAR2(10),
+    POINTRATE NUMBER(3,2),
+    EFFECTIVESTARTDATE DATE NOT NULL,
+    EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
+    FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
+    FOREIGN KEY (CUSTOMERID) REFERENCES WAREHOUSEDATA.CUSTOMER(CUSTOMER_ID)
 );
 
 CREATE TABLE COURIER_DIM(
-	COURIERKEY NUMBER PRIMARY KEY,
-	COURIERID VARCHAR2(20),
-	COURIERNAME VARCHAR2(100),
-	DELIVERYCOMPANYID VARCHAR2(20),
-	DELIVERYCOMPANYNAME VARCHAR2(100),
-	EFFECTIVESTARTDATE DATE NOT NULL,
-	EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
-	FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
-	FOREIGN KEY (COURIERID) REFERENCES WAREHOUSEDATA.COURIER(COURIER_ID),
-	FOREIGN KEY (DELIVERYCOMPANYID) REFERENCES WAREHOUSEDATA.DELIVERY_COMPANY(DELIVERY_COMPANY_ID)
+    COURIERKEY NUMBER PRIMARY KEY,
+    COURIERID VARCHAR2(20),
+    COURIERNAME VARCHAR2(100),
+    DELIVERYCOMPANYID VARCHAR2(20),
+    DELIVERYCOMPANYNAME VARCHAR2(100),
+    EFFECTIVESTARTDATE DATE NOT NULL,
+    EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
+    FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
+    FOREIGN KEY (COURIERID) REFERENCES WAREHOUSEDATA.COURIER(COURIER_ID),
+    FOREIGN KEY (DELIVERYCOMPANYID) REFERENCES WAREHOUSEDATA.DELIVERY_COMPANY(DELIVERY_COMPANY_ID)
 );
 
 CREATE TABLE DELIVERY_STATUS_DIM(
-	DELIVERY_STATUS_KEY NUMBER PRIMARY KEY,
-	DELIVERY_STATUS VARCHAR2(20)
+    DELIVERY_STATUS_KEY NUMBER PRIMARY KEY,
+    DELIVERY_STATUS VARCHAR2(20)
 );
 
 CREATE TABLE REWARD_DIM(
-	REWARD_KEY NUMBER PRIMARY KEY,
-	REWARDID VARCHAR2(20),
-	REWARDNAME VARCHAR2(100),
-	REWARDTYPE VARCHAR2(20),
-	POINTSREQUIRED NUMBER(10,0),
-	REWARDVALUE NUMBER(7,2),
-	REWARDSTATUS VARCHAR2(10),
-	EFFECTIVESTARTDATE DATE NOT NULL,
-	EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
-	FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
-	FOREIGN KEY (REWARDID) REFERENCES WAREHOUSEDATA.REWARD(REWARD_ID)
+    REWARD_KEY NUMBER PRIMARY KEY,
+    REWARDID VARCHAR2(20),
+    REWARDNAME VARCHAR2(100),
+    REWARDTYPE VARCHAR2(20),
+    POINTSREQUIRED NUMBER(10,0),
+    REWARDVALUE NUMBER(7,2),
+    REWARDSTATUS VARCHAR2(10),
+    EFFECTIVESTARTDATE DATE NOT NULL,
+    EFFECTIVEENDDATE DATE DEFAULT DATE '9999-12-31' NOT NULL,
+    FLAG VARCHAR2(1) DEFAULT 'Y' NOT NULL CHECK (FLAG IN ('Y', 'N')),
+    FOREIGN KEY (REWARDID) REFERENCES WAREHOUSEDATA.REWARD(REWARD_ID)
 );
 
 -- Insert value -1 to indicate key with empty value (null) > fact table cannot have null in composite key
 INSERT INTO CUSTOMER_DIM
 VALUES (-1, NULL, 'Non-Member', 'N/A', 'Unknown',
        'N/A', 0, DATE '2020-01-01', DATE '9999-12-31', 'Y');
- 
+
 INSERT INTO COURIER_DIM (COURIERKEY, COURIERID, COURIERNAME, DELIVERYCOMPANYID,
        DELIVERYCOMPANYNAME, EFFECTIVESTARTDATE, EFFECTIVEENDDATE, FLAG)
 VALUES (-1, NULL, 'Not Applicable', NULL, 'Not Applicable', DATE '2020-01-01', DATE '9999-12-31', 'Y');
- 
+
 INSERT INTO DELIVERY_STATUS_DIM VALUES (-1, 'Not Applicable');
- 
+
 INSERT INTO REWARD_DIM (REWARD_KEY, REWARDID, REWARDNAME, REWARDTYPE,
        POINTSREQUIRED, REWARDVALUE,
        REWARDSTATUS, EFFECTIVESTARTDATE, EFFECTIVEENDDATE, FLAG)
 VALUES (-1, NULL, 'No Redemption', 'Not Applicable', 0,
        0, 'N/A', DATE '2020-01-01', DATE '9999-12-31', 'Y');
-	   
+
 	   
 INSERT INTO DATE_DIM (DATE_KEY, CAL_DATE, FULL_DESC, DAY_WEEK, CAL_MONTH_NAME, CAL_YEAR)
 SELECT -1, DATE '9999-12-31', 'Not Delivered', 'N/A', 'N/A', 9999 FROM dual
 WHERE  NOT EXISTS (SELECT 1 FROM DATE_DIM WHERE DATE_KEY = -1);
-	   
-	   
+
+
 -- DIMENSION INITIAL LOAD
+-- Historical transaction cutoff for initial load:
+-- all transaction facts/order profiles before 01-Jul-2026,
+-- therefore the initial warehouse contains data through 30-Jun-2026.
+
 CREATE OR REPLACE PROCEDURE DATE_GENERATION
 IS
-	v_start_date DATE := DATE '2015-01-01';
-	v_end_date DATE := DATE '2026-12-31';
+    v_start_date DATE := DATE '2015-01-01';
+    v_end_date DATE := DATE '2026-12-31';
 BEGIN
-	WHILE v_start_date <= v_end_date LOOP
-		INSERT INTO DATE_DIM(
-			DATE_KEY,
-			CAL_DATE,			
-			FULL_DESC,
-			DAY_WEEK,
-			DAY_NUM_MONTH,
-			DAY_NUM_YEAR,
-			LAST_DAY_IND,
-			CAL_WEEK_END_DATE,
-			CAL_WEEK_YEAR,	
-			CAL_MONTH_NAME,	
-			CAL_MONTH_YEAR,
-			CAL_YEAR_MONTH,	
-			CAL_QUARTER,
-			CAL_YEAR_QUARTER,
-			CAL_YEAR
-		) VALUES (
-			DATE_SEQ.NEXTVAL,
-			v_start_date,
-			TO_CHAR(v_start_date, 'DL'),
-			TO_CHAR(v_start_date, 'DAY'),
-			TO_NUMBER(TO_CHAR(v_start_date, 'DD')),
-			TO_NUMBER(TO_CHAR(v_start_date, 'DDD')),
-			CASE WHEN v_start_date = LAST_DAY(v_start_date) THEN 'Y' ELSE 'N' END,
-			TRUNC(v_start_date, 'IW') + 6,
-			TO_NUMBER(TO_CHAR(v_start_date, 'IW')),
-			TO_CHAR(v_start_date, 'MONTH'),
-			TO_NUMBER(TO_CHAR(v_start_date, 'MM')),
-			TO_CHAR(v_start_date, 'YYYYMM'),
-			'Q' || TO_CHAR(v_start_date, 'Q'),
-			TO_CHAR(v_start_date, 'YYYY') || '-Q' || TO_CHAR(v_start_date, 'Q'),
-			TO_NUMBER(TO_CHAR(v_start_date, 'YYYY'))
-		);
-		v_start_date := v_start_date + 1;
-	END LOOP;	
+    WHILE v_start_date <= v_end_date LOOP
+        INSERT INTO DATE_DIM(
+            DATE_KEY,
+            CAL_DATE,
+            FULL_DESC,
+            DAY_WEEK,
+            DAY_NUM_MONTH,
+            DAY_NUM_YEAR,
+            LAST_DAY_IND,
+            CAL_WEEK_END_DATE,
+            CAL_WEEK_YEAR,
+            CAL_MONTH_NAME,
+            CAL_MONTH_YEAR,
+            CAL_YEAR_MONTH,
+            CAL_QUARTER,
+            CAL_YEAR_QUARTER,
+            CAL_YEAR
+        ) VALUES (
+            DATE_SEQ.NEXTVAL,
+            v_start_date,
+            TO_CHAR(v_start_date, 'DL'),
+            TO_CHAR(v_start_date, 'DAY'),
+            TO_NUMBER(TO_CHAR(v_start_date, 'DD')),
+            TO_NUMBER(TO_CHAR(v_start_date, 'DDD')),
+            CASE WHEN v_start_date = LAST_DAY(v_start_date) THEN 'Y' ELSE 'N' END,
+            TRUNC(v_start_date, 'IW') + 6,
+            TO_NUMBER(TO_CHAR(v_start_date, 'IW')),
+            TO_CHAR(v_start_date, 'MONTH'),
+            TO_NUMBER(TO_CHAR(v_start_date, 'MM')),
+            TO_CHAR(v_start_date, 'YYYYMM'),
+            'Q' || TO_CHAR(v_start_date, 'Q'),
+            TO_CHAR(v_start_date, 'YYYY') || '-Q' || TO_CHAR(v_start_date, 'Q'),
+            TO_NUMBER(TO_CHAR(v_start_date, 'YYYY'))
+        );
+        v_start_date := v_start_date + 1;
+    END LOOP;
 END;
 /
 
@@ -327,14 +331,14 @@ EXECUTE DATE_GENERATION;
 COMMIT;
 
 INSERT INTO BRANCH_DIM SELECT 
-	BRANCH_DIM_SEQ.NEXTVAL, 
-	b.branch_id, 
-	b.name, 
-	INITCAP(
-		REGEXP_SUBSTR(b.name, 'speedmart[[:space:]]+(.+)$', 1, 1, 'i', 1)
-	),
-	TRIM(REGEXP_REPLACE(REGEXP_SUBSTR(b.address, '[^,]+$'), '^[[:space:]]*[0-9]{5}[[:space:]]+', '')),
-	b.status,
+    BRANCH_DIM_SEQ.NEXTVAL,
+    b.branch_id,
+    b.name,
+    INITCAP(
+        REGEXP_SUBSTR(b.name, 'speedmart[[:space:]]+(.+)$', 1, 1, 'i', 1)
+    ),
+    TRIM(REGEXP_REPLACE(REGEXP_SUBSTR(b.address, '[^,]+$'), '^[[:space:]]*[0-9]{5}[[:space:]]+', '')),
+    b.status,
 	b.open_time, b.close_time, DATE '2020-01-01', DATE '9999-12-31', 'Y'
 FROM WAREHOUSEDATA.Branch b;
 
@@ -344,42 +348,48 @@ SELECT COURIER_DIM_SEQ.NEXTVAL, c.courier_id, c.name,
        DATE '2020-01-01', DATE '9999-12-31', 'Y'
 FROM   WAREHOUSEDATA.Courier c
 JOIN   WAREHOUSEDATA.Delivery_Company dc
-       ON dc.delivery_company_id = c.delivery_company_id;
+  ON dc.delivery_company_id = c.delivery_company_id;
 
+-- Only order-profile combinations that already existed by 30-Jun-2026.
 INSERT INTO ORDER_PROFILE_DIM
 SELECT ORDER_PROFILE_DIM_SEQ.NEXTVAL, x.order_type, x.service_type,
        x.order_status, x.mykasih
 FROM ( SELECT DISTINCT
-              o.order_type,
-              o.service_type,
-              o.order_status,
-              CASE WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
-                   ELSE 'Standard Purchase' END AS mykasih
-       FROM   WAREHOUSEDATA.Orders o ) x;
+           o.order_type,
+           o.service_type,
+           o.order_status,
+           CASE
+               WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
+               ELSE 'Standard Purchase'
+           END AS mykasih
+    FROM WAREHOUSEDATA.Orders o
+    WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00'
+) x;
 
 INSERT INTO REWARD_DIM
 SELECT REWARD_DIM_SEQ.NEXTVAL, r.reward_id, r.name, r.reward_type,
        r.points_required, r.value, r.status,
        DATE '2020-01-01', DATE '9999-12-31', 'Y'
-FROM   WAREHOUSEDATA.Reward r;
+FROM WAREHOUSEDATA.Reward r;
 
 INSERT INTO PRODUCT_DIM
 SELECT PRODUCT_DIM_SEQ.NEXTVAL, i.item_id, i.supplier_id, s.company_name,
        i.name, i.unit_price, i.unit_of_measure, i.unit_weight_kg,
        i.is_mykasih_eligible, i.status,
        DATE '2020-01-01', DATE '9999-12-31', 'Y'
-FROM   WAREHOUSEDATA.Item i
-JOIN   WAREHOUSEDATA.Supplier s ON s.supplier_id = i.supplier_id;
+FROM WAREHOUSEDATA.Item i
+JOIN WAREHOUSEDATA.Supplier s
+  ON s.supplier_id = i.supplier_id;
 
 INSERT INTO DELIVERY_STATUS_DIM VALUES (DELIVERY_STATUS_DIM_SEQ.NEXTVAL, 'Delivered');
 INSERT INTO DELIVERY_STATUS_DIM VALUES (DELIVERY_STATUS_DIM_SEQ.NEXTVAL, 'Processing');
 INSERT INTO DELIVERY_STATUS_DIM VALUES (DELIVERY_STATUS_DIM_SEQ.NEXTVAL, 'Failed');
 
-INSERT INTO EMPLOYEE_DIM 
+INSERT INTO EMPLOYEE_DIM
 SELECT EMPLOYEE_DIM_SEQ.NEXTVAL, e.employee_id, e.name, e.position, e.salary,
        e.hire_date, DATE '9999-12-31',
        DATE '2020-01-01', DATE '9999-12-31', 'Y'
-FROM   WAREHOUSEDATA.Employee e;
+FROM WAREHOUSEDATA.Employee e;
 
 DECLARE
     v_start DATE;
@@ -389,48 +399,77 @@ BEGIN
     SELECT CUSTOMER_DIM_SEQ.NEXTVAL, c.customer_id, NULL,
            'Non-Member', 'Unknown', 'None', 0,
            DATE '2020-01-01', DATE '9999-12-31', 'Y'
-    FROM   WAREHOUSEDATA.Customer c
-    WHERE  c.member_id IS NULL;
- 
+    FROM WAREHOUSEDATA.Customer c
+    WHERE c.member_id IS NULL;
+
     -- (b) Members: walk the paid subscription windows in date order.
-    FOR m IN (SELECT c.customer_id, c.member_id, mb.name, mb.gender
-              FROM   WAREHOUSEDATA.Customer c
-              JOIN   WAREHOUSEDATA.Member   mb ON mb.member_id = c.member_id)
+    FOR m IN (
+        SELECT c.customer_id, c.member_id, mb.name, mb.gender
+        FROM WAREHOUSEDATA.Customer c
+        JOIN WAREHOUSEDATA.Member mb
+          ON mb.member_id = c.member_id
+    )
     LOOP
         v_start := DATE '2020-01-01';
- 
-        FOR s IN (SELECT ms.start_date, ms.end_date
-                  FROM   WAREHOUSEDATA.Member_Subscription ms
-                  WHERE  ms.member_id      = m.member_id
-                  AND    ms.payment_status = 'Paid'
-                  ORDER  BY ms.start_date)
+
+        FOR s IN (
+            SELECT ms.start_date, ms.end_date
+            FROM WAREHOUSEDATA.Member_Subscription ms
+            WHERE ms.member_id = m.member_id
+              AND ms.payment_status = 'Paid'
+            ORDER BY ms.start_date
+        )
         LOOP
-            -- Normal period before this VIP window opens
             IF s.start_date > v_start THEN
                 INSERT INTO CUSTOMER_DIM
-                VALUES (CUSTOMER_DIM_SEQ.NEXTVAL, m.customer_id, m.member_id,
-                        m.name, m.gender, 'Normal', 1.00,
-                        v_start, s.start_date - 1, 'N');
+                VALUES (
+                    CUSTOMER_DIM_SEQ.NEXTVAL,
+                    m.customer_id,
+                    m.member_id,
+                    m.name,
+                    m.gender,
+                    'Normal',
+                    1.00,
+                    v_start,
+                    s.start_date - 1,
+                    'N'
+                );
             END IF;
- 
-            -- The VIP window itself
+
             INSERT INTO CUSTOMER_DIM
-            VALUES (CUSTOMER_DIM_SEQ.NEXTVAL, m.customer_id, m.member_id,
-                    m.name, m.gender, 'VIP', 2.00,
-                    s.start_date, s.end_date, 'N');
- 
+            VALUES (
+                CUSTOMER_DIM_SEQ.NEXTVAL,
+                m.customer_id,
+                m.member_id,
+                m.name,
+                m.gender,
+                'VIP',
+                2.00,
+                s.start_date,
+                s.end_date,
+                'N'
+            );
+
             v_start := s.end_date + 1;
         END LOOP;
- 
-        -- Trailing Normal period after the last subscription lapsed
+
         INSERT INTO CUSTOMER_DIM
-        VALUES (CUSTOMER_DIM_SEQ.NEXTVAL, m.customer_id, m.member_id,
-                m.name, m.gender, 'Normal', 1.00,
-                v_start, DATE '9999-12-31', 'N');
+        VALUES (
+            CUSTOMER_DIM_SEQ.NEXTVAL,
+            m.customer_id,
+            m.member_id,
+            m.name,
+            m.gender,
+            'Normal',
+            1.00,
+            v_start,
+            DATE '9999-12-31',
+            'N'
+        );
     END LOOP;
 
     /* ========================================================
-       SET CURRENT CUSTOMER VERSION
+       SET CURRENT CUSTOMER VERSION AS AT INITIAL LOAD CUTOFF
        ======================================================== */
     UPDATE CUSTOMER_DIM
     SET FLAG = 'N'
@@ -438,24 +477,19 @@ BEGIN
 
     UPDATE CUSTOMER_DIM
     SET FLAG = 'Y'
-    WHERE CUSTOMERKEY IN
-    (
+    WHERE CUSTOMERKEY IN (
         SELECT CUSTOMERKEY
-        FROM
-        (
+        FROM (
             SELECT
                 CUSTOMERKEY,
-                ROW_NUMBER() OVER
-                (
+                ROW_NUMBER() OVER (
                     PARTITION BY CUSTOMERID
-                    ORDER BY EFFECTIVESTARTDATE DESC,
-                             CUSTOMERKEY DESC
+                    ORDER BY EFFECTIVESTARTDATE DESC, CUSTOMERKEY DESC
                 ) AS rn
             FROM CUSTOMER_DIM
             WHERE CUSTOMERID IS NOT NULL
-              AND DATE '2026-07-20'
-                  BETWEEN EFFECTIVESTARTDATE
-                      AND EFFECTIVEENDDATE
+              AND DATE '2026-06-30'
+                  BETWEEN EFFECTIVESTARTDATE AND EFFECTIVEENDDATE
         )
         WHERE rn = 1
     );
@@ -472,43 +506,43 @@ CREATE TABLE SALES_FACT (
     PRODUCTKEY               NUMBER        NOT NULL,
     ORDERPROFILEKEY          NUMBER(6)     NOT NULL,
     EMPLOYEEKEY              NUMBER        NOT NULL,
-    ORDERNO                  VARCHAR2(20)  NOT NULL,  
+    ORDERNO                  VARCHAR2(20)  NOT NULL,
     UNITSELLINGPRICE         NUMBER(7,2)   DEFAULT 0 NOT NULL,
     PURCHASEQUANTITY         NUMBER(7)     DEFAULT 0 NOT NULL,
     GROSSLINEAMOUNT          NUMBER(12,2)  DEFAULT 0 NOT NULL,
     ALLOCATEDDISCOUNTAMOUNT  NUMBER(12,2)  DEFAULT 0 NOT NULL,
     NETLINEAMOUNT            NUMBER(12,2)  DEFAULT 0 NOT NULL,
-    RATINGSCORE              NUMBER(3,2),                     
+    RATINGSCORE              NUMBER(3,2),
     REFUNDQUANTITY           NUMBER(7)     DEFAULT 0 NOT NULL,
     REFUNDTOTAL              NUMBER(12,2)  DEFAULT 0 NOT NULL,
-	PRIMARY KEY (DATEKEY, BRANCHKEY, CUSTOMERKEY, PRODUCTKEY, ORDERPROFILEKEY, EMPLOYEEKEY, ORDERNO),
-	FOREIGN KEY (DATEKEY) REFERENCES DATE_DIM(DATE_KEY),
+    PRIMARY KEY (DATEKEY, BRANCHKEY, CUSTOMERKEY, PRODUCTKEY, ORDERPROFILEKEY, EMPLOYEEKEY, ORDERNO),
+    FOREIGN KEY (DATEKEY) REFERENCES DATE_DIM(DATE_KEY),
     FOREIGN KEY (BRANCHKEY) REFERENCES BRANCH_DIM(BRANCHKEY),
     FOREIGN KEY (CUSTOMERKEY) REFERENCES CUSTOMER_DIM(CUSTOMERKEY),
     FOREIGN KEY (PRODUCTKEY) REFERENCES PRODUCT_DIM(PRODUCTKEY),
     FOREIGN KEY (ORDERPROFILEKEY) REFERENCES ORDER_PROFILE_DIM(ORDER_PROFILE_KEY),
     FOREIGN KEY (EMPLOYEEKEY) REFERENCES EMPLOYEE_DIM(EMPLOYEEKEY),
-	CONSTRAINT UQ_SALES_GRAIN UNIQUE (ORDERNO, PRODUCTKEY)
+    CONSTRAINT UQ_SALES_GRAIN UNIQUE (ORDERNO, PRODUCTKEY)
 );
 
 CREATE TABLE DELIVERY_FACT (
-    DATEKEY              NUMBER        NOT NULL,   
-    DELIVEREDDATEKEY     NUMBER        NOT NULL,   
+    DATEKEY              NUMBER        NOT NULL,
+    DELIVEREDDATEKEY     NUMBER        NOT NULL,
     BRANCHKEY            NUMBER        NOT NULL,
     CUSTOMERKEY          NUMBER        NOT NULL,
     COURIERKEY           NUMBER        NOT NULL,
     DELIVERY_STATUS_KEY  NUMBER        NOT NULL,
-    DELIVERYREQUESTID    VARCHAR2(20)  NOT NULL,   
-    ORDERNO              VARCHAR2(20)  NOT NULL,   
+    DELIVERYREQUESTID    VARCHAR2(20)  NOT NULL,
+    ORDERNO              VARCHAR2(20)  NOT NULL,
     DELIVERYFEE          NUMBER(10,2)  DEFAULT 0 NOT NULL,
     ORDERTOTALAMOUNT     NUMBER(12,2)  DEFAULT 0 NOT NULL,
-    DELIVERYLEADHOURS    NUMBER(9,2),            
-    DELIVERYRATING       NUMBER(3,2),           
+    DELIVERYLEADHOURS    NUMBER(9,2),
+    DELIVERYRATING       NUMBER(3,2),
     DELIVERYRATINGCOUNT  NUMBER(1)     DEFAULT 0 NOT NULL,
     FAILEDDELIVERYCOUNT  NUMBER(1)     DEFAULT 0 NOT NULL,
     PRIMARY KEY (DATEKEY, DELIVEREDDATEKEY, BRANCHKEY, CUSTOMERKEY, COURIERKEY, DELIVERY_STATUS_KEY, DELIVERYREQUESTID),
     CONSTRAINT UQ_DELIVERY_GRAIN UNIQUE (ORDERNO),
-	FOREIGN KEY (DATEKEY) REFERENCES DATE_DIM(DATE_KEY),
+    FOREIGN KEY (DATEKEY) REFERENCES DATE_DIM(DATE_KEY),
     FOREIGN KEY (DELIVEREDDATEKEY) REFERENCES DATE_DIM(DATE_KEY),
     FOREIGN KEY (BRANCHKEY) REFERENCES BRANCH_DIM(BRANCHKEY),
     FOREIGN KEY (CUSTOMERKEY) REFERENCES CUSTOMER_DIM(CUSTOMERKEY),
@@ -517,40 +551,36 @@ CREATE TABLE DELIVERY_FACT (
 );
 
 CREATE TABLE REWARD_FACT (
-    DATEKEY         NUMBER        NOT NULL,   
-    CUSTOMERKEY     NUMBER        NOT NULL,
-    REWARDKEY       NUMBER        NOT NULL,
-    REDEMPTIONID    VARCHAR2(20)  NOT NULL,  
-    QUANTITYREDEEMED NUMBER(5)    DEFAULT 0 NOT NULL,
-    POINTSPEND      NUMBER(10)    DEFAULT 0 NOT NULL,
-    REWARDVALUE     NUMBER(10,2)  DEFAULT 0 NOT NULL,  
-    USEDCOUNT       NUMBER(1)     DEFAULT 0 NOT NULL,
-    EXPIREDCOUNT    NUMBER(1)     DEFAULT 0 NOT NULL,
-    ACTIVECOUNT     NUMBER(1)     DEFAULT 0 NOT NULL,
+    DATEKEY          NUMBER        NOT NULL,
+    CUSTOMERKEY      NUMBER        NOT NULL,
+    REWARDKEY        NUMBER        NOT NULL,
+    REDEMPTIONID     VARCHAR2(20)  NOT NULL,
+    QUANTITYREDEEMED NUMBER(5)     DEFAULT 0 NOT NULL,
+    POINTSPEND       NUMBER(10)    DEFAULT 0 NOT NULL,
+    REWARDVALUE      NUMBER(10,2)  DEFAULT 0 NOT NULL,
+    USEDCOUNT        NUMBER(1)     DEFAULT 0 NOT NULL,
+    EXPIREDCOUNT     NUMBER(1)     DEFAULT 0 NOT NULL,
+    ACTIVECOUNT      NUMBER(1)     DEFAULT 0 NOT NULL,
     PRIMARY KEY (DATEKEY, CUSTOMERKEY, REWARDKEY, REDEMPTIONID),
     CONSTRAINT UQ_REWARD_GRAIN UNIQUE (REDEMPTIONID),
-    FOREIGN KEY (DATEKEY)     REFERENCES DATE_DIM(DATE_KEY),
+    FOREIGN KEY (DATEKEY) REFERENCES DATE_DIM(DATE_KEY),
     FOREIGN KEY (CUSTOMERKEY) REFERENCES CUSTOMER_DIM(CUSTOMERKEY),
-    FOREIGN KEY (REWARDKEY)   REFERENCES REWARD_DIM(REWARD_KEY)
+    FOREIGN KEY (REWARDKEY) REFERENCES REWARD_DIM(REWARD_KEY)
 );
 
- 
+
 --------------------------------------------------------------------------------
 -- FACT INITIAL LOAD
---
--- THE KEY PATTERN: SCD2 dimensions are joined on natural key AND
---   order date BETWEEN EFFECTIVESTARTDATE AND EFFECTIVEENDDATE.
---   NOT on FLAG = 'Y'. Joining on the current flag would attach a 2021 order
---   to the customer's 2026 membership tier, which destroys SCD2 entirely.
---
--- DATE_DIM uses a sequence surrogate, so the date key must be looked up by
--- joining on CAL_DATE rather than computed from the timestamp.
+-- INITIAL LOAD CUTOFF: THROUGH 30-JUN-2026 ONLY.
+-- 01-JUL-2026 TO 20-JUL-2026 IS RESERVED FOR SUBSEQUENT LOAD.
 --------------------------------------------------------------------------------
+
 INSERT INTO SALES_FACT (
     DATEKEY, BRANCHKEY, CUSTOMERKEY, PRODUCTKEY, ORDERPROFILEKEY, EMPLOYEEKEY,
     ORDERNO, UNITSELLINGPRICE, PURCHASEQUANTITY, GROSSLINEAMOUNT,
     ALLOCATEDDISCOUNTAMOUNT, NETLINEAMOUNT, RATINGSCORE,
-    REFUNDQUANTITY, REFUNDTOTAL)
+    REFUNDQUANTITY, REFUNDTOTAL
+)
 SELECT
     d.DATE_KEY,
     b.BRANCHKEY,
@@ -593,33 +623,55 @@ SELECT
         THEN NVL(rr.refund_amount, 0)
         ELSE 0
     END
-FROM        WAREHOUSEDATA.Order_Detail od
-JOIN        WAREHOUSEDATA.Orders o ON o.order_no = od.order_no
-JOIN        DATE_DIM d ON d.CAL_DATE = TRUNC(CAST(o.order_date_time AS DATE))
-JOIN        BRANCH_DIM b ON b.BRANCHID = o.branch_id
-                        AND CAST(o.order_date_time AS DATE) BETWEEN b.EFFECTIVESTARTDATE AND b.EFFECTIVEENDDATE
-LEFT JOIN   CUSTOMER_DIM c ON c.CUSTOMERID = o.customer_id
-                          AND CAST(o.order_date_time AS DATE) BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
-JOIN        PRODUCT_DIM p ON p.ITEMID = od.item_id
-                         AND CAST(o.order_date_time AS DATE) BETWEEN p.EFFECTIVESTARTDATE AND p.EFFECTIVEENDDATE
-JOIN        EMPLOYEE_DIM e ON e.EMPLOYEEID = o.handled_by
-                          AND CAST(o.order_date_time AS DATE) BETWEEN e.EFFECTIVESTARTDATE AND e.EFFECTIVEENDDATE
-JOIN        ORDER_PROFILE_DIM op ON op.order_type = o.order_type
-                                AND op.service_type = o.service_type
-                                AND op.order_status = o.order_status
-                                AND op.mykasih_purchase = CASE WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised' ELSE 'Standard Purchase' END
-LEFT JOIN   WAREHOUSEDATA.Rating rt ON rt.order_no = od.order_no AND rt.item_id = od.item_id
-LEFT JOIN   WAREHOUSEDATA.Return_Request rr ON rr.order_no = od.order_no AND rr.item_id = od.item_id
-LEFT JOIN WAREHOUSEDATA.Reward_Redemption red ON red.redemption_id = o.redemption_id
-LEFT JOIN WAREHOUSEDATA.Reward rw ON rw.reward_id = red.reward_id;
-
+FROM WAREHOUSEDATA.Order_Detail od
+JOIN WAREHOUSEDATA.Orders o
+  ON o.order_no = od.order_no
+JOIN DATE_DIM d
+  ON d.CAL_DATE = TRUNC(CAST(o.order_date_time AS DATE))
+JOIN BRANCH_DIM b
+  ON b.BRANCHID = o.branch_id
+ AND CAST(o.order_date_time AS DATE)
+     BETWEEN b.EFFECTIVESTARTDATE AND b.EFFECTIVEENDDATE
+LEFT JOIN CUSTOMER_DIM c
+  ON c.CUSTOMERID = o.customer_id
+ AND CAST(o.order_date_time AS DATE)
+     BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
+JOIN PRODUCT_DIM p
+  ON p.ITEMID = od.item_id
+ AND CAST(o.order_date_time AS DATE)
+     BETWEEN p.EFFECTIVESTARTDATE AND p.EFFECTIVEENDDATE
+JOIN EMPLOYEE_DIM e
+  ON e.EMPLOYEEID = o.handled_by
+ AND CAST(o.order_date_time AS DATE)
+     BETWEEN e.EFFECTIVESTARTDATE AND e.EFFECTIVEENDDATE
+JOIN ORDER_PROFILE_DIM op
+  ON op.order_type = o.order_type
+ AND op.service_type = o.service_type
+ AND op.order_status = o.order_status
+ AND op.mykasih_purchase =
+     CASE
+         WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
+         ELSE 'Standard Purchase'
+     END
+LEFT JOIN WAREHOUSEDATA.Rating rt
+  ON rt.order_no = od.order_no
+ AND rt.item_id = od.item_id
+LEFT JOIN WAREHOUSEDATA.Return_Request rr
+  ON rr.order_no = od.order_no
+ AND rr.item_id = od.item_id
+LEFT JOIN WAREHOUSEDATA.Reward_Redemption red
+  ON red.redemption_id = o.redemption_id
+LEFT JOIN WAREHOUSEDATA.Reward rw
+  ON rw.reward_id = red.reward_id
+WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00';
 
 
 INSERT INTO DELIVERY_FACT (
     DATEKEY, DELIVEREDDATEKEY, BRANCHKEY, CUSTOMERKEY, COURIERKEY,
     DELIVERY_STATUS_KEY, DELIVERYREQUESTID, ORDERNO,
     DELIVERYFEE, ORDERTOTALAMOUNT, DELIVERYLEADHOURS,
-    DELIVERYRATING, DELIVERYRATINGCOUNT, FAILEDDELIVERYCOUNT)
+    DELIVERYRATING, DELIVERYRATINGCOUNT, FAILEDDELIVERYCOUNT
+)
 SELECT
     d.DATE_KEY,
     NVL(dd.DATE_KEY, -1),
@@ -631,31 +683,49 @@ SELECT
     dr.order_no,
     NVL(dr.delivery_fee, 0),
     o.total_amount,
-    CASE WHEN dr.delivered_date_time IS NOT NULL
-         THEN ROUND((CAST(dr.delivered_date_time AS DATE)
-                   - CAST(o.order_date_time     AS DATE)) * 24, 2)
+    CASE
+        WHEN dr.delivered_date_time IS NOT NULL
+        THEN ROUND(
+            (CAST(dr.delivered_date_time AS DATE)
+             - CAST(o.order_date_time AS DATE)) * 24,
+            2
+        )
     END,
     dr.rating,
     CASE WHEN dr.rating IS NOT NULL THEN 1 ELSE 0 END,
-    CASE WHEN dr.status = 'Failed'  THEN 1 ELSE 0 END
-FROM        WAREHOUSEDATA.Delivery_Request dr
-JOIN        WAREHOUSEDATA.Orders o  ON o.order_no = dr.order_no
-JOIN        DATE_DIM d   ON d.CAL_DATE = TRUNC(CAST(o.order_date_time AS DATE))
-LEFT JOIN   DATE_DIM dd  ON dd.CAL_DATE = TRUNC(CAST(dr.delivered_date_time AS DATE))
-JOIN        BRANCH_DIM b ON b.BRANCHID = o.branch_id
-                        AND CAST(o.order_date_time AS DATE)
-                            BETWEEN b.EFFECTIVESTARTDATE AND b.EFFECTIVEENDDATE
-LEFT JOIN   CUSTOMER_DIM c ON c.CUSTOMERID = o.customer_id
-                          AND CAST(o.order_date_time AS DATE)
-                              BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
-JOIN        COURIER_DIM cr ON cr.COURIERID = dr.courier_id
-                          AND CAST(o.order_date_time AS DATE)
-                              BETWEEN cr.EFFECTIVESTARTDATE AND cr.EFFECTIVEENDDATE
-JOIN        DELIVERY_STATUS_DIM ds ON ds.DELIVERY_STATUS = dr.status;
+    CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END
+FROM WAREHOUSEDATA.Delivery_Request dr
+JOIN WAREHOUSEDATA.Orders o
+  ON o.order_no = dr.order_no
+JOIN DATE_DIM d
+  ON d.CAL_DATE = TRUNC(CAST(o.order_date_time AS DATE))
+LEFT JOIN DATE_DIM dd
+  ON dd.CAL_DATE = TRUNC(CAST(dr.delivered_date_time AS DATE))
+JOIN BRANCH_DIM b
+  ON b.BRANCHID = o.branch_id
+ AND CAST(o.order_date_time AS DATE)
+     BETWEEN b.EFFECTIVESTARTDATE AND b.EFFECTIVEENDDATE
+LEFT JOIN CUSTOMER_DIM c
+  ON c.CUSTOMERID = o.customer_id
+ AND CAST(o.order_date_time AS DATE)
+     BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
+JOIN COURIER_DIM cr
+  ON cr.COURIERID = dr.courier_id
+ AND CAST(o.order_date_time AS DATE)
+     BETWEEN cr.EFFECTIVESTARTDATE AND cr.EFFECTIVEENDDATE
+JOIN DELIVERY_STATUS_DIM ds
+  ON ds.DELIVERY_STATUS = dr.status
+WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00'
+  AND (
+        dr.delivered_date_time IS NULL
+        OR dr.delivered_date_time < TIMESTAMP '2026-07-01 00:00:00'
+      );
+
 
 INSERT INTO REWARD_FACT (
     DATEKEY, CUSTOMERKEY, REWARDKEY, REDEMPTIONID, QUANTITYREDEEMED,
-    POINTSPEND, REWARDVALUE, USEDCOUNT, EXPIREDCOUNT, ACTIVECOUNT)
+    POINTSPEND, REWARDVALUE, USEDCOUNT, EXPIREDCOUNT, ACTIVECOUNT
+)
 SELECT
     d.DATE_KEY,
     NVL(c.CUSTOMERKEY, -1),
@@ -664,16 +734,24 @@ SELECT
     rr.quantity_redeemed,
     rr.point_spent,
     ROUND(rr.quantity_redeemed * r.value, 2),
-    CASE WHEN rr.status = 'Used'    THEN 1 ELSE 0 END,
+    CASE WHEN rr.status = 'Used' THEN 1 ELSE 0 END,
     CASE WHEN rr.status = 'Expired' THEN 1 ELSE 0 END,
-    CASE WHEN rr.status = 'Active'  THEN 1 ELSE 0 END
-FROM        WAREHOUSEDATA.Reward_Redemption rr
-JOIN        WAREHOUSEDATA.Reward   r  ON r.reward_id = rr.reward_id
-JOIN        WAREHOUSEDATA.Customer cu ON cu.member_id = rr.member_id
-JOIN        DATE_DIM d ON d.CAL_DATE = rr.issue_date
-LEFT JOIN   CUSTOMER_DIM c ON c.CUSTOMERID = cu.customer_id
-                          AND rr.issue_date BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
-JOIN        REWARD_DIM rd ON rd.REWARDID = rr.reward_id
-                         AND rr.issue_date BETWEEN rd.EFFECTIVESTARTDATE AND rd.EFFECTIVEENDDATE;
+    CASE WHEN rr.status = 'Active' THEN 1 ELSE 0 END
+FROM WAREHOUSEDATA.Reward_Redemption rr
+JOIN WAREHOUSEDATA.Reward r
+  ON r.reward_id = rr.reward_id
+JOIN WAREHOUSEDATA.Customer cu
+  ON cu.member_id = rr.member_id
+JOIN DATE_DIM d
+  ON d.CAL_DATE = rr.issue_date
+LEFT JOIN CUSTOMER_DIM c
+  ON c.CUSTOMERID = cu.customer_id
+ AND rr.issue_date
+     BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
+JOIN REWARD_DIM rd
+  ON rd.REWARDID = rr.reward_id
+ AND rr.issue_date
+     BETWEEN rd.EFFECTIVESTARTDATE AND rd.EFFECTIVEENDDATE
+WHERE rr.issue_date < DATE '2026-07-01';
 
 COMMIT;
