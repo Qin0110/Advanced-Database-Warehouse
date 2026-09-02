@@ -251,7 +251,7 @@ SELECT
         WHEN TRIM(e.name) IS NULL THEN 'N'
         WHEN TRIM(e.position) IS NULL THEN 'N'
         WHEN INITCAP(TRIM(e.position)) NOT IN ('Cashier', 'Manager', 'Supervisor', 'Stock Clerk') THEN 'N'
-        WHEN e.salary IS NULL THEN 'N'
+WHEN e.salary IS NULL THEN 'N'
         WHEN e.salary <= 0 THEN 'N'
         WHEN e.hire_date IS NULL THEN 'N'
         WHEN TRUNC(e.hire_date) > TRUNC(SYSDATE) THEN 'N'
@@ -267,7 +267,7 @@ SELECT
         WHEN TRIM(e.position) IS NULL THEN 'Employee position is missing'
         WHEN INITCAP(TRIM(e.position)) NOT IN ('Cashier', 'Manager', 'Supervisor', 'Stock Clerk')
              THEN 'Invalid employee position'
-        WHEN e.salary IS NULL THEN 'Employee salary is missing'
+WHEN e.salary IS NULL THEN 'Employee salary is missing'
         WHEN e.salary <= 0 THEN 'Employee salary must be a positive number'
         WHEN e.hire_date IS NULL THEN 'Employee hire date is missing'
         WHEN TRUNC(e.hire_date) > TRUNC(SYSDATE)
@@ -1145,7 +1145,7 @@ END;
 /
 
 /* ---------- 7. Example subsequent load ---------- */
-EXEC PRC_SUBSEQUENT_LOAD(DATE '2026-07-01',DATE '2026-07-21');
+EXEC PRC_SUBSEQUENT_LOAD(DATE '2026-07-01',DATE '2026-08-01');
 
 /* ---------- 8. Evidence / checking queries ---------- */
 
@@ -1181,16 +1181,16 @@ SELECT COUNT(*) AS JULY_SALES_ROWS
 FROM SALES_FACT sf
 JOIN DATE_DIM d ON d.DATE_KEY = sf.DATEKEY
 WHERE d.CAL_DATE >= DATE '2026-07-01'
-  AND d.CAL_DATE <  DATE '2026-07-21';
+    AND d.CAL_DATE < DATE '2026-08-01'; 
 
 SELECT COUNT(*) AS JULY_DELIVERY_ROWS
 FROM DELIVERY_FACT df
 JOIN DATE_DIM d ON d.DATE_KEY = df.DATEKEY
 WHERE d.CAL_DATE >= DATE '2026-07-01'
-  AND d.CAL_DATE <  DATE '2026-07-21';
+    AND d.CAL_DATE < DATE '2026-08-01'; 
 
 SELECT COUNT(*) AS JULY_REWARD_ROWS
 FROM REWARD_FACT rf
 JOIN DATE_DIM d ON d.DATE_KEY = rf.DATEKEY
 WHERE d.CAL_DATE >= DATE '2026-07-01'
-  AND d.CAL_DATE <  DATE '2026-07-21';
+    AND d.CAL_DATE < DATE '2026-08-01'; 
