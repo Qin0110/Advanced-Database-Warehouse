@@ -245,6 +245,7 @@ BEGIN
         v_b_fee    := 0;
  
         DBMS_OUTPUT.PUT_LINE(' ');
+	DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
         DBMS_OUTPUT.PUT_LINE('BRANCH ' || b.branch_id || ' - ' || b.branch_name);
         DBMS_OUTPUT.PUT_LINE(RPAD('-', c_width, '-'));
         DBMS_OUTPUT.PUT_LINE(
