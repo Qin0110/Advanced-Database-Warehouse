@@ -275,7 +275,112 @@ VALUES (-1, NULL, 'No Redemption', 'Not Applicable', 0,
 	   
 INSERT INTO DATE_DIM (DATE_KEY, CAL_DATE, FULL_DESC, DAY_WEEK, CAL_MONTH_NAME, CAL_YEAR)
 SELECT -1, DATE '9999-12-31', 'Not Delivered', 'N/A', 'N/A', 9999 FROM dual
-WHERE  NOT EXISTS (SELECT 1 FROM DATE_DIM WHERE DATE_KEY = -1);
+WHERE NOT EXISTS (SELECT 1 FROM DATE_DIM WHERE DATE_KEY = -1);
+
+
+
+--------------------------------------------------------------------------------
+-- INITIAL / HISTORICAL LOAD VIEWS
+-- These extraction views are used by the first-time historical load.
+-- Historical transaction cutoff: before 01-Jul-2026,
+-- therefore the initial warehouse contains data through 30-Jun-2026.
+--------------------------------------------------------------------------------
+
+-- Historical order-profile combinations
+CREATE OR REPLACE VIEW VW_INIT_ORDER_PROFILE AS
+SELECT DISTINCT
+       o.order_type,
+       o.service_type,
+       o.order_status,
+       CASE
+           WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
+           ELSE 'Standard Purchase'
+       END AS mykasih_purchase
+FROM WAREHOUSEDATA.Orders o
+WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00';
+
+
+-- Historical sales source rows
+CREATE OR REPLACE VIEW VW_INIT_SALES_SOURCE AS
+SELECT
+    o.order_no,
+    o.order_date_time,
+    o.branch_id,
+    o.customer_id,
+    o.handled_by,
+    o.order_type,
+    o.service_type,
+    o.order_status,
+    o.is_mykasih_purchase,
+    o.subtotal_amount,
+    o.discount_amount,
+    od.item_id,
+    od.unit_price,
+    od.quantity,
+    od.subtotal,
+    rt.score AS rating_score,
+    rr.status AS return_status,
+    rr.return_quantity,
+    rr.refund_amount,
+    rw.reward_type
+FROM WAREHOUSEDATA.Order_Detail od
+JOIN WAREHOUSEDATA.Orders o
+  ON o.order_no = od.order_no
+LEFT JOIN WAREHOUSEDATA.Rating rt
+  ON rt.order_no = od.order_no
+ AND rt.item_id = od.item_id
+LEFT JOIN WAREHOUSEDATA.Return_Request rr
+  ON rr.order_no = od.order_no
+ AND rr.item_id = od.item_id
+LEFT JOIN WAREHOUSEDATA.Reward_Redemption red
+  ON red.redemption_id = o.redemption_id
+LEFT JOIN WAREHOUSEDATA.Reward rw
+  ON rw.reward_id = red.reward_id
+WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00';
+
+
+-- Historical delivery source rows
+CREATE OR REPLACE VIEW VW_INIT_DELIVERY_SOURCE AS
+SELECT
+    dr.delivery_request_id,
+    dr.order_no,
+    dr.delivered_date_time,
+    dr.courier_id,
+    dr.delivery_fee,
+    dr.rating,
+    dr.status AS delivery_status,
+    o.order_date_time,
+    o.branch_id,
+    o.customer_id,
+    o.total_amount
+FROM WAREHOUSEDATA.Delivery_Request dr
+JOIN WAREHOUSEDATA.Orders o
+  ON o.order_no = dr.order_no
+WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00'
+  AND (
+        dr.delivered_date_time IS NULL
+        OR dr.delivered_date_time < TIMESTAMP '2026-07-01 00:00:00'
+      );
+
+
+-- Historical reward-redemption source rows
+CREATE OR REPLACE VIEW VW_INIT_REWARD_SOURCE AS
+SELECT
+    rr.redemption_id,
+    rr.issue_date,
+    rr.member_id,
+    rr.reward_id,
+    rr.quantity_redeemed,
+    rr.point_spent,
+    rr.status AS redemption_status,
+    r.value AS reward_unit_value,
+    cu.customer_id
+FROM WAREHOUSEDATA.Reward_Redemption rr
+JOIN WAREHOUSEDATA.Reward r
+  ON r.reward_id = rr.reward_id
+JOIN WAREHOUSEDATA.Customer cu
+  ON cu.member_id = rr.member_id
+WHERE rr.issue_date < DATE '2026-07-01';
 
 
 -- DIMENSION INITIAL LOAD
@@ -352,19 +457,12 @@ JOIN   WAREHOUSEDATA.Delivery_Company dc
 
 -- Only order-profile combinations that already existed by 30-Jun-2026.
 INSERT INTO ORDER_PROFILE_DIM
-SELECT ORDER_PROFILE_DIM_SEQ.NEXTVAL, x.order_type, x.service_type,
-       x.order_status, x.mykasih
-FROM ( SELECT DISTINCT
-           o.order_type,
-           o.service_type,
-           o.order_status,
-           CASE
-               WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
-               ELSE 'Standard Purchase'
-           END AS mykasih
-    FROM WAREHOUSEDATA.Orders o
-    WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00'
-) x;
+SELECT ORDER_PROFILE_DIM_SEQ.NEXTVAL,
+       v.order_type,
+       v.service_type,
+       v.order_status,
+       v.mykasih_purchase
+FROM VW_INIT_ORDER_PROFILE v;
 
 INSERT INTO REWARD_DIM
 SELECT REWARD_DIM_SEQ.NEXTVAL, r.reward_id, r.name, r.reward_type,
@@ -588,83 +686,69 @@ SELECT
     p.PRODUCTKEY,
     op.ORDER_PROFILE_KEY,
     e.EMPLOYEEKEY,
-    o.order_no,
-    od.unit_price,
-    od.quantity,
-    od.subtotal,
+    s.order_no,
+    s.unit_price,
+    s.quantity,
+    s.subtotal,
     CASE
-        WHEN rw.reward_type = 'Discount'
+        WHEN s.reward_type = 'Discount'
         THEN ROUND(
-            o.discount_amount * od.subtotal /
-            NULLIF(o.subtotal_amount, 0),
+            s.discount_amount * s.subtotal /
+            NULLIF(s.subtotal_amount, 0),
             2
         )
         ELSE 0
     END,
-    od.subtotal
+    s.subtotal
     - CASE
-        WHEN rw.reward_type = 'Discount'
+        WHEN s.reward_type = 'Discount'
         THEN ROUND(
-            o.discount_amount * od.subtotal /
-            NULLIF(o.subtotal_amount, 0),
+            s.discount_amount * s.subtotal /
+            NULLIF(s.subtotal_amount, 0),
             2
         )
         ELSE 0
     END
     - CASE
-        WHEN rr.status = 'Refunded'
-        THEN NVL(rr.refund_amount, 0)
+        WHEN s.return_status = 'Refunded'
+        THEN NVL(s.refund_amount, 0)
         ELSE 0
     END,
-    rt.score,
-    NVL(rr.return_quantity, 0),
+    s.rating_score,
+    NVL(s.return_quantity, 0),
     CASE
-        WHEN rr.status = 'Refunded'
-        THEN NVL(rr.refund_amount, 0)
+        WHEN s.return_status = 'Refunded'
+        THEN NVL(s.refund_amount, 0)
         ELSE 0
     END
-FROM WAREHOUSEDATA.Order_Detail od
-JOIN WAREHOUSEDATA.Orders o
-  ON o.order_no = od.order_no
+FROM VW_INIT_SALES_SOURCE s
 JOIN DATE_DIM d
-  ON d.CAL_DATE = TRUNC(CAST(o.order_date_time AS DATE))
+  ON d.CAL_DATE = TRUNC(CAST(s.order_date_time AS DATE))
 JOIN BRANCH_DIM b
-  ON b.BRANCHID = o.branch_id
- AND CAST(o.order_date_time AS DATE)
+  ON b.BRANCHID = s.branch_id
+ AND CAST(s.order_date_time AS DATE)
      BETWEEN b.EFFECTIVESTARTDATE AND b.EFFECTIVEENDDATE
 LEFT JOIN CUSTOMER_DIM c
-  ON c.CUSTOMERID = o.customer_id
- AND CAST(o.order_date_time AS DATE)
+  ON c.CUSTOMERID = s.customer_id
+ AND CAST(s.order_date_time AS DATE)
      BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
 JOIN PRODUCT_DIM p
-  ON p.ITEMID = od.item_id
- AND CAST(o.order_date_time AS DATE)
+  ON p.ITEMID = s.item_id
+ AND CAST(s.order_date_time AS DATE)
      BETWEEN p.EFFECTIVESTARTDATE AND p.EFFECTIVEENDDATE
 JOIN EMPLOYEE_DIM e
-  ON e.EMPLOYEEID = o.handled_by
- AND CAST(o.order_date_time AS DATE)
+  ON e.EMPLOYEEID = s.handled_by
+ AND CAST(s.order_date_time AS DATE)
      BETWEEN e.EFFECTIVESTARTDATE AND e.EFFECTIVEENDDATE
 JOIN ORDER_PROFILE_DIM op
-  ON op.order_type = o.order_type
- AND op.service_type = o.service_type
- AND op.order_status = o.order_status
+  ON op.order_type = s.order_type
+ AND op.service_type = s.service_type
+ AND op.order_status = s.order_status
  AND op.mykasih_purchase =
      CASE
-         WHEN o.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
+         WHEN s.is_mykasih_purchase = 'Y' THEN 'MyKasih Subsidised'
          ELSE 'Standard Purchase'
-     END
-LEFT JOIN WAREHOUSEDATA.Rating rt
-  ON rt.order_no = od.order_no
- AND rt.item_id = od.item_id
-LEFT JOIN WAREHOUSEDATA.Return_Request rr
-  ON rr.order_no = od.order_no
- AND rr.item_id = od.item_id
-LEFT JOIN WAREHOUSEDATA.Reward_Redemption red
-  ON red.redemption_id = o.redemption_id
-LEFT JOIN WAREHOUSEDATA.Reward rw
-  ON rw.reward_id = red.reward_id
-WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00';
-
+     END;
 
 INSERT INTO DELIVERY_FACT (
     DATEKEY, DELIVEREDDATEKEY, BRANCHKEY, CUSTOMERKEY, COURIERKEY,
@@ -679,48 +763,40 @@ SELECT
     NVL(c.CUSTOMERKEY, -1),
     cr.COURIERKEY,
     ds.DELIVERY_STATUS_KEY,
-    dr.delivery_request_id,
-    dr.order_no,
-    NVL(dr.delivery_fee, 0),
-    o.total_amount,
+    s.delivery_request_id,
+    s.order_no,
+    NVL(s.delivery_fee, 0),
+    s.total_amount,
     CASE
-        WHEN dr.delivered_date_time IS NOT NULL
+        WHEN s.delivered_date_time IS NOT NULL
         THEN ROUND(
-            (CAST(dr.delivered_date_time AS DATE)
-             - CAST(o.order_date_time AS DATE)) * 24,
+            (CAST(s.delivered_date_time AS DATE)
+             - CAST(s.order_date_time AS DATE)) * 24,
             2
         )
     END,
-    dr.rating,
-    CASE WHEN dr.rating IS NOT NULL THEN 1 ELSE 0 END,
-    CASE WHEN dr.status = 'Failed' THEN 1 ELSE 0 END
-FROM WAREHOUSEDATA.Delivery_Request dr
-JOIN WAREHOUSEDATA.Orders o
-  ON o.order_no = dr.order_no
+    s.rating,
+    CASE WHEN s.rating IS NOT NULL THEN 1 ELSE 0 END,
+    CASE WHEN s.delivery_status = 'Failed' THEN 1 ELSE 0 END
+FROM VW_INIT_DELIVERY_SOURCE s
 JOIN DATE_DIM d
-  ON d.CAL_DATE = TRUNC(CAST(o.order_date_time AS DATE))
+  ON d.CAL_DATE = TRUNC(CAST(s.order_date_time AS DATE))
 LEFT JOIN DATE_DIM dd
-  ON dd.CAL_DATE = TRUNC(CAST(dr.delivered_date_time AS DATE))
+  ON dd.CAL_DATE = TRUNC(CAST(s.delivered_date_time AS DATE))
 JOIN BRANCH_DIM b
-  ON b.BRANCHID = o.branch_id
- AND CAST(o.order_date_time AS DATE)
+  ON b.BRANCHID = s.branch_id
+ AND CAST(s.order_date_time AS DATE)
      BETWEEN b.EFFECTIVESTARTDATE AND b.EFFECTIVEENDDATE
 LEFT JOIN CUSTOMER_DIM c
-  ON c.CUSTOMERID = o.customer_id
- AND CAST(o.order_date_time AS DATE)
+  ON c.CUSTOMERID = s.customer_id
+ AND CAST(s.order_date_time AS DATE)
      BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
 JOIN COURIER_DIM cr
-  ON cr.COURIERID = dr.courier_id
- AND CAST(o.order_date_time AS DATE)
+  ON cr.COURIERID = s.courier_id
+ AND CAST(s.order_date_time AS DATE)
      BETWEEN cr.EFFECTIVESTARTDATE AND cr.EFFECTIVEENDDATE
 JOIN DELIVERY_STATUS_DIM ds
-  ON ds.DELIVERY_STATUS = dr.status
-WHERE o.order_date_time < TIMESTAMP '2026-07-01 00:00:00'
-  AND (
-        dr.delivered_date_time IS NULL
-        OR dr.delivered_date_time < TIMESTAMP '2026-07-01 00:00:00'
-      );
-
+  ON ds.DELIVERY_STATUS = s.delivery_status;
 
 INSERT INTO REWARD_FACT (
     DATEKEY, CUSTOMERKEY, REWARDKEY, REDEMPTIONID, QUANTITYREDEEMED,
@@ -730,28 +806,42 @@ SELECT
     d.DATE_KEY,
     NVL(c.CUSTOMERKEY, -1),
     rd.REWARD_KEY,
-    rr.redemption_id,
-    rr.quantity_redeemed,
-    rr.point_spent,
-    ROUND(rr.quantity_redeemed * r.value, 2),
-    CASE WHEN rr.status = 'Used' THEN 1 ELSE 0 END,
-    CASE WHEN rr.status = 'Expired' THEN 1 ELSE 0 END,
-    CASE WHEN rr.status = 'Active' THEN 1 ELSE 0 END
-FROM WAREHOUSEDATA.Reward_Redemption rr
-JOIN WAREHOUSEDATA.Reward r
-  ON r.reward_id = rr.reward_id
-JOIN WAREHOUSEDATA.Customer cu
-  ON cu.member_id = rr.member_id
+    s.redemption_id,
+    s.quantity_redeemed,
+    s.point_spent,
+    ROUND(s.quantity_redeemed * s.reward_unit_value, 2),
+    CASE WHEN s.redemption_status = 'Used' THEN 1 ELSE 0 END,
+    CASE WHEN s.redemption_status = 'Expired' THEN 1 ELSE 0 END,
+    CASE WHEN s.redemption_status = 'Active' THEN 1 ELSE 0 END
+FROM VW_INIT_REWARD_SOURCE s
 JOIN DATE_DIM d
-  ON d.CAL_DATE = rr.issue_date
+  ON d.CAL_DATE = s.issue_date
 LEFT JOIN CUSTOMER_DIM c
-  ON c.CUSTOMERID = cu.customer_id
- AND rr.issue_date
+  ON c.CUSTOMERID = s.customer_id
+ AND s.issue_date
      BETWEEN c.EFFECTIVESTARTDATE AND c.EFFECTIVEENDDATE
 JOIN REWARD_DIM rd
-  ON rd.REWARDID = rr.reward_id
- AND rr.issue_date
-     BETWEEN rd.EFFECTIVESTARTDATE AND rd.EFFECTIVEENDDATE
-WHERE rr.issue_date < DATE '2026-07-01';
+  ON rd.REWARDID = s.reward_id
+ AND s.issue_date
+     BETWEEN rd.EFFECTIVESTARTDATE AND rd.EFFECTIVEENDDATE;
 
-COMMIT;
+COMMIT; 
+
+SELECT COUNT(*) AS DATE_DIM_ROWS FROM DATE_DIM;
+SELECT COUNT(*) AS BRANCH_DIM_ROWS FROM BRANCH_DIM;
+SELECT COUNT(*) AS COURIER_DIM_ROWS FROM COURIER_DIM;
+SELECT COUNT(*) AS PRODUCT_DIM_ROWS FROM PRODUCT_DIM;
+SELECT COUNT(*) AS REWARD_DIM_ROWS FROM REWARD_DIM;
+SELECT COUNT(*) AS EMPLOYEE_DIM_ROWS FROM EMPLOYEE_DIM;
+SELECT COUNT(*) AS CUSTOMER_DIM_ROWS FROM CUSTOMER_DIM;
+SELECT COUNT(*) AS ORDER_PROFILE_DIM_ROWS FROM ORDER_PROFILE_DIM;
+
+
+SELECT COUNT(*) AS SALES_SOURCE_ROWS
+FROM VW_INIT_SALES_SOURCE;
+
+SELECT COUNT(*) AS DELIVERY_SOURCE_ROWS
+FROM VW_INIT_DELIVERY_SOURCE;
+
+SELECT COUNT(*) AS REWARD_SOURCE_ROWS
+FROM VW_INIT_REWARD_SOURCE;
