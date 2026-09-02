@@ -22,5 +22,5 @@ grant dba to warehouse
 
 
 
-3\. Connect to warehouse and run dimension.txt
+3\. Connect to warehouse and run dimension.txt ,subsequent_load.txt
 
